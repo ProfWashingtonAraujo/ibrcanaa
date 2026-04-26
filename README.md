@@ -1,16 +1,20 @@
-# React + Vite
+React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este template fornece uma configuração mínima para fazer o React funcionar no Vite com HMR e algumas regras do ESLint.
 
-Currently, two official plugins are available:
+Atualmente, dois plugins oficiais estão disponíveis:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+@vitejs/plugin-react
+ usa Oxc
+@vitejs/plugin-react-swc
+ usa SWC
+React Compiler
 
-## React Compiler
+O React Compiler não está habilitado neste template por causa do impacto no desempenho durante o desenvolvimento e a build. Para adicioná-lo, consulte esta documentação
+.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Expandindo a configuração do ESLint
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Se você está desenvolvendo uma aplicação para produção, recomendamos usar TypeScript com regras de lint baseadas em tipos habilitadas. Consulte o template TS
+ para obter informações sobre como integrar TypeScript e typescript-eslint
+ ao seu projeto.
