@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     <div>
       <PageHeader 
         title="Dashboard" 
-        description="Bem-vindo ao painel administrativo do Lumen Ecclesia."
+        description="Bem-vindo ao painel administrativo da Igreja Batista Regular Canaã."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

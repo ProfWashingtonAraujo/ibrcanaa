@@ -30,7 +30,7 @@ export default function LandingPage() {
             Um Santuário Digital para uma <span className="text-blue-900">Fé Real</span>
           </h1>
           <p className="text-xl text-slate-500 mb-10 leading-relaxed">
-            Bem-vindo ao Lumen Ecclesia, o portal digital da IBR Canaã. 
+            Bem-vindo ao portal digital da Igreja Batista Regular Canaã. 
             Conecte-se com nossa comunidade, acompanhe eventos e cresça em sua jornada espiritual.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -54,7 +54,7 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold text-slate-900 mb-6">Ser Luz no Mundo</h2>
               <p className="text-lg text-slate-500 mb-8 leading-relaxed">
                 Nossa missão é levar a esperança e o amor de Cristo para todos. 
-                Através do Lumen Ecclesia, buscamos estar mais próximos de você, 
+                Através da nossa plataforma digital, buscamos estar mais próximos de você, 
                 oferecendo suporte espiritual, ensino de qualidade e uma comunidade acolhedora.
               </p>
               <div className="grid sm:grid-cols-2 gap-6">
@@ -144,7 +144,7 @@ export default function LandingPage() {
           <p className="text-slate-500 mb-2">Av. Principal, 1000 - Centro</p>
           <p className="text-slate-500 mb-8">Cultos: Domingo 18h | Quarta 20h</p>
           <div className="pt-8 border-t border-slate-100 text-sm text-slate-400">
-            © {new Date().getFullYear()} IBR Canaã / Lumen Ecclesia. Todos os direitos reservados.
+            © {new Date().getFullYear()} Igreja Batista Regular Canaã. Todos os direitos reservados.
           </div>
         </div>
       </footer>

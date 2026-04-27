@@ -11,7 +11,7 @@ export default function Gateway() {
           Selecione seu acesso
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
-          Como você deseja acessar o Lumen Ecclesia?
+          Como você deseja acessar o portal da Igreja Batista Regular Canaã?
         </p>
       </div>
 

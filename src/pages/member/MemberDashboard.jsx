@@ -6,8 +6,8 @@ import Button from '../../components/ui/Button';
 export default function MemberDashboard() {
   return (
     <div>
-      <PageHeader 
-        title="Olá, João!" 
+      <PageHeader
+        title="Olá, João!"
         description="Bem-vindo ao seu portal do membro. Aqui você acompanha sua jornada de fé."
       />
 
@@ -29,7 +29,7 @@ export default function MemberDashboard() {
             <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
               <PlayCircle className="w-5 h-5 text-blue-600" /> Treinamentos e Cursos
             </h3>
-            
+
             <div className="space-y-6">
               <div className="group">
                 <div className="flex justify-between items-center mb-2">
