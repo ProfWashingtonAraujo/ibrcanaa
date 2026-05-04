@@ -1,0 +1,47 @@
+---
+import logo from '../assets/logo.png';
+import { contact, navItems } from '../data/landing';
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-white/10 bg-slate-950 py-14 text-slate-300">
+  <div class="mx-auto grid w-full max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] lg:px-8">
+    <div>
+      <a href="#inicio" class="flex items-center gap-3">
+        <img src={logo.src} width="52" height="52" alt="Logo da Igreja Batista Regular Canaa" class="h-12 w-auto" />
+        <span>
+          <span class="block text-[10px] font-bold uppercase tracking-[0.32em] text-gold-300">Igreja</span>
+          <span class="block text-sm font-extrabold tracking-tight text-white">Batista Regular Canaa</span>
+        </span>
+      </a>
+      <p class="mt-5 max-w-sm leading-7">Uma comunidade biblica, acolhedora e preparada para ajudar pessoas e familias a crescerem em Cristo.</p>
+    </div>
+    <div>
+      <h2 class="font-black text-white">Links uteis</h2>
+      <nav class="mt-4 space-y-3 text-sm">
+        {navItems.map((item) => <a class="block transition hover:text-gold-300" href={item.href}>{item.label}</a>)}
+        <a class="block transition hover:text-gold-300" href="#faq">FAQ</a>
+      </nav>
+    </div>
+    <div>
+      <h2 class="font-black text-white">Contato</h2>
+      <div class="mt-4 space-y-3 text-sm leading-6">
+        <p>{contact.address}</p>
+        <p>{contact.schedule}</p>
+        <a class="block transition hover:text-gold-300" href={`mailto:${contact.email}`}>{contact.email}</a>
+      </div>
+    </div>
+    <div>
+      <h2 class="font-black text-white">Redes e legal</h2>
+      <div class="mt-4 space-y-3 text-sm">
+        <a class="block transition hover:text-gold-300" href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+        <a class="block transition hover:text-gold-300" href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a>
+        <a class="block transition hover:text-gold-300" href="#">Politica de Privacidade</a>
+        <a class="block transition hover:text-gold-300" href="#">Termos de Uso</a>
+      </div>
+    </div>
+  </div>
+  <div class="mx-auto mt-10 w-full max-w-7xl border-t border-white/10 px-5 pt-6 text-sm text-slate-500 sm:px-6 lg:px-8">
+    © {year} Igreja Batista Regular Canaa. Todos os direitos reservados.
+  </div>
+</footer>

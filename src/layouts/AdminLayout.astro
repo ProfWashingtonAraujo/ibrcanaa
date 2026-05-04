@@ -1,0 +1,86 @@
+---
+import MainLayout from './MainLayout.astro';
+import Icon from '../components/Icon.astro';
+import logo from '../assets/logo.png';
+
+interface Props {
+  title: string;
+  description?: string;
+  eyebrow?: string;
+  heading: string;
+  subheading?: string;
+}
+
+const { title, description, eyebrow = 'Administracao', heading, subheading } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const currentPath = Astro.url.pathname;
+const navItems = [
+  { href: `${base}admin/`, label: 'Visao geral', icon: 'target' },
+  { href: `${base}admin/membros/`, label: 'Membros', icon: 'users' },
+  { href: `${base}admin/eventos/`, label: 'Eventos', icon: 'calendar' },
+  { href: `${base}admin/financeiro/`, label: 'Financeiro', icon: 'shield' },
+  { href: `${base}admin/relatorios/`, label: 'Relatorios', icon: 'book' },
+];
+---
+
+<MainLayout title={title} description={description}>
+  <main class="min-h-screen bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[280px_1fr]">
+    <aside class="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+      <div class="flex h-20 items-center justify-between px-5 lg:h-auto lg:block lg:p-6">
+        <a href={base} class="flex items-center gap-3" aria-label="Voltar para a landing page">
+          <img src={logo.src} width="48" height="48" alt="Logo da Igreja Batista Regular Canaa" class="h-12 w-auto" />
+          <span>
+            <span class="block text-[10px] font-bold uppercase tracking-[0.28em] text-canaa-800">IBR Canaa</span>
+            <span class="block text-sm font-black text-slate-950">Gestao Eclesiastica</span>
+          </span>
+        </a>
+        <a href={`${base}login/diretoria/`} class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 lg:hidden">Sair</a>
+      </div>
+
+      <nav class="flex gap-2 overflow-x-auto px-5 pb-5 text-sm font-bold lg:block lg:space-y-2 lg:overflow-visible lg:px-4 lg:pb-0" aria-label="Menu administrativo">
+        {navItems.map((item) => {
+          const isActive = currentPath === new URL(item.href, Astro.url).pathname;
+          return (
+            <a href={item.href} class:list={[
+              'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 transition',
+              isActive ? 'bg-canaa-800 text-white shadow-lg shadow-canaa-800/15' : 'text-slate-600 hover:bg-slate-50 hover:text-canaa-800',
+            ]}>
+              <Icon name={item.icon} class="h-5 w-5" />
+              {item.label}
+            </a>
+          );
+        })}
+      </nav>
+
+      <div class="mx-4 mt-8 hidden rounded-3xl bg-slate-950 p-5 text-white lg:block">
+        <p class="text-sm font-black text-gold-300">Acao rapida</p>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Cadastre visitantes e acompanhe o funil de integracao.</p>
+        <a href={`${base}admin/membros/`} class="mt-4 inline-flex rounded-full bg-gold-300 px-4 py-2 text-xs font-black text-canaa-950">Adicionar membro</a>
+      </div>
+    </aside>
+
+    <section class="min-w-0">
+      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-canaa-800">{eyebrow}</p>
+            <h1 class="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{heading}</h1>
+            {subheading && <p class="mt-1 text-sm leading-6 text-slate-500">{subheading}</p>}
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label class="relative block min-w-0 sm:w-80">
+              <span class="sr-only">Busca global</span>
+              <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-canaa-800 focus:bg-white focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministerios..." />
+            </label>
+            <button class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700" type="button">3 alertas</button>
+            <a href={`${base}login/diretoria/`} class="hidden rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white sm:inline-flex">Pr. Roberto</a>
+          </div>
+        </div>
+      </header>
+
+      <div class="px-5 py-6 sm:px-6 lg:px-8">
+        <slot />
+      </div>
+    </section>
+  </main>
+</MainLayout>

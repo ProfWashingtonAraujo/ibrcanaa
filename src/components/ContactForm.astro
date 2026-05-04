@@ -1,0 +1,69 @@
+---
+import { contact } from '../data/landing';
+---
+
+<section id="contato" class="bg-slate-950 py-24 text-white">
+  <div class="mx-auto grid w-full max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
+    <div class="reveal">
+      <p class="text-sm font-black uppercase tracking-[0.26em] text-gold-300">Contato</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Planeje sua visita ou envie seu interesse.</h2>
+      <p class="mt-5 text-lg leading-8 text-slate-300">A estrutura do formulario esta preparada para futura integracao com uma API em Python usando FastAPI ou Flask.</p>
+      <div class="mt-8 space-y-4 rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-6">
+        <p><strong class="text-gold-300">Endereco:</strong> {contact.address}</p>
+        <p><strong class="text-gold-300">Cultos:</strong> {contact.schedule}</p>
+        <p><strong class="text-gold-300">E-mail:</strong> <a class="hover:text-gold-300" href={`mailto:${contact.email}`}>{contact.email}</a></p>
+      </div>
+    </div>
+
+    <form id="lead-form" class="reveal rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8" action="/ibrcanaa/obrigado/" method="get" novalidate>
+      <input type="hidden" name="source" value="landing-page" />
+      <div class="grid gap-5 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">Nome</span>
+          <input required minlength="2" name="name" autocomplete="name" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Seu nome" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">E-mail</span>
+          <input required type="email" name="email" autocomplete="email" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="voce@email.com" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">WhatsApp</span>
+          <input required name="whatsapp" inputmode="tel" autocomplete="tel" pattern="[0-9 ()+.-]{10,}" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="(99) 99999-9999" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">Interesse</span>
+          <select required name="interest" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100">
+            <option value="">Selecione</option>
+            <option>Planejar visita</option>
+            <option>Ministerios</option>
+            <option>Aconselhamento</option>
+            <option>Eventos</option>
+          </select>
+        </label>
+      </div>
+      <label class="mt-5 block">
+        <span class="text-sm font-bold text-slate-700">Mensagem</span>
+        <textarea required minlength="8" name="message" rows="5" class="mt-2 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Conte como podemos ajudar"></textarea>
+      </label>
+      <p id="form-error" class="mt-4 hidden rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">Revise os campos obrigatorios antes de enviar.</p>
+      <button data-analytics="lead_form_submit" class="mt-6 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-canaa-950" type="submit">Enviar interesse</button>
+      <p class="mt-4 text-center text-xs leading-5 text-slate-500">Ao enviar, voce concorda em ser contatado pela equipe. Para integrar com backend, troque `action` pela URL da API e use POST.</p>
+    </form>
+  </div>
+</section>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('#lead-form');
+  const error = document.querySelector('#form-error');
+
+  form?.addEventListener('submit', (event) => {
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      error?.classList.remove('hidden');
+      form.reportValidity();
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('lead_form_submit', { detail: Object.fromEntries(new FormData(form)) }));
+  });
+</script>

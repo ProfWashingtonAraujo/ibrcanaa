@@ -1,0 +1,35 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Benefits from '../components/Benefits.astro';
+import About from '../components/About.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Features from '../components/Features.astro';
+import Testimonials from '../components/Testimonials.astro';
+import FAQ from '../components/FAQ.astro';
+import FinalCTA from '../components/FinalCTA.astro';
+import ContactForm from '../components/ContactForm.astro';
+import Footer from '../components/Footer.astro';
+import { contact } from '../data/landing';
+---
+
+<MainLayout>
+  <Header />
+  <main>
+    <Hero />
+    <Benefits />
+    <About />
+    <HowItWorks />
+    <Features />
+    <Testimonials />
+    <FAQ />
+    <FinalCTA />
+    <ContactForm />
+  </main>
+  <Footer />
+  <a href={`https://wa.me/${contact.whatsapp}?text=Ola%2C%20quero%20planejar%20minha%20visita%20a%20IBR%20Canaa.`} target="_blank" rel="noreferrer" class="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-2xl shadow-emerald-950/30 transition hover:-translate-y-1 hover:bg-emerald-400" aria-label="Falar pelo WhatsApp">
+    <span class="h-2.5 w-2.5 rounded-full bg-white"></span>
+    WhatsApp
+  </a>
+</MainLayout>

@@ -1,0 +1,23 @@
+---
+import { steps } from '../data/landing';
+---
+
+<section id="como-funciona" class="bg-slate-50 py-24 text-slate-950">
+  <div class="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
+    <div class="reveal max-w-2xl">
+      <p class="text-sm font-black uppercase tracking-[0.26em] text-canaa-800">Como funciona</p>
+      <h2 class="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Um caminho simples do interesse a participacao.</h2>
+    </div>
+
+    <div class="mt-14 grid gap-5 lg:grid-cols-4">
+      {steps.map((step, index) => (
+        <article class="reveal relative rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm">
+          <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-canaa-800 text-lg font-black text-white">{String(index + 1).padStart(2, '0')}</span>
+          <h3 class="mt-7 text-xl font-black">{step.title}</h3>
+          <p class="mt-3 leading-7 text-slate-600">{step.description}</p>
+          {index < steps.length - 1 && <span class="absolute -right-3 top-12 hidden h-px w-6 bg-canaa-100 lg:block"></span>}
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

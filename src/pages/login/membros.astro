@@ -1,0 +1,58 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import Icon from '../../components/Icon.astro';
+import logo from '../../assets/logo.png';
+
+const homeHref = import.meta.env.BASE_URL;
+const memberPortalHref = `${import.meta.env.BASE_URL}membros/`;
+---
+
+<MainLayout title="Login de membros | IBR Canaa" description="Acesso demonstrativo ao portal de membros da Igreja Batista Regular Canaa.">
+  <main class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(248,217,139,0.18),transparent_30%),linear-gradient(135deg,#07152f,#0f172a)] px-5 py-10 text-white sm:px-6 lg:px-8">
+    <section class="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+      <div class="hidden lg:block">
+        <a href={homeHref} class="inline-flex items-center gap-3">
+          <img src={logo.src} width="56" height="56" alt="Logo da Igreja Batista Regular Canaa" class="h-14 w-auto" />
+          <span>
+            <span class="block text-[10px] font-bold uppercase tracking-[0.32em] text-gold-300">Igreja</span>
+            <span class="block text-base font-extrabold tracking-tight text-white">Batista Regular Canaa</span>
+          </span>
+        </a>
+        <p class="mt-12 text-sm font-black uppercase tracking-[0.26em] text-gold-300">Portal do membro</p>
+        <h1 class="mt-3 text-5xl font-black tracking-tight">Sua jornada de fe em um so lugar.</h1>
+        <p class="mt-5 max-w-xl text-lg leading-8 text-slate-300">Acesse comunicados, acompanhamento, dados de perfil e proximos passos da vida da igreja.</p>
+      </div>
+
+      <form action={memberPortalHref} method="get" class="mx-auto w-full max-w-md rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8">
+        <a href={homeHref} class="mb-8 inline-flex items-center gap-2 text-sm font-bold text-canaa-800 transition hover:text-canaa-950 lg:hidden">
+          <Icon name="arrow" class="h-4 w-4 rotate-180" />
+          Voltar para inicio
+        </a>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-canaa-800">Acesso de membros</p>
+        <h2 class="mt-3 text-3xl font-black tracking-tight">Entrar no portal</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">Use qualquer e-mail e senha para acessar a demonstracao.</p>
+
+        <label class="mt-8 block">
+          <span class="text-sm font-bold text-slate-700">E-mail</span>
+          <input required type="email" name="email" autocomplete="email" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="membro@email.com" />
+        </label>
+
+        <label class="mt-5 block">
+          <span class="text-sm font-bold text-slate-700">Senha</span>
+          <input required type="password" name="password" autocomplete="current-password" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Sua senha" />
+        </label>
+
+        <div class="mt-5 flex items-center justify-between gap-4 text-sm">
+          <label class="flex items-center gap-2 font-semibold text-slate-600">
+            <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-canaa-800" />
+            Lembrar acesso
+          </label>
+          <a href="#" class="font-bold text-canaa-800 hover:text-canaa-950">Esqueci a senha</a>
+        </div>
+
+        <button class="mt-7 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-canaa-950" type="submit">Entrar como membro</button>
+        <p class="mt-5 text-center text-xs leading-5 text-slate-500">Ambiente demonstrativo. A autenticacao real pode ser conectada depois a FastAPI, Flask ou outro backend.</p>
+      </form>
+    </section>
+  </main>
+</MainLayout>

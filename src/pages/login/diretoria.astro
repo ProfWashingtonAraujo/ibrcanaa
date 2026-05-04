@@ -1,0 +1,54 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import Icon from '../../components/Icon.astro';
+import logo from '../../assets/logo.png';
+
+const homeHref = import.meta.env.BASE_URL;
+const adminDashboardHref = `${import.meta.env.BASE_URL}admin/`;
+---
+
+<MainLayout title="Login da diretoria | IBR Canaa" description="Acesso demonstrativo da diretoria ao painel administrativo da Igreja Batista Regular Canaa.">
+  <main class="min-h-screen bg-slate-950 px-5 py-10 text-white sm:px-6 lg:px-8">
+    <section class="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+      <div class="rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(248,217,139,0.18),transparent_30%),linear-gradient(135deg,#07152f,#1e3a8a)] p-8 shadow-2xl shadow-black/30 sm:p-10">
+        <a href={homeHref} class="inline-flex items-center gap-3">
+          <img src={logo.src} width="56" height="56" alt="Logo da Igreja Batista Regular Canaa" class="h-14 w-auto" />
+          <span>
+            <span class="block text-[10px] font-bold uppercase tracking-[0.32em] text-gold-300">Igreja</span>
+            <span class="block text-base font-extrabold tracking-tight text-white">Batista Regular Canaa</span>
+          </span>
+        </a>
+        <p class="mt-12 text-sm font-black uppercase tracking-[0.26em] text-gold-300">Diretoria da igreja</p>
+        <h1 class="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Gestao segura para lideranca e administracao.</h1>
+        <div class="mt-8 grid gap-3 text-sm font-semibold text-slate-200">
+          <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-4"><Icon name="shield" class="h-5 w-5 text-gold-300" />Gestao de membros e visitantes</div>
+          <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-4"><Icon name="calendar" class="h-5 w-5 text-gold-300" />Acompanhamento de ministerios e eventos</div>
+          <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-4"><Icon name="users" class="h-5 w-5 text-gold-300" />Visao organizada para tomada de decisao</div>
+        </div>
+      </div>
+
+      <form action={adminDashboardHref} method="get" class="mx-auto w-full max-w-md rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8">
+        <a href={homeHref} class="mb-8 inline-flex items-center gap-2 text-sm font-bold text-canaa-800 transition hover:text-canaa-950">
+          <Icon name="arrow" class="h-4 w-4 rotate-180" />
+          Voltar para landing page
+        </a>
+        <p class="text-sm font-black uppercase tracking-[0.22em] text-canaa-800">Acesso restrito</p>
+        <h2 class="mt-3 text-3xl font-black tracking-tight">Entrar como diretoria</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">Use qualquer credencial para acessar a demonstracao do painel.</p>
+
+        <label class="mt-8 block">
+          <span class="text-sm font-bold text-slate-700">E-mail institucional</span>
+          <input required type="email" name="email" autocomplete="email" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="diretoria@ibrcanaa.org" />
+        </label>
+
+        <label class="mt-5 block">
+          <span class="text-sm font-bold text-slate-700">Senha</span>
+          <input required type="password" name="password" autocomplete="current-password" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Senha de acesso" />
+        </label>
+
+        <button class="mt-7 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-canaa-950" type="submit">Acessar painel</button>
+        <p class="mt-5 text-center text-xs leading-5 text-slate-500">Em producao, esta tela deve validar usuario, senha e permissao antes de liberar o painel.</p>
+      </form>
+    </section>
+  </main>
+</MainLayout>

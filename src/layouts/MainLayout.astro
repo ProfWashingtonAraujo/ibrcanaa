@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Igreja Batista Regular Canaa | Comunidade, cuidado e fe',
+  description = 'Planeje sua visita a Igreja Batista Regular Canaa. Conheca cultos, ministerios, proposta de valor e fale com a equipe em uma landing page rapida e responsiva.',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://profwashingtonaraujo.github.io').toString();
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="/ibrcanaa/favicon.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#07152f" />
+    <link rel="icon" href="/ibrcanaa/favicon.png" />
+    <slot name="head" />
+  </head>
+  <body class="bg-slate-950 font-sans text-slate-100 antialiased">
+    <slot />
+    <script is:inline>
+      const revealItems = document.querySelectorAll('.reveal');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      revealItems.forEach((item) => observer.observe(item));
+
+      window.dataLayer = window.dataLayer || [];
+      document.querySelectorAll('[data-analytics]').forEach((element) => {
+        element.addEventListener('click', () => {
+          window.dataLayer.push({ event: element.getAttribute('data-analytics') });
+        });
+      });
+
+      window.metaPixelQueue = window.metaPixelQueue || [];
+    </script>
+  </body>
+</html>

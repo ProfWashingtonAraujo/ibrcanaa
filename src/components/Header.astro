@@ -1,0 +1,66 @@
+---
+import logo from '../assets/logo.png';
+import { navItems } from '../data/landing';
+
+const memberLoginHref = `${import.meta.env.BASE_URL}login/membros/`;
+const boardLoginHref = `${import.meta.env.BASE_URL}login/diretoria/`;
+---
+
+<header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/55 backdrop-blur-xl transition-shadow duration-300">
+  <div class="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
+    <a href="#inicio" class="flex items-center gap-3" aria-label="IBR Canaa - inicio">
+      <img src={logo.src} width="52" height="52" alt="Logo da Igreja Batista Regular Canaa" class="h-12 w-auto" />
+      <span class="hidden border-l border-white/15 pl-3 sm:block">
+        <span class="block text-[10px] font-bold uppercase tracking-[0.32em] text-gold-300">Igreja</span>
+        <span class="block text-sm font-extrabold tracking-tight text-white">Batista Regular Canaa</span>
+      </span>
+    </a>
+
+    <nav class="hidden items-center gap-7 text-sm font-medium text-slate-200 lg:flex" aria-label="Navegacao principal">
+      {navItems.map((item) => <a class="transition hover:text-gold-300" href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <div class="hidden items-center gap-3 lg:flex">
+      <a href={memberLoginHref} class="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-gold-300/70 hover:bg-white/10">Membros</a>
+      <a href={boardLoginHref} class="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-gold-300/70 hover:bg-white/10">Diretoria</a>
+      <a href="#contato" class="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-gold-300/70 hover:bg-white/10">Falar com a equipe</a>
+      <a href="#contato" class="rounded-full bg-gold-300 px-5 py-2.5 text-sm font-extrabold text-canaa-950 shadow-lg shadow-gold-300/20 transition hover:-translate-y-0.5 hover:bg-white">Planejar visita</a>
+    </div>
+
+    <button id="menu-toggle" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white lg:hidden" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
+      <span class="h-0.5 w-5 bg-current before:block before:h-0.5 before:w-5 before:-translate-y-1.5 before:bg-current before:content-[''] after:block after:h-0.5 after:w-5 after:translate-y-1 after:bg-current after:content-['']"></span>
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="mx-auto hidden w-full max-w-7xl px-5 pb-5 sm:px-6 lg:hidden lg:px-8">
+    <nav class="rounded-3xl border border-white/10 bg-white/10 p-3 text-sm font-semibold text-white shadow-2xl shadow-black/20" aria-label="Navegacao mobile">
+      {navItems.map((item) => <a class="block rounded-2xl px-4 py-3 transition hover:bg-white/10" href={item.href}>{item.label}</a>)}
+      <a class="block rounded-2xl px-4 py-3 transition hover:bg-white/10" href={memberLoginHref}>Area de membros</a>
+      <a class="block rounded-2xl px-4 py-3 transition hover:bg-white/10" href={boardLoginHref}>Acesso da diretoria</a>
+      <a class="mt-2 block rounded-2xl bg-gold-300 px-4 py-3 text-center font-extrabold text-canaa-950" href="#contato">Planejar visita</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector('#site-header');
+  const toggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
+  const menu = document.querySelector('#mobile-menu');
+
+  const setHeaderShadow = () => header?.classList.toggle('shadow-2xl', window.scrollY > 8);
+  setHeaderShadow();
+  window.addEventListener('scroll', setHeaderShadow, { passive: true });
+
+  toggle?.addEventListener('click', () => {
+    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!isOpen));
+    menu?.classList.toggle('hidden');
+  });
+
+  menu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      toggle?.setAttribute('aria-expanded', 'false');
+      menu.classList.add('hidden');
+    });
+  });
+</script>

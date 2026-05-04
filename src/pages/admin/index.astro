@@ -1,0 +1,131 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { members } from '../../legacy/mocks/members';
+import { events } from '../../legacy/mocks/events';
+import { financeSummary, transactions } from '../../legacy/mocks/finance';
+
+const activeMembers = members.filter((member) => member.status === 'Ativo' || member.status === 'Liderança');
+const visitors = members.filter((member) => member.status === 'Visitante' || member.status === 'Novo');
+const averageFrequency = Math.round(members.reduce((total, member) => total + member.frequency, 0) / members.length);
+const income = transactions.filter((item) => item.type === 'entrada').reduce((total, item) => total + item.amount, 0);
+const expense = Math.abs(transactions.filter((item) => item.type === 'saida').reduce((total, item) => total + item.amount, 0));
+const frequencyBars = [68, 74, 71, 82, 79, averageFrequency];
+const base = import.meta.env.BASE_URL;
+
+const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
+---
+
+<AdminLayout title="Dashboard administrativo | IBR Canaa" heading="Visao geral da igreja" subheading="Indicadores para pastores, diretoria, secretaria e lideres acompanharem a saude da comunidade.">
+  <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    {[
+      { label: 'Total de membros', value: members.length, detail: `${activeMembers.length} ativos`, icon: 'users' },
+      { label: 'Visitantes novos', value: visitors.length, detail: 'funil de acompanhamento', icon: 'heart' },
+      { label: 'Eventos proximos', value: events.length, detail: 'cultos e ministerios', icon: 'calendar' },
+      { label: 'Saldo mensal', value: formatCurrency(financeSummary.balance), detail: `+${financeSummary.trend.value}% no periodo`, icon: 'shield' },
+    ].map((card) => (
+      <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-bold text-slate-500">{card.label}</p>
+            <p class="mt-3 text-3xl font-black tracking-tight text-slate-950">{card.value}</p>
+            <p class="mt-2 text-sm font-semibold text-emerald-600">{card.detail}</p>
+          </div>
+          <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-canaa-50 text-canaa-800"><Icon name={card.icon} class="h-6 w-6" /></span>
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <section class="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Frequencia</p>
+          <h2 class="mt-2 text-2xl font-black">Cultos dos ultimos domingos</h2>
+        </div>
+        <span class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">Media {averageFrequency}%</span>
+      </div>
+      <div class="mt-8 flex h-72 items-end gap-3 rounded-3xl bg-slate-50 p-5 sm:gap-5">
+        {frequencyBars.map((value, index) => (
+          <div class="flex flex-1 flex-col items-center gap-3">
+            <div class="flex h-52 w-full items-end rounded-full bg-white p-1 ring-1 ring-slate-100">
+              <div class="w-full rounded-full bg-gradient-to-t from-canaa-800 to-blue-400" style={`height: ${value}%`}></div>
+            </div>
+            <span class="text-xs font-black text-slate-500">D{index + 1}</span>
+          </div>
+        ))}
+      </div>
+    </article>
+
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Acoes rapidas</p>
+      <h2 class="mt-2 text-2xl font-black">Operacoes frequentes</h2>
+      <div class="mt-6 grid gap-3">
+        <a href={`${base}admin/membros/`} class="rounded-2xl bg-canaa-800 p-4 font-black text-white transition hover:bg-canaa-950">Adicionar membro</a>
+        <a href={`${base}admin/eventos/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Criar evento</a>
+        <a href={`${base}admin/financeiro/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Registrar oferta</a>
+        <a href={`${base}admin/relatorios/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Exportar relatorio</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="mt-6 grid gap-6 xl:grid-cols-3">
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
+      <h2 class="text-2xl font-black">Funil de visitantes</h2>
+      <div class="mt-6 grid gap-4 sm:grid-cols-4">
+        {[
+          ['Primeira visita', 18],
+          ['Contato realizado', 12],
+          ['Discipulado', 7],
+          ['Integrados', 4],
+        ].map(([label, value]) => (
+          <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-100">
+            <p class="text-3xl font-black text-canaa-800">{value}</p>
+            <p class="mt-2 text-sm font-bold text-slate-500">{label}</p>
+          </div>
+        ))}
+      </div>
+    </article>
+
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-2xl font-black">Alertas</h2>
+      <div class="mt-5 space-y-3 text-sm font-semibold text-slate-600">
+        <p class="rounded-2xl bg-amber-50 p-4 text-amber-700">3 visitantes aguardando acompanhamento.</p>
+        <p class="rounded-2xl bg-blue-50 p-4 text-blue-700">Escala de louvor pendente para domingo.</p>
+        <p class="rounded-2xl bg-emerald-50 p-4 text-emerald-700">Relatorio financeiro mensal pronto.</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="mt-6 grid gap-6 xl:grid-cols-2">
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-2xl font-black">Proximos eventos</h2>
+      <div class="mt-5 divide-y divide-slate-100">
+        {events.slice(0, 4).map((event) => (
+          <div class="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+            <div>
+              <p class="font-black text-slate-950">{event.title}</p>
+              <p class="mt-1 text-sm text-slate-500">{event.location} | {event.attendees} previstos</p>
+            </div>
+            <span class="rounded-full bg-canaa-50 px-3 py-1 text-sm font-black text-canaa-800">{event.type}</span>
+          </div>
+        ))}
+      </div>
+    </article>
+
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-2xl font-black">Resumo financeiro</h2>
+      <div class="mt-6 space-y-5">
+        <div>
+          <div class="flex justify-between text-sm font-black"><span>Entradas</span><span>{formatCurrency(income)}</span></div>
+          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width: 82%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm font-black"><span>Saidas</span><span>{formatCurrency(expense)}</span></div>
+          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-rose-500" style="width: 38%"></div></div>
+        </div>
+      </div>
+    </article>
+  </section>
+</AdminLayout>

@@ -1,0 +1,70 @@
+---
+import Icon from './Icon.astro';
+import { stats } from '../data/landing';
+
+const memberLoginHref = `${import.meta.env.BASE_URL}login/membros/`;
+const boardLoginHref = `${import.meta.env.BASE_URL}login/diretoria/`;
+---
+
+<section id="inicio" class="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(248,217,139,0.18),_transparent_34%),linear-gradient(135deg,#07152f_0%,#0f172a_48%,#0b1020_100%)] pt-32 pb-20 sm:pt-40 lg:pb-28">
+  <div class="absolute left-1/2 top-24 h-72 w-72 -translate-x-1/2 rounded-full bg-canaa-600/20 blur-3xl"></div>
+  <div class="absolute right-0 top-40 hidden h-96 w-96 rounded-full border border-white/10 lg:block"></div>
+
+  <div class="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+    <div class="reveal max-w-3xl">
+      <p class="mb-5 inline-flex rounded-full border border-gold-300/25 bg-gold-300/10 px-4 py-2 text-sm font-bold text-gold-300">Comunidade, cuidado e fe com proposito</p>
+      <h1 class="text-4xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">Uma igreja acolhedora para fortalecer sua jornada com Cristo.</h1>
+      <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">A Igreja Batista Regular Canaa conecta pessoas a uma comunidade biblica, humana e organizada, com cultos, ministerios e acompanhamento para toda a familia.</p>
+      <div class="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+        <a href="#contato" data-analytics="hero_primary_cta" class="group inline-flex items-center justify-center gap-2 rounded-full bg-gold-300 px-7 py-4 text-base font-extrabold text-canaa-950 shadow-2xl shadow-gold-300/20 transition hover:-translate-y-1 hover:bg-white">
+          Planejar minha visita
+          <Icon name="arrow" class="h-5 w-5 transition group-hover:translate-x-1" />
+        </a>
+        <a href="#sobre" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-base font-bold text-white transition hover:border-gold-300/70 hover:bg-white/10">Conhecer a proposta</a>
+        <a href={memberLoginHref} data-analytics="hero_member_login" class="inline-flex items-center justify-center rounded-full border border-gold-300/40 px-7 py-4 text-base font-bold text-gold-300 transition hover:-translate-y-1 hover:bg-gold-300 hover:text-canaa-950">Area de membros</a>
+        <a href={boardLoginHref} data-analytics="hero_board_login" class="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-4 text-base font-bold text-white transition hover:-translate-y-1 hover:border-gold-300/70 hover:bg-white/10">Diretoria</a>
+      </div>
+    </div>
+
+    <div class="reveal relative">
+      <div class="absolute -left-6 top-8 z-10 hidden rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:block">
+        <p class="text-sm font-semibold text-slate-300">Proximo culto</p>
+        <p class="mt-1 text-2xl font-black text-white">Domingo, 18h</p>
+      </div>
+      <div class="rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
+        <div class="rounded-[1.5rem] bg-[linear-gradient(160deg,rgba(255,255,255,0.16),rgba(255,255,255,0.04))] p-6 sm:p-8">
+          <div class="mb-6 flex items-center justify-between">
+            <div>
+              <p class="text-sm font-bold uppercase tracking-[0.22em] text-gold-300">Portal Canaa</p>
+              <h2 class="mt-2 text-2xl font-black text-white">Caminhos para pertencer</h2>
+            </div>
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-300 text-canaa-950">
+              <Icon name="spark" class="h-7 w-7" />
+            </div>
+          </div>
+          <div class="space-y-4">
+            {['Recepcao preparada para visitantes', 'Ministerios para criancas, jovens e adultos', 'Acompanhamento e ensino biblico'].map((item) => (
+              <div class="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-300/15 text-gold-300"><Icon name="check" class="h-5 w-5" /></span>
+                <span class="font-semibold text-slate-100">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div class="absolute -bottom-8 right-4 rounded-3xl border border-white/10 bg-canaa-950/80 p-5 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <p class="text-3xl font-black text-gold-300">98%</p>
+        <p class="mt-1 max-w-36 text-sm text-slate-300">dos visitantes destacam acolhimento e clareza</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="relative mx-auto mt-20 grid w-full max-w-7xl gap-4 px-5 sm:grid-cols-3 sm:px-6 lg:px-8">
+    {stats.map((stat) => (
+      <div class="reveal rounded-3xl border border-white/10 bg-white/[0.06] p-6 backdrop-blur-xl">
+        <p class="text-3xl font-black text-white">{stat.value}</p>
+        <p class="mt-2 text-sm leading-6 text-slate-300">{stat.label}</p>
+      </div>
+    ))}
+  </div>
+</section>

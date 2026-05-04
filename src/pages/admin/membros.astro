@@ -1,0 +1,55 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { members } from '../../legacy/mocks/members';
+
+const activeMembers = members.filter((member) => member.status === 'Ativo' || member.status === 'Liderança');
+const visitors = members.filter((member) => member.status === 'Visitante' || member.status === 'Novo');
+const averageFrequency = Math.round(members.reduce((total, member) => total + member.frequency, 0) / members.length);
+const statusClasses: Record<string, string> = {
+  Ativo: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  Liderança: 'bg-blue-50 text-blue-700 ring-blue-200',
+  Visitante: 'bg-gold-300/20 text-canaa-950 ring-gold-300/40',
+  Novo: 'bg-canaa-50 text-canaa-800 ring-canaa-100',
+  Afastado: 'bg-amber-50 text-amber-700 ring-amber-200',
+};
+---
+
+<AdminLayout title="Gestao de membros | IBR Canaa" heading="Gestao de membros" subheading="Cadastro, acompanhamento espiritual, ministerios, frequencia e status dos membros.">
+  <section class="grid gap-4 md:grid-cols-4">
+    <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Total</p><p class="mt-3 text-3xl font-black text-canaa-800">{members.length}</p></article>
+    <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Ativos</p><p class="mt-3 text-3xl font-black text-canaa-800">{activeMembers.length}</p></article>
+    <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Visitantes/novos</p><p class="mt-3 text-3xl font-black text-canaa-800">{visitors.length}</p></article>
+    <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Frequencia media</p><p class="mt-3 text-3xl font-black text-canaa-800">{averageFrequency}%</p></article>
+  </section>
+
+  <section class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+    <article class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
+      <div class="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 class="text-2xl font-black">Cadastro e acompanhamento</h2><p class="mt-1 text-sm text-slate-500">Filtros por status, ministerio e frequencia.</p></div>
+        <div class="flex gap-2"><button class="rounded-full border border-slate-200 px-4 py-2 text-sm font-black text-slate-600" type="button">Exportar</button><button class="rounded-full bg-canaa-800 px-4 py-2 text-sm font-black text-white" type="button">Novo membro</button></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[860px] text-left">
+          <thead class="border-b border-slate-200 bg-slate-50 text-sm font-bold text-slate-500"><tr><th class="px-5 py-4">Membro</th><th class="px-5 py-4">Ministerio</th><th class="px-5 py-4">Batismo</th><th class="px-5 py-4">Status</th><th class="px-5 py-4">Frequencia</th><th class="px-5 py-4 text-right">Acoes</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            {members.map((member) => (
+              <tr class="transition hover:bg-slate-50/80">
+                <td class="px-5 py-4"><div class="flex items-center gap-3"><img src={member.avatar} alt={`Foto de ${member.name}`} class="h-11 w-11 rounded-full bg-slate-200" /><div><p class="font-black text-slate-950">{member.name}</p><p class="text-sm text-slate-500">{member.email}</p></div></div></td>
+                <td class="px-5 py-4 text-slate-600">{member.ministry}</td>
+                <td class="px-5 py-4"><span class="rounded-full bg-canaa-50 px-3 py-1 text-xs font-black text-canaa-800">Regular</span></td>
+                <td class="px-5 py-4"><span class={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${statusClasses[member.status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'}`}>{member.status}</span></td>
+                <td class="px-5 py-4"><div class="flex items-center gap-3"><div class="h-2 w-28 overflow-hidden rounded-full bg-slate-100"><div class:list={["h-full rounded-full", member.frequency > 50 ? 'bg-emerald-500' : 'bg-amber-500']} style={`width: ${member.frequency}%`}></div></div><span class="w-10 text-sm font-bold text-slate-600">{member.frequency}%</span></div></td>
+                <td class="px-5 py-4 text-right"><button class="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-bold text-slate-600" type="button">Editar</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="space-y-6">
+      <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm"><h2 class="text-xl font-black">Funil de visitantes</h2><div class="mt-5 space-y-3"><p class="rounded-2xl bg-slate-50 p-4 font-bold text-slate-600">Primeira visita: 18</p><p class="rounded-2xl bg-slate-50 p-4 font-bold text-slate-600">Contato realizado: 12</p><p class="rounded-2xl bg-slate-50 p-4 font-bold text-slate-600">Discipulado: 7</p></div></article>
+      <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm"><h2 class="text-xl font-black">Pedidos de oracao</h2><p class="mt-4 rounded-2xl bg-blue-50 p-4 text-sm font-semibold leading-6 text-blue-700">5 pedidos aguardam acompanhamento pastoral esta semana.</p></article>
+    </aside>
+  </section>
+</AdminLayout>
