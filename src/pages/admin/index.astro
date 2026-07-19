@@ -10,8 +10,73 @@ const visitors = members.filter((member) => member.status === 'Visitante' || mem
 const averageFrequency = Math.round(members.reduce((total, member) => total + member.frequency, 0) / members.length);
 const income = transactions.filter((item) => item.type === 'entrada').reduce((total, item) => total + item.amount, 0);
 const expense = Math.abs(transactions.filter((item) => item.type === 'saida').reduce((total, item) => total + item.amount, 0));
-const frequencyBars = [68, 74, 71, 82, 79, averageFrequency];
+const periodPresets = {
+  semanal: {
+    label: 'Ultimos 7 dias',
+    summary: 'Leitura mais sensivel das atividades recentes da igreja.',
+    frequencySeries: [63, 71, 69, 78, 74, averageFrequency],
+    frequencyLabels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Media'],
+    visitors: [
+      { label: 'Primeira visita', value: 8 },
+      { label: 'Contato realizado', value: 6 },
+      { label: 'Discipulado', value: 3 },
+      { label: 'Integrados', value: 2 },
+    ],
+    income: 2450.5,
+    expense: 1270,
+    balance: 1180.5,
+  },
+  mensal: {
+    label: 'Ultimos 30 dias',
+    summary: 'Consolida a operacao do mes com foco em acompanhamento pastoral.',
+    frequencySeries: [68, 74, 71, 82, 79, averageFrequency],
+    frequencyLabels: ['4 sem', '3 sem', '2 sem', 'Dom passado', 'Hoje', 'Media'],
+    visitors: [
+      { label: 'Primeira visita', value: 18 },
+      { label: 'Contato realizado', value: 12 },
+      { label: 'Discipulado', value: 7 },
+      { label: 'Integrados', value: 4 },
+    ],
+    income,
+    expense,
+    balance: financeSummary.balance,
+  },
+  trimestral: {
+    label: 'Ultimos 90 dias',
+    summary: 'Visao gerencial para comparar retencao, frequencia e saude financeira.',
+    frequencySeries: [61, 67, 73, 76, 81, 75],
+    frequencyLabels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Media'],
+    visitors: [
+      { label: 'Primeira visita', value: 41 },
+      { label: 'Contato realizado', value: 29 },
+      { label: 'Discipulado', value: 17 },
+      { label: 'Integrados', value: 11 },
+    ],
+    income: 12480,
+    expense: 5380,
+    balance: 7100,
+  },
+} as const;
+const defaultPeriod = 'mensal';
+const defaultPreset = periodPresets[defaultPeriod];
+const frequencySeries = defaultPreset.frequencySeries;
+const frequencyLabels = defaultPreset.frequencyLabels;
+const maxFrequency = Math.max(...frequencySeries);
+const chartHeight = 220;
+const chartWidth = 560;
+const pointGap = chartWidth / (frequencySeries.length - 1);
+const toChartY = (value: number) => chartHeight - (value / maxFrequency) * (chartHeight - 24) - 12;
+const frequencyPoints = frequencySeries.map((value, index) => `${index * pointGap},${toChartY(value)}`).join(' ');
+const frequencyAreaPoints = `0,${chartHeight} ${frequencyPoints} ${chartWidth},${chartHeight}`;
+const visitorStages = defaultPreset.visitors;
+const maxVisitorStage = visitorStages[0].value;
+const totalTransactions = defaultPreset.income + defaultPreset.expense;
+const incomeShare = Math.round((income / totalTransactions) * 100);
+const expenseShare = 100 - incomeShare;
+const financeCircumference = 2 * Math.PI * 54;
+const incomeStroke = (incomeShare / 100) * financeCircumference;
 const base = import.meta.env.BASE_URL;
+const periodData = JSON.stringify(periodPresets);
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
 ---
@@ -37,24 +102,93 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
     ))}
   </section>
 
+  <section class="mt-6 rounded-[1.75rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-canaa-950 to-canaa-800 p-6 text-white shadow-sm">
+    <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div class="max-w-3xl">
+        <p class="text-sm font-black uppercase tracking-[0.24em] text-gold-300">Central analitica</p>
+        <div class="mt-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h2 class="text-3xl font-black tracking-tight">Graficos de acompanhamento ministerial</h2>
+            <p id="period-summary" class="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-200">{defaultPreset.summary}</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3" data-period-switcher>
+        {Object.entries(periodPresets).map(([key, preset]) => (
+          <button
+            type="button"
+            class:list={[
+              'rounded-full border px-4 py-2 text-sm font-black transition',
+              key === defaultPeriod ? 'border-gold-300 bg-gold-300 text-canaa-950' : 'border-white/20 bg-white/10 text-white hover:bg-white/18',
+            ]}
+            data-period={key}
+            aria-pressed={key === defaultPeriod ? 'true' : 'false'}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
   <section class="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+    <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-100/80">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Frequencia</p>
           <h2 class="mt-2 text-2xl font-black">Cultos dos ultimos domingos</h2>
         </div>
-        <span class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">Media {averageFrequency}%</span>
+        <span id="frequency-average" class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">Media {frequencySeries.at(-1)}%</span>
       </div>
-      <div class="mt-8 flex h-72 items-end gap-3 rounded-3xl bg-slate-50 p-5 sm:gap-5">
-        {frequencyBars.map((value, index) => (
-          <div class="flex flex-1 flex-col items-center gap-3">
-            <div class="flex h-52 w-full items-end rounded-full bg-white p-1 ring-1 ring-slate-100">
-              <div class="w-full rounded-full bg-gradient-to-t from-canaa-800 to-blue-400" style={`height: ${value}%`}></div>
+      <div class="mt-8 rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 to-canaa-50 p-4 sm:p-6">
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
+          <div>
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} class="h-64 w-full overflow-visible" aria-label="Grafico de frequencia dos cultos">
+              {[25, 50, 75, 100].map((mark) => {
+                const y = toChartY(mark);
+                return (
+                  <g>
+                    <line x1="0" y1={y} x2={chartWidth} y2={y} stroke="#cbd5e1" stroke-dasharray="6 8" stroke-width="1" />
+                    <text x="0" y={y - 6} fill="#64748b" font-size="12" font-weight="700">{mark}%</text>
+                  </g>
+                );
+              })}
+              <polygon id="frequency-area" points={frequencyAreaPoints} fill="url(#frequencyAreaGradient)" />
+              <polyline id="frequency-line" points={frequencyPoints} fill="none" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+              {frequencySeries.map((value, index) => {
+                const x = index * pointGap;
+                const y = toChartY(value);
+                return (
+                  <g class="frequency-point" data-index={index}>
+                    <circle cx={x} cy={y} r="6" fill="#ffffff" stroke="#1e3a8a" stroke-width="4" />
+                    <text x={x} y={y - 16} text-anchor="middle" fill="#0f172a" font-size="12" font-weight="800">{value}%</text>
+                  </g>
+                );
+              })}
+              <defs>
+                <linearGradient id="frequencyAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#2563eb" stop-opacity="0.30" />
+                  <stop offset="100%" stop-color="#2563eb" stop-opacity="0.04" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div id="frequency-labels" class="mt-4 grid grid-cols-3 gap-3 text-center text-xs font-black text-slate-500 sm:grid-cols-6">
+              {frequencyLabels.map((label, index) => (
+                <span data-index={index}>{label}</span>
+              ))}
             </div>
-            <span class="text-xs font-black text-slate-500">D{index + 1}</span>
           </div>
-        ))}
+          <div class="grid gap-3 rounded-[1.5rem] bg-white p-4 ring-1 ring-slate-100">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Melhor registro</p>
+              <p id="frequency-peak" class="mt-2 text-3xl font-black text-slate-950">{maxFrequency}%</p>
+            </div>
+            <div class="rounded-2xl bg-emerald-50 p-4 text-emerald-700">
+              <p class="text-xs font-black uppercase tracking-[0.18em]">Engajamento</p>
+              <p class="mt-2 text-sm font-bold">{activeMembers.length} membros ativos com presenca media forte.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -73,16 +207,22 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
   <section class="mt-6 grid gap-6 xl:grid-cols-3">
     <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
       <h2 class="text-2xl font-black">Funil de visitantes</h2>
-      <div class="mt-6 grid gap-4 sm:grid-cols-4">
-        {[
-          ['Primeira visita', 18],
-          ['Contato realizado', 12],
-          ['Discipulado', 7],
-          ['Integrados', 4],
-        ].map(([label, value]) => (
-          <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-100">
-            <p class="text-3xl font-black text-canaa-800">{value}</p>
-            <p class="mt-2 text-sm font-bold text-slate-500">{label}</p>
+      <div id="visitor-funnel" class="mt-6 space-y-4">
+        {visitorStages.map((stage, index) => (
+          <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-100" data-stage={index}>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-center gap-4">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-black text-canaa-800 ring-1 ring-slate-100">0{index + 1}</span>
+                <div>
+                  <p class="font-black text-slate-950" data-role="label">{stage.label}</p>
+                  <p class="text-sm font-semibold text-slate-500" data-role="share">{Math.round((stage.value / maxVisitorStage) * 100)}% da entrada inicial</p>
+                </div>
+              </div>
+              <p class="text-3xl font-black text-canaa-800" data-role="value">{stage.value}</p>
+            </div>
+            <div class="mt-4 h-3 overflow-hidden rounded-full bg-white ring-1 ring-slate-100">
+              <div class="h-full rounded-full bg-gradient-to-r from-canaa-950 via-canaa-800 to-gold-500" data-role="bar" style={`width: ${(stage.value / maxVisitorStage) * 100}%`}></div>
+            </div>
           </div>
         ))}
       </div>
@@ -116,16 +256,160 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
 
     <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
       <h2 class="text-2xl font-black">Resumo financeiro</h2>
-      <div class="mt-6 space-y-5">
-        <div>
-          <div class="flex justify-between text-sm font-black"><span>Entradas</span><span>{formatCurrency(income)}</span></div>
-          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width: 82%"></div></div>
+      <div class="mt-6 grid gap-6 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center">
+        <div class="mx-auto">
+          <svg viewBox="0 0 140 140" class="h-36 w-36" aria-label="Distribuicao entre entradas e saidas">
+            <circle cx="70" cy="70" r="54" fill="none" stroke="#e2e8f0" stroke-width="16" />
+            <circle
+              id="finance-income-ring"
+              cx="70"
+              cy="70"
+              r="54"
+              fill="none"
+              stroke="#10b981"
+              stroke-width="16"
+              stroke-linecap="round"
+              stroke-dasharray={`${incomeStroke} ${financeCircumference}`}
+              transform="rotate(-90 70 70)"
+            />
+            <circle
+              id="finance-expense-ring"
+              cx="70"
+              cy="70"
+              r="54"
+              fill="none"
+              stroke="#f43f5e"
+              stroke-width="16"
+              stroke-linecap="round"
+              stroke-dasharray={`${financeCircumference - incomeStroke} ${financeCircumference}`}
+              stroke-dashoffset={-incomeStroke}
+              transform="rotate(-90 70 70)"
+            />
+            <text x="70" y="62" text-anchor="middle" fill="#64748b" font-size="12" font-weight="800">Saldo</text>
+            <text id="finance-balance" x="70" y="82" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="900">{formatCurrency(defaultPreset.balance)}</text>
+          </svg>
         </div>
-        <div>
-          <div class="flex justify-between text-sm font-black"><span>Saidas</span><span>{formatCurrency(expense)}</span></div>
-          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-rose-500" style="width: 38%"></div></div>
+        <div class="space-y-5">
+          <div>
+            <div class="flex justify-between text-sm font-black"><span>Entradas</span><span id="finance-income-value">{formatCurrency(defaultPreset.income)}</span></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-income-bar" class="h-full rounded-full bg-emerald-500" style={`width: ${incomeShare}%`}></div></div>
+            <p id="finance-income-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{incomeShare}% do fluxo do periodo</p>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm font-black"><span>Saidas</span><span id="finance-expense-value">{formatCurrency(defaultPreset.expense)}</span></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-expense-bar" class="h-full rounded-full bg-rose-500" style={`width: ${expenseShare}%`}></div></div>
+            <p id="finance-expense-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{expenseShare}% do fluxo do periodo</p>
+          </div>
         </div>
       </div>
     </article>
   </section>
+
+  <script is:inline define:vars={{ periodData, chartHeight, chartWidth, financeCircumference }}>
+    const presets = JSON.parse(periodData);
+    const buttons = Array.from(document.querySelectorAll('[data-period-switcher] [data-period]'));
+    const frequencyLine = document.getElementById('frequency-line');
+    const frequencyArea = document.getElementById('frequency-area');
+    const frequencyAverage = document.getElementById('frequency-average');
+    const frequencyPeak = document.getElementById('frequency-peak');
+    const periodSummary = document.getElementById('period-summary');
+    const pointGroups = Array.from(document.querySelectorAll('.frequency-point'));
+    const labelNodes = Array.from(document.querySelectorAll('#frequency-labels [data-index]'));
+    const visitorStages = Array.from(document.querySelectorAll('#visitor-funnel [data-stage]'));
+    const incomeRing = document.getElementById('finance-income-ring');
+    const expenseRing = document.getElementById('finance-expense-ring');
+    const balanceNode = document.getElementById('finance-balance');
+    const incomeValue = document.getElementById('finance-income-value');
+    const expenseValue = document.getElementById('finance-expense-value');
+    const incomeBar = document.getElementById('finance-income-bar');
+    const expenseBar = document.getElementById('finance-expense-bar');
+    const incomeShareNode = document.getElementById('finance-income-share');
+    const expenseShareNode = document.getElementById('finance-expense-share');
+    const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const updateChart = (series, labels) => {
+      const maxFrequency = Math.max(...series);
+      const gap = chartWidth / (series.length - 1);
+      const toChartY = (value) => chartHeight - (value / maxFrequency) * (chartHeight - 24) - 12;
+      const points = series.map((value, index) => `${index * gap},${toChartY(value)}`).join(' ');
+      const areaPoints = `0,${chartHeight} ${points} ${chartWidth},${chartHeight}`;
+
+      frequencyLine?.setAttribute('points', points);
+      frequencyArea?.setAttribute('points', areaPoints);
+      frequencyAverage.textContent = `Media ${series.at(-1)}%`;
+      frequencyPeak.textContent = `${maxFrequency}%`;
+
+      pointGroups.forEach((group, index) => {
+        const value = series[index];
+        const x = index * gap;
+        const y = toChartY(value);
+        const circle = group.querySelector('circle');
+        const text = group.querySelector('text');
+        circle?.setAttribute('cx', `${x}`);
+        circle?.setAttribute('cy', `${y}`);
+        text?.setAttribute('x', `${x}`);
+        text?.setAttribute('y', `${y - 16}`);
+        if (text) text.textContent = `${value}%`;
+      });
+
+      labelNodes.forEach((node, index) => {
+        node.textContent = labels[index] || '';
+      });
+    };
+
+    const updateVisitors = (stages) => {
+      const maxStage = stages[0].value;
+      visitorStages.forEach((stageNode, index) => {
+        const stage = stages[index];
+        const share = Math.round((stage.value / maxStage) * 100);
+        stageNode.querySelector('[data-role="label"]').textContent = stage.label;
+        stageNode.querySelector('[data-role="share"]').textContent = `${share}% da entrada inicial`;
+        stageNode.querySelector('[data-role="value"]').textContent = String(stage.value);
+        stageNode.querySelector('[data-role="bar"]').style.width = `${share}%`;
+      });
+    };
+
+    const updateFinance = (preset) => {
+      const total = preset.income + preset.expense;
+      const incomeShare = Math.round((preset.income / total) * 100);
+      const expenseShare = 100 - incomeShare;
+      const incomeStroke = (incomeShare / 100) * financeCircumference;
+
+      incomeRing?.setAttribute('stroke-dasharray', `${incomeStroke} ${financeCircumference}`);
+      expenseRing?.setAttribute('stroke-dasharray', `${financeCircumference - incomeStroke} ${financeCircumference}`);
+      expenseRing?.setAttribute('stroke-dashoffset', `${-incomeStroke}`);
+      balanceNode.textContent = currencyFormatter.format(preset.balance);
+      incomeValue.textContent = currencyFormatter.format(preset.income);
+      expenseValue.textContent = currencyFormatter.format(preset.expense);
+      incomeBar.style.width = `${incomeShare}%`;
+      expenseBar.style.width = `${expenseShare}%`;
+      incomeShareNode.textContent = `${incomeShare}% do fluxo do periodo`;
+      expenseShareNode.textContent = `${expenseShare}% do fluxo do periodo`;
+    };
+
+    const setActivePeriod = (key) => {
+      const preset = presets[key];
+      if (!preset) return;
+
+      buttons.forEach((button) => {
+        const active = button.dataset.period === key;
+        button.setAttribute('aria-pressed', String(active));
+        button.classList.toggle('border-gold-300', active);
+        button.classList.toggle('bg-gold-300', active);
+        button.classList.toggle('text-canaa-950', active);
+        button.classList.toggle('border-white/20', !active);
+        button.classList.toggle('bg-white/10', !active);
+        button.classList.toggle('text-white', !active);
+      });
+
+      periodSummary.textContent = preset.summary;
+      updateChart(preset.frequencySeries, preset.frequencyLabels);
+      updateVisitors(preset.visitors);
+      updateFinance(preset);
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => setActivePeriod(button.dataset.period));
+    });
+  </script>
 </AdminLayout>
