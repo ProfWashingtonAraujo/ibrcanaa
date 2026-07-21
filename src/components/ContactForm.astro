@@ -8,9 +8,9 @@ import { withBase } from '../utils/withBase';
     <div class="reveal">
       <p class="text-sm font-black uppercase tracking-[0.26em] text-gold-300">Contato</p>
       <h2 class="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Planeje sua visita ou envie seu interesse.</h2>
-      <p class="mt-5 text-lg leading-8 text-slate-300">A estrutura do formulario esta preparada para futura integracao com uma API em Python usando FastAPI ou Flask.</p>
+      <p class="mt-5 text-lg leading-8 text-slate-300">A estrutura do formulário está preparada para futura integração com uma API em Python usando FastAPI ou Flask.</p>
       <div class="mt-8 space-y-4 rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-6">
-        <p><strong class="text-gold-300">Endereco:</strong> {contact.address}</p>
+        <p><strong class="text-gold-300">Endereço:</strong> {contact.address}</p>
         <p><strong class="text-gold-300">Cultos:</strong> {contact.schedule}</p>
         <p><strong class="text-gold-300">E-mail:</strong> <a class="hover:text-gold-300" href={`mailto:${contact.email}`}>{contact.email}</a></p>
       </div>
@@ -36,7 +36,7 @@ import { withBase } from '../utils/withBase';
           <select required name="interest" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100">
             <option value="">Selecione</option>
             <option>Planejar visita</option>
-            <option>Ministerios</option>
+            <option>Ministérios</option>
             <option>Aconselhamento</option>
             <option>Eventos</option>
           </select>
@@ -46,9 +46,9 @@ import { withBase } from '../utils/withBase';
         <span class="text-sm font-bold text-slate-700">Mensagem</span>
         <textarea required minlength="8" name="message" rows="5" class="mt-2 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Conte como podemos ajudar"></textarea>
       </label>
-      <p id="form-error" class="mt-4 hidden rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">Revise os campos obrigatorios antes de enviar.</p>
+      <p id="form-error" class="mt-4 hidden rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">Revise os campos obrigatórios antes de enviar.</p>
       <button data-analytics="lead_form_submit" class="mt-6 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-canaa-950" type="submit">Enviar interesse</button>
-      <p class="mt-4 text-center text-xs leading-5 text-slate-500">Ao enviar, voce concorda em ser contatado pela equipe. Para integrar com backend, troque `action` pela URL da API e use POST.</p>
+      <p class="mt-4 text-center text-xs leading-5 text-slate-500">Ao enviar, você concorda em ser contatado pela equipe. Para integrar com backend, troque `action` pela URL da API e use POST.</p>
     </form>
   </div>
 </section>

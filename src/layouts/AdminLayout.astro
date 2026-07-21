@@ -12,15 +12,15 @@ interface Props {
   subheading?: string;
 }
 
-const { title, description, eyebrow = 'Administracao', heading, subheading } = Astro.props;
+const { title, description, eyebrow = 'Administração', heading, subheading } = Astro.props;
 const base = withBase();
 const currentPath = Astro.url.pathname;
 const navItems = [
-  { href: withBase('admin/'), label: 'Visao geral', icon: 'target' },
+  { href: withBase('admin/'), label: 'Visão geral', icon: 'target' },
   { href: withBase('admin/membros/'), label: 'Membros', icon: 'users' },
   { href: withBase('admin/eventos/'), label: 'Eventos', icon: 'calendar' },
   { href: withBase('admin/financeiro/'), label: 'Financeiro', icon: 'shield' },
-  { href: withBase('admin/relatorios/'), label: 'Relatorios', icon: 'book' },
+  { href: withBase('admin/relatorios/'), label: 'Relatórios', icon: 'book' },
 ];
 ---
 
@@ -32,7 +32,7 @@ const navItems = [
           <img src={logo.src} width="48" height="48" alt="Logo da Igreja Batista Regular Canaa" class="h-12 w-auto" />
           <span>
             <span class="block text-[10px] font-bold uppercase tracking-[0.28em] text-canaa-800">IBR Canaa</span>
-            <span class="block text-sm font-black text-slate-950">Gestao Eclesiastica</span>
+            <span class="block text-sm font-black text-slate-950">Gestão Eclesiástica</span>
           </span>
         </a>
         <a href={withBase('login/diretoria/')} class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 lg:hidden">Sair</a>
@@ -54,8 +54,8 @@ const navItems = [
       </nav>
 
       <div class="mx-4 mt-8 hidden rounded-3xl bg-slate-950 p-5 text-white lg:block">
-        <p class="text-sm font-black text-gold-300">Acao rapida</p>
-        <p class="mt-2 text-sm leading-6 text-slate-300">Cadastre visitantes e acompanhe o funil de integracao.</p>
+        <p class="text-sm font-black text-gold-300">Ação rápida</p>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Cadastre visitantes e acompanhe o funil de integração.</p>
         <a href={withBase('admin/membros/')} class="mt-4 inline-flex rounded-full bg-gold-300 px-4 py-2 text-xs font-black text-canaa-950">Adicionar membro</a>
       </div>
     </aside>
@@ -71,7 +71,7 @@ const navItems = [
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label class="relative block min-w-0 sm:w-80">
               <span class="sr-only">Busca global</span>
-              <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-canaa-800 focus:bg-white focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministerios..." />
+              <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-canaa-800 focus:bg-white focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministérios..." />
             </label>
             <button class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700" type="button">3 alertas</button>
             <a href={withBase('login/diretoria/')} class="hidden rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white sm:inline-flex">Pr. Roberto</a>

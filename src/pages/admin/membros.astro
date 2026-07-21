@@ -14,7 +14,7 @@ const statusClasses: Record<string, string> = {
 };
 ---
 
-<AdminLayout title="Gestao de membros | IBR Canaa" heading="Gestao de membros" subheading="Cadastro, acompanhamento espiritual, ministerios, frequencia e status dos membros.">
+<AdminLayout title="Gestão de membros | IBR Canaã" heading="Gestão de membros" subheading="Cadastro, acompanhamento espiritual, ministérios, frequência e status dos membros.">
   <section class="grid gap-4 md:grid-cols-4">
     <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Total</p><p class="mt-3 text-3xl font-black text-canaa-800">{members.length}</p></article>
     <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><p class="text-sm font-bold text-slate-500">Ativos</p><p class="mt-3 text-3xl font-black text-canaa-800">{activeMembers.length}</p></article>
@@ -25,7 +25,7 @@ const statusClasses: Record<string, string> = {
   <section class="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
     <article class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div><h2 class="text-2xl font-black">Cadastro e acompanhamento</h2><p class="mt-1 text-sm text-slate-500">Filtros por status, ministerio e frequencia.</p></div>
+        <div><h2 class="text-2xl font-black">Cadastro e acompanhamento</h2><p class="mt-1 text-sm text-slate-500">Filtros por status, ministério e frequência.</p></div>
         <div class="flex gap-2"><button class="rounded-full border border-slate-200 px-4 py-2 text-sm font-black text-slate-600" type="button">Exportar</button><button class="rounded-full bg-canaa-800 px-4 py-2 text-sm font-black text-white" type="button">Novo membro</button></div>
       </div>
       <div class="overflow-x-auto">
