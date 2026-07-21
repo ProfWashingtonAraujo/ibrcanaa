@@ -2,6 +2,7 @@
 import MainLayout from './MainLayout.astro';
 import Icon from '../components/Icon.astro';
 import logo from '../assets/logo.png';
+import { withBase } from '../utils/withBase';
 
 interface Props {
   title: string;
@@ -12,14 +13,14 @@ interface Props {
 }
 
 const { title, description, eyebrow = 'Administracao', heading, subheading } = Astro.props;
-const base = import.meta.env.BASE_URL;
+const base = withBase();
 const currentPath = Astro.url.pathname;
 const navItems = [
-  { href: `${base}admin/`, label: 'Visao geral', icon: 'target' },
-  { href: `${base}admin/membros/`, label: 'Membros', icon: 'users' },
-  { href: `${base}admin/eventos/`, label: 'Eventos', icon: 'calendar' },
-  { href: `${base}admin/financeiro/`, label: 'Financeiro', icon: 'shield' },
-  { href: `${base}admin/relatorios/`, label: 'Relatorios', icon: 'book' },
+  { href: withBase('admin/'), label: 'Visao geral', icon: 'target' },
+  { href: withBase('admin/membros/'), label: 'Membros', icon: 'users' },
+  { href: withBase('admin/eventos/'), label: 'Eventos', icon: 'calendar' },
+  { href: withBase('admin/financeiro/'), label: 'Financeiro', icon: 'shield' },
+  { href: withBase('admin/relatorios/'), label: 'Relatorios', icon: 'book' },
 ];
 ---
 
@@ -34,7 +35,7 @@ const navItems = [
             <span class="block text-sm font-black text-slate-950">Gestao Eclesiastica</span>
           </span>
         </a>
-        <a href={`${base}login/diretoria/`} class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 lg:hidden">Sair</a>
+        <a href={withBase('login/diretoria/')} class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 lg:hidden">Sair</a>
       </div>
 
       <nav class="flex gap-2 overflow-x-auto px-5 pb-5 text-sm font-bold lg:block lg:space-y-2 lg:overflow-visible lg:px-4 lg:pb-0" aria-label="Menu administrativo">
@@ -55,7 +56,7 @@ const navItems = [
       <div class="mx-4 mt-8 hidden rounded-3xl bg-slate-950 p-5 text-white lg:block">
         <p class="text-sm font-black text-gold-300">Acao rapida</p>
         <p class="mt-2 text-sm leading-6 text-slate-300">Cadastre visitantes e acompanhe o funil de integracao.</p>
-        <a href={`${base}admin/membros/`} class="mt-4 inline-flex rounded-full bg-gold-300 px-4 py-2 text-xs font-black text-canaa-950">Adicionar membro</a>
+        <a href={withBase('admin/membros/')} class="mt-4 inline-flex rounded-full bg-gold-300 px-4 py-2 text-xs font-black text-canaa-950">Adicionar membro</a>
       </div>
     </aside>
 
@@ -73,7 +74,7 @@ const navItems = [
               <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-canaa-800 focus:bg-white focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministerios..." />
             </label>
             <button class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700" type="button">3 alertas</button>
-            <a href={`${base}login/diretoria/`} class="hidden rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white sm:inline-flex">Pr. Roberto</a>
+            <a href={withBase('login/diretoria/')} class="hidden rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white sm:inline-flex">Pr. Roberto</a>
           </div>
         </div>
       </header>

@@ -1,5 +1,6 @@
 ---
 import { contact } from '../data/landing';
+import { withBase } from '../utils/withBase';
 ---
 
 <section id="contato" class="bg-slate-950 py-24 text-white">
@@ -15,7 +16,7 @@ import { contact } from '../data/landing';
       </div>
     </div>
 
-    <form id="lead-form" class="reveal rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8" action="/ibrcanaa/obrigado/" method="get" novalidate>
+    <form id="lead-form" class="reveal rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8" action={withBase('obrigado/')} method="get" novalidate>
       <input type="hidden" name="source" value="landing-page" />
       <div class="grid gap-5 sm:grid-cols-2">
         <label class="block">

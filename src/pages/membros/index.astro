@@ -5,10 +5,11 @@ import { members } from '../../legacy/mocks/members';
 import { events } from '../../legacy/mocks/events';
 import { transactions } from '../../legacy/mocks/finance';
 import { ministries } from '../../legacy/mocks/ministries';
+import { withBase } from '../../utils/withBase';
 
 const member = members[0];
-const homeHref = import.meta.env.BASE_URL;
-const memberLoginHref = `${import.meta.env.BASE_URL}login/membros/`;
+const homeHref = withBase();
+const memberLoginHref = withBase('login/membros/');
 
 const memberContributions = transactions.filter((transaction) => transaction.description.includes(member.name));
 const recommendedMinistries = ministries.filter((ministry) => ministry.status === 'Ativo' || ministry.status === 'Precisa Voluntários').slice(0, 3);

@@ -4,6 +4,7 @@ import Icon from '../../components/Icon.astro';
 import { members } from '../../legacy/mocks/members';
 import { events } from '../../legacy/mocks/events';
 import { financeSummary, transactions } from '../../legacy/mocks/finance';
+import { withBase } from '../../utils/withBase';
 
 const activeMembers = members.filter((member) => member.status === 'Ativo' || member.status === 'Liderança');
 const visitors = members.filter((member) => member.status === 'Visitante' || member.status === 'Novo');
@@ -75,7 +76,6 @@ const incomeShare = Math.round((income / totalTransactions) * 100);
 const expenseShare = 100 - incomeShare;
 const financeCircumference = 2 * Math.PI * 54;
 const incomeStroke = (incomeShare / 100) * financeCircumference;
-const base = import.meta.env.BASE_URL;
 const periodData = JSON.stringify(periodPresets);
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
@@ -196,10 +196,10 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
       <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Acoes rapidas</p>
       <h2 class="mt-2 text-2xl font-black">Operacoes frequentes</h2>
       <div class="mt-6 grid gap-3">
-        <a href={`${base}admin/membros/`} class="rounded-2xl bg-canaa-800 p-4 font-black text-white transition hover:bg-canaa-950">Adicionar membro</a>
-        <a href={`${base}admin/eventos/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Criar evento</a>
-        <a href={`${base}admin/financeiro/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Registrar oferta</a>
-        <a href={`${base}admin/relatorios/`} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Exportar relatorio</a>
+        <a href={withBase('admin/membros/')} class="rounded-2xl bg-canaa-800 p-4 font-black text-white transition hover:bg-canaa-950">Adicionar membro</a>
+        <a href={withBase('admin/eventos/')} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Criar evento</a>
+        <a href={withBase('admin/financeiro/')} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Registrar oferta</a>
+        <a href={withBase('admin/relatorios/')} class="rounded-2xl border border-slate-200 p-4 font-black text-slate-700 transition hover:bg-slate-50">Exportar relatorio</a>
       </div>
     </article>
   </section>

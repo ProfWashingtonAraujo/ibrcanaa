@@ -2,9 +2,10 @@
 import MainLayout from '../../layouts/MainLayout.astro';
 import Icon from '../../components/Icon.astro';
 import logo from '../../assets/logo.png';
+import { withBase } from '../../utils/withBase';
 
-const homeHref = import.meta.env.BASE_URL;
-const adminDashboardHref = `${import.meta.env.BASE_URL}admin/`;
+const homeHref = withBase();
+const adminDashboardHref = withBase('admin/');
 ---
 
 <MainLayout title="Login da diretoria | IBR Canaa" description="Acesso demonstrativo da diretoria ao painel administrativo da Igreja Batista Regular Canaa.">

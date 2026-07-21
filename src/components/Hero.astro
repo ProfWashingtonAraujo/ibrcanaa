@@ -1,9 +1,10 @@
 ---
 import Icon from './Icon.astro';
 import { stats } from '../data/landing';
+import { withBase } from '../utils/withBase';
 
-const memberLoginHref = `${import.meta.env.BASE_URL}login/membros/`;
-const boardLoginHref = `${import.meta.env.BASE_URL}login/diretoria/`;
+const memberLoginHref = withBase('login/membros/');
+const boardLoginHref = withBase('login/diretoria/');
 ---
 
 <section id="inicio" class="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(248,217,139,0.18),_transparent_34%),linear-gradient(135deg,#07152f_0%,#0f172a_48%,#0b1020_100%)] pt-32 pb-20 sm:pt-40 lg:pb-28">

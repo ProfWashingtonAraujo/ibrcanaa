@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { withBase } from '../utils/withBase';
 
 interface Props {
   title?: string;
@@ -27,10 +28,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://profwashing
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="/ibrcanaa/favicon.png" />
+    <meta property="og:image" content={withBase('favicon.png')} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#07152f" />
-    <link rel="icon" href="/ibrcanaa/favicon.png" />
+    <link rel="icon" href={withBase('favicon.png')} />
     <slot name="head" />
   </head>
   <body class="bg-slate-950 font-sans text-slate-100 antialiased">
