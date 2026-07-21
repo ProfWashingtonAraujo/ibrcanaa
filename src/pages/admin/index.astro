@@ -293,12 +293,12 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
           <div>
             <div class="flex justify-between text-sm font-black"><span>Entradas</span><span id="finance-income-value">{formatCurrency(defaultPreset.income)}</span></div>
             <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-income-bar" class="h-full rounded-full bg-emerald-500" style={`width: ${incomeShare}%`}></div></div>
-            <p id="finance-income-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{incomeShare}% do fluxo do periodo</p>
+            <p id="finance-income-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{incomeShare}% do fluxo do período</p>
           </div>
           <div>
             <div class="flex justify-between text-sm font-black"><span>Saidas</span><span id="finance-expense-value">{formatCurrency(defaultPreset.expense)}</span></div>
             <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-expense-bar" class="h-full rounded-full bg-rose-500" style={`width: ${expenseShare}%`}></div></div>
-            <p id="finance-expense-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{expenseShare}% do fluxo do periodo</p>
+            <p id="finance-expense-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{expenseShare}% do fluxo do período</p>
           </div>
         </div>
       </div>
@@ -383,8 +383,8 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
       expenseValue.textContent = currencyFormatter.format(preset.expense);
       incomeBar.style.width = `${incomeShare}%`;
       expenseBar.style.width = `${expenseShare}%`;
-      incomeShareNode.textContent = `${incomeShare}% do fluxo do periodo`;
-      expenseShareNode.textContent = `${expenseShare}% do fluxo do periodo`;
+      incomeShareNode.textContent = `${incomeShare}% do fluxo do período`;
+      expenseShareNode.textContent = `${expenseShare}% do fluxo do período`;
     };
 
     const setActivePeriod = (key) => {
