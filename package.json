@@ -10,7 +10,7 @@
     "lint": "astro check",
     "preview": "astro preview --host 127.0.0.1",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist --nojekyll"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
