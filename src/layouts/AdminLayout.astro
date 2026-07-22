@@ -15,6 +15,8 @@ interface Props {
 const { title, description, eyebrow = 'Administração', heading, subheading } = Astro.props;
 const base = withBase();
 const currentPath = Astro.url.pathname;
+const logoutHref = withBase('login/diretoria/');
+const defaultAdminName = 'Pr. Roberto';
 const navItems = [
   { href: withBase('admin/'), label: 'Visão geral', icon: 'target' },
   { href: withBase('admin/membros/'), label: 'Membros', icon: 'users' },
@@ -22,12 +24,13 @@ const navItems = [
   { href: withBase('admin/financeiro/'), label: 'Financeiro', icon: 'shield' },
   { href: withBase('admin/relatorios/'), label: 'Relatórios', icon: 'book' },
 ];
+const currentPage = navItems.find((item) => currentPath === new URL(item.href, Astro.url).pathname)?.label;
 ---
 
 <MainLayout title={title} description={description}>
-  <main class="min-h-screen bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[280px_1fr]">
-    <aside class="border-b border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
-      <div class="flex h-20 items-center justify-between px-5 lg:h-auto lg:block lg:p-6">
+  <main class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(30,58,138,0.08),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] text-slate-950 lg:grid lg:grid-cols-[272px_1fr]">
+    <aside class="border-b border-slate-200/80 bg-white/92 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:border-slate-200/70">
+      <div class="flex h-20 items-center justify-between px-5 lg:h-auto lg:border-b lg:border-slate-200/70 lg:px-6 lg:py-6">
         <a href={base} class="flex items-center gap-3" aria-label="Voltar para a landing page">
           <img src={logo.src} width="48" height="48" alt="Logo da Igreja Batista Regular Canaã" class="h-12 w-auto" />
           <span>
@@ -35,46 +38,76 @@ const navItems = [
             <span class="block text-sm font-black text-slate-950">Gestão Eclesiástica</span>
           </span>
         </a>
-        <a href={withBase('login/diretoria/')} class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 lg:hidden">Sair</a>
+        <a href={logoutHref} data-admin-logout class="rounded-full border border-slate-200 px-3 py-2 text-xs font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950 lg:hidden">Sair</a>
       </div>
 
-      <nav class="flex gap-2 overflow-x-auto px-5 pb-5 text-sm font-bold lg:block lg:space-y-2 lg:overflow-visible lg:px-4 lg:pb-0" aria-label="Menu administrativo">
+      <div class="hidden px-6 pt-6 lg:block">
+        <p class="px-1 text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Navegação</p>
+      </div>
+
+      <nav class="flex gap-2 overflow-x-auto px-5 pb-5 text-sm font-bold lg:block lg:overflow-visible lg:px-5 lg:py-4" aria-label="Menu administrativo">
         {navItems.map((item) => {
           const isActive = currentPath === new URL(item.href, Astro.url).pathname;
           return (
             <a href={item.href} class:list={[
-              'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 transition',
-              isActive ? 'bg-canaa-800 text-white shadow-lg shadow-canaa-800/15' : 'text-slate-600 hover:bg-slate-50 hover:text-canaa-800',
+              'group flex shrink-0 items-center gap-3 rounded-2xl border px-3 py-3 transition lg:mt-2',
+              isActive ? 'border-canaa-100 bg-canaa-50 text-canaa-900' : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-canaa-800',
             ]}>
-              <Icon name={item.icon} class="h-5 w-5" />
-              {item.label}
+              <span class:list={[
+                'flex h-10 w-10 items-center justify-center rounded-2xl transition',
+                isActive ? 'bg-white text-canaa-800 ring-1 ring-canaa-100' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-canaa-800 group-hover:ring-1 group-hover:ring-slate-200',
+              ]}>
+                <Icon name={item.icon} class="h-5 w-5" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate">{item.label}</span>
+                <span class:list={[
+                  'block text-xs font-semibold',
+                  isActive ? 'text-canaa-700' : 'text-slate-400 group-hover:text-canaa-700',
+                ]}>
+                  {isActive ? 'Página atual' : 'Abrir módulo'}
+                </span>
+              </span>
             </a>
           );
         })}
       </nav>
-
-      <div class="mx-4 mt-8 hidden rounded-3xl bg-slate-950 p-5 text-white lg:block">
-        <p class="text-sm font-black text-gold-300">Ação rápida</p>
-        <p class="mt-2 text-sm leading-6 text-slate-300">Cadastre visitantes e acompanhe o funil de integração.</p>
-        <a href={withBase('admin/membros/')} class="mt-4 inline-flex rounded-full bg-gold-300 px-4 py-2 text-xs font-black text-canaa-950">Adicionar membro</a>
-      </div>
     </aside>
 
     <section class="min-w-0">
-      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.22em] text-canaa-800">{eyebrow}</p>
-            <h1 class="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{heading}</h1>
-            {subheading && <p class="mt-1 text-sm leading-6 text-slate-500">{subheading}</p>}
+      <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 px-5 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+              <span>{eyebrow}</span>
+              <span class="hidden h-1 w-1 rounded-full bg-slate-300 sm:block"></span>
+              <span class="text-canaa-800">{currentPage ?? 'Painel'}</span>
+            </div>
+            <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{heading}</h1>
+            {subheading && <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{subheading}</p>}
           </div>
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label class="relative block min-w-0 sm:w-80">
+          <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+            <label class="relative block min-w-0 xl:w-80">
               <span class="sr-only">Busca global</span>
-              <input class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-canaa-800 focus:bg-white focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministérios..." />
+              <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                <Icon name="target" class="h-4 w-4" />
+              </span>
+              <input class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pl-11 text-sm outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Buscar membros, eventos, ministérios..." />
             </label>
-            <button class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700" type="button">3 alertas</button>
-            <a href={withBase('login/diretoria/')} class="hidden rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white sm:inline-flex">Pr. Roberto</a>
+            <button class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" type="button">3 alertas</button>
+            <div class="hidden items-center gap-3 sm:flex">
+              <div class="flex items-center gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+                <span id="admin-user-initials" class="flex h-11 w-11 items-center justify-center rounded-2xl bg-canaa-800 text-sm font-black text-white">PR</span>
+                <span class="min-w-0">
+                  <span id="admin-user-name" class="block truncate text-sm font-black text-slate-800">{defaultAdminName}</span>
+                  <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Diretoria</span>
+                </span>
+              </div>
+              <a href={logoutHref} data-admin-logout class="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800">
+                <Icon name="arrow" class="h-4 w-4" />
+                Sair
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -82,6 +115,58 @@ const navItems = [
       <div class="px-5 py-6 sm:px-6 lg:px-8">
         <slot />
       </div>
+
+      <script is:inline define:vars={{ defaultAdminName }}>
+        const adminStorageKey = 'ibrcanaa.adminName';
+        const adminNameNode = document.getElementById('admin-user-name');
+        const adminInitialsNode = document.getElementById('admin-user-initials');
+        const formatAdminName = (email) => {
+          if (!email || typeof email !== 'string') return defaultAdminName;
+
+          const localPart = email.split('@')[0]?.trim();
+          if (!localPart) return defaultAdminName;
+
+          return localPart
+            .split(/[._-]+/)
+            .filter(Boolean)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+        };
+        const getInitials = (name) => {
+          if (!name || typeof name !== 'string') return 'AD';
+
+          const initials = name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part.charAt(0).toUpperCase())
+            .join('');
+
+          return initials || 'AD';
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email');
+        const resolvedAdminName = email ? formatAdminName(email) : window.sessionStorage.getItem(adminStorageKey) || defaultAdminName;
+
+        if (email) {
+          window.sessionStorage.setItem(adminStorageKey, resolvedAdminName);
+        }
+
+        if (adminNameNode) {
+          adminNameNode.textContent = resolvedAdminName;
+        }
+
+        if (adminInitialsNode) {
+          adminInitialsNode.textContent = getInitials(resolvedAdminName);
+        }
+
+        document.querySelectorAll('[data-admin-logout]').forEach((link) => {
+          link.addEventListener('click', () => {
+            window.sessionStorage.removeItem(adminStorageKey);
+          });
+        });
+      </script>
     </section>
   </main>
 </MainLayout>
