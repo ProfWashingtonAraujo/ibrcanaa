@@ -1,7 +1,7 @@
 ---
 import MainLayout from './MainLayout.astro';
 import Icon from '../components/Icon.astro';
-import defaultLogo from '../assets/logo.png';
+import dashboardLogo from '../assets/logo_preto.png';
 import { withBase } from '../utils/withBase';
 
 interface Props {
@@ -10,10 +10,9 @@ interface Props {
   eyebrow?: string;
   heading: string;
   subheading?: string;
-  logoSrc?: string;
 }
 
-const { title, description, eyebrow = 'Administração', heading, subheading, logoSrc = defaultLogo.src } = Astro.props;
+const { title, description, eyebrow = 'Administração', heading, subheading } = Astro.props;
 const base = withBase();
 const currentPath = Astro.url.pathname;
 const logoutHref = withBase('login/diretoria/');
@@ -35,7 +34,7 @@ const currentPage = navItems.find((item) => currentPath === new URL(item.href, A
     <aside class="border-b border-slate-200/80 bg-white/92 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:border-slate-200/70">
       <div class="flex h-20 items-center justify-between px-5 lg:h-auto lg:border-b lg:border-slate-200/70 lg:px-6 lg:py-6">
         <a href={base} class="flex items-center gap-3" aria-label="Voltar para a landing page">
-          <img src={logoSrc} width="68" height="68" alt="Logo da Igreja Batista Regular Canaã" class="h-16 w-auto" />
+          <img src={dashboardLogo.src} width="68" height="68" alt="Logo da Igreja Batista Regular Canaã" class="h-16 w-auto" />
           <span>
             <span class="block text-[10px] font-bold uppercase tracking-[0.28em] text-canaa-800">IBR Canaã</span>
             <span class="block text-sm font-black text-slate-950">Gestão Eclesiástica</span>
