@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import Icon from '../../components/Icon.astro';
+import blackLogo from '../../assets/logo_preto.png';
 import { members } from '../../legacy/mocks/members';
 import { events } from '../../legacy/mocks/events';
 import { financeSummary, transactions } from '../../legacy/mocks/finance';
@@ -81,7 +82,7 @@ const periodData = JSON.stringify(periodPresets);
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
 ---
 
-<AdminLayout title="Dashboard administrativo | IBR Canaã" heading="Visão geral da igreja" subheading="Indicadores para pastores, diretoria, secretaria e líderes acompanharem a saúde da comunidade.">
+<AdminLayout title="Dashboard administrativo | IBR Canaã" heading="Visão geral da igreja" subheading="Indicadores para pastores, diretoria, secretaria e líderes acompanharem a saúde da comunidade." logoSrc={blackLogo.src}>
   <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
     {[
       { label: 'Total de membros', value: members.length, detail: `${activeMembers.length} ativos`, icon: 'users' },
