@@ -4,7 +4,7 @@ Landing page premium desenvolvida com Astro, TypeScript e Tailwind CSS para a Ig
 
 ## Tecnologias
 
-- Astro 6
+- Astro 7
 - TypeScript
 - Tailwind CSS 4
 - HTML semantico
@@ -43,11 +43,13 @@ Arquivos React antigos foram isolados em `src/legacy` e excluidos da checagem Ty
 ## Como rodar
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Acesse `http://localhost:4321/ibrcanaa/` ou a URL exibida pelo Astro no terminal.
+
+Copie as variaveis de `.env.example` para um arquivo `.env` local quando precisar configurar integracoes. O modo demonstrativo dos paineis fica desativado por padrao; use `PUBLIC_ENABLE_DEMO=true` apenas em ambientes de demonstracao sem dados reais.
 
 ## Build
 
@@ -58,16 +60,16 @@ npm run preview
 
 O projeto esta configurado com `base: /ibrcanaa` para publicacao no GitHub Pages.
 
-## Formulario e backend futuro
+## Formulario e backend
 
-O formulario esta em `src/components/ContactForm.astro` com validacao HTML e JavaScript basico. Hoje ele envia para `/obrigado/` usando `GET` para demonstracao.
+O formulario esta em `src/components/ContactForm.astro` com validacao HTML e JavaScript basico. Por seguranca, o envio fica desabilitado ate que `PUBLIC_CONTACT_ENDPOINT` contenha a URL HTTPS de um backend.
 
 Para integrar com FastAPI ou Flask:
 
-1. Troque `method="get"` para `method="post"`.
-2. Troque `action="/ibrcanaa/obrigado/"` pela URL da API, por exemplo `https://api.seudominio.com/leads`.
-3. No backend, aceite os campos `name`, `email`, `whatsapp`, `interest`, `message` e `source`.
-4. Retorne sucesso e redirecione para `/ibrcanaa/obrigado/` ou exiba feedback inline.
+1. Configure `PUBLIC_CONTACT_ENDPOINT=https://api.seudominio.com/leads`.
+2. No backend, aceite via `POST` os campos `name`, `email`, `whatsapp`, `interest`, `message` e `source`.
+3. Valide os campos, limite requisicoes, configure CORS para o dominio do site e armazene os dados conforme a LGPD.
+4. Retorne um redirecionamento para `/ibrcanaa/obrigado/` somente depois de salvar o contato.
 
 ## SEO e performance
 

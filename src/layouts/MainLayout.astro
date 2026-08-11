@@ -5,11 +5,13 @@ import { withBase } from '../utils/withBase';
 interface Props {
   title?: string;
   description?: string;
+  robots?: string;
 }
 
 const {
   title = 'Igreja Batista Regular Canaã | Comunidade, cuidado e fé',
   description = 'Planeje sua visita à Igreja Batista Regular Canaã. Conheça cultos, ministérios, proposta de valor e fale com a equipe em uma landing page rápida e responsiva.',
+  robots = 'index, follow',
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://profwashingtonaraujo.github.io').toString();
@@ -23,7 +25,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://profwashing
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={robots} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

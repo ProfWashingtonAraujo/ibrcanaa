@@ -1,6 +1,8 @@
 ---
 import { contact } from '../data/landing';
-import { withBase } from '../utils/withBase';
+
+const contactEndpoint = import.meta.env.PUBLIC_CONTACT_ENDPOINT;
+const contactEnabled = Boolean(contactEndpoint);
 ---
 
 <section id="contato" class="bg-slate-950 py-24 text-white">
@@ -16,7 +18,7 @@ import { withBase } from '../utils/withBase';
       </div>
     </div>
 
-    <form id="lead-form" class="reveal rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8" action={withBase('obrigado/')} method="get" novalidate>
+    <form id="lead-form" class="reveal rounded-[2rem] border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-black/30 sm:p-8" action={contactEndpoint} method="post" novalidate>
       <input type="hidden" name="source" value="landing-page" />
       <div class="grid gap-5 sm:grid-cols-2">
         <label class="block">
@@ -47,8 +49,8 @@ import { withBase } from '../utils/withBase';
         <textarea required minlength="8" name="message" rows="5" class="mt-2 w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-canaa-800 focus:ring-4 focus:ring-canaa-100" placeholder="Conte como podemos ajudar"></textarea>
       </label>
       <p id="form-error" class="mt-4 hidden rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">Revise os campos obrigatórios antes de enviar.</p>
-      <button data-analytics="lead_form_submit" class="mt-6 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-canaa-950" type="submit">Enviar interesse</button>
-      <p class="mt-4 text-center text-xs leading-5 text-slate-500">Ao enviar, você concorda em ser contatado pela equipe. Para integrar com backend, troque `action` pela URL da API e use POST.</p>
+      <button disabled={!contactEnabled} data-analytics="lead_form_submit" class="mt-6 w-full rounded-full bg-canaa-800 px-7 py-4 text-base font-extrabold text-white transition enabled:hover:-translate-y-0.5 enabled:hover:bg-canaa-950 disabled:cursor-not-allowed disabled:bg-slate-400" type="submit">{contactEnabled ? 'Enviar interesse' : 'Formulário em configuração'}</button>
+      <p class="mt-4 text-center text-xs leading-5 text-slate-500">{contactEnabled ? 'Ao enviar, você concorda em ser contatado pela equipe.' : 'O envio está temporariamente indisponível. Nenhum dado preenchido será transmitido.'}</p>
     </form>
   </div>
 </section>
