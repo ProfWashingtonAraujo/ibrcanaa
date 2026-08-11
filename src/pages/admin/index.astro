@@ -139,7 +139,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
           <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Frequência</p>
           <h2 class="mt-2 text-2xl font-black">Cultos dos últimos domingos</h2>
         </div>
-        <span id="frequency-average" class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">Média {frequencySeries.at(-1)}%</span>
+        <span id="frequency-average" class="rounded-full bg-gold-300/30 px-4 py-2 text-sm font-black text-canaa-950">Média {frequencySeries.at(-1)}%</span>
       </div>
       <div class="mt-8 rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 to-canaa-50 p-4 sm:p-6">
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
@@ -161,15 +161,15 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
                 const y = toChartY(value);
                 return (
                   <g class="frequency-point" data-index={index}>
-                    <circle cx={x} cy={y} r="6" fill="#ffffff" stroke="#1e3a8a" stroke-width="4" />
+                    <circle cx={x} cy={y} r="6" fill="#f8d98b" stroke="#1e3a8a" stroke-width="4" />
                     <text x={x} y={y - 16} text-anchor="middle" fill="#0f172a" font-size="12" font-weight="800">{value}%</text>
                   </g>
                 );
               })}
               <defs>
                 <linearGradient id="frequencyAreaGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stop-color="#2563eb" stop-opacity="0.30" />
-                  <stop offset="100%" stop-color="#2563eb" stop-opacity="0.04" />
+                  <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.30" />
+                  <stop offset="100%" stop-color="#dba63a" stop-opacity="0.10" />
                 </linearGradient>
               </defs>
             </svg>
@@ -184,7 +184,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
               <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Melhor registro</p>
               <p id="frequency-peak" class="mt-2 text-3xl font-black text-slate-950">{maxFrequency}%</p>
             </div>
-            <div class="rounded-2xl bg-emerald-50 p-4 text-emerald-700">
+            <div class="rounded-2xl bg-canaa-50 p-4 text-canaa-800">
               <p class="text-xs font-black uppercase tracking-[0.18em]">Engajamento</p>
                <p class="mt-2 text-sm font-bold">{activeMembers.length} membros ativos com presença média forte.</p>
             </div>
@@ -267,7 +267,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
               cy="70"
               r="54"
               fill="none"
-              stroke="#10b981"
+              stroke="#1e3a8a"
               stroke-width="16"
               stroke-linecap="round"
               stroke-dasharray={`${incomeStroke} ${financeCircumference}`}
@@ -279,7 +279,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
               cy="70"
               r="54"
               fill="none"
-              stroke="#f43f5e"
+              stroke="#dba63a"
               stroke-width="16"
               stroke-linecap="round"
               stroke-dasharray={`${financeCircumference - incomeStroke} ${financeCircumference}`}
@@ -293,12 +293,12 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
         <div class="space-y-5">
           <div>
             <div class="flex justify-between text-sm font-black"><span>Entradas</span><span id="finance-income-value">{formatCurrency(defaultPreset.income)}</span></div>
-            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-income-bar" class="h-full rounded-full bg-emerald-500" style={`width: ${incomeShare}%`}></div></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-income-bar" class="h-full rounded-full bg-canaa-800" style={`width: ${incomeShare}%`}></div></div>
             <p id="finance-income-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{incomeShare}% do fluxo do período</p>
           </div>
           <div>
             <div class="flex justify-between text-sm font-black"><span>Saidas</span><span id="finance-expense-value">{formatCurrency(defaultPreset.expense)}</span></div>
-            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-expense-bar" class="h-full rounded-full bg-rose-500" style={`width: ${expenseShare}%`}></div></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div id="finance-expense-bar" class="h-full rounded-full bg-gold-500" style={`width: ${expenseShare}%`}></div></div>
             <p id="finance-expense-share" class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{expenseShare}% do fluxo do período</p>
           </div>
         </div>
