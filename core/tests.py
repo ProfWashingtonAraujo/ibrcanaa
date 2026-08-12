@@ -21,6 +21,8 @@ class PublicViewsTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Uma igreja para viver a fé')
+        self.assertContains(response, 'Desenvolvimento e criação por')
+        self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
 
     def test_contact_form_saves(self):
         response = self.client.post(reverse('home'), {

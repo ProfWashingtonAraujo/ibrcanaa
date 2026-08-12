@@ -70,3 +70,20 @@
   .daily-verse-link { grid-column: 1; }
   .daily-verse-copy blockquote { font-size: 1.7rem; }
 }
+
+.footer-credits {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.footer-credits small {
+  color: #7f8da6;
+  font-size: .65rem;
+  letter-spacing: .04em;
+}
+
+.footer-credits small a {
+  color: #d9aa47;
+  font-weight: 800;
+}

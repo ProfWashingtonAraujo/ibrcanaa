@@ -55,7 +55,7 @@
     <form method="post" class="contact-form reveal">{% csrf_token %}{% crispy form %}<button class="button button-primary" type="submit">Enviar mensagem</button></form>
   </section>
 </main>
-<footer class="public-footer"><a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt=""><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><span>© {% now 'Y' %} IBR Canaã. Uma comunidade para pertencer.</span><a href="{% url 'login' %}">Área restrita</a></footer>
+<footer class="public-footer"><a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt=""><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><span class="footer-credits"><span>© {% now 'Y' %} IBR Canaã. Uma comunidade para pertencer.</span><small>Desenvolvimento e criação por <a href="https://profwashingtonaraujo.github.io/carcara/" target="_blank" rel="noopener">Carcará Tech</a></small></span><a href="{% url 'login' %}">Área restrita</a></footer>
 {% endblock %}
 {% block extra_scripts %}
 <script>
