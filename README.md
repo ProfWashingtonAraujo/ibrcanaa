@@ -82,3 +82,10 @@ Depois do deploy, crie o primeiro administrador no Shell do Render:
 ```bash
 python manage.py createsuperuser
 ```
+
+## GitHub Pages
+
+O GitHub Pages publica uma versão estática da página institucional em
+`https://profwashingtonaraujo.github.io/ibrcanaa/`. Agenda, contato, login e
+demais recursos dinâmicos direcionam para o serviço Django no Render. O workflow
+`.github/workflows/deploy-pages.yml` executa os testes antes de cada publicação.
