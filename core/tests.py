@@ -34,6 +34,8 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
         self.assertContains(response, 'params="origin=https://ibrcanaa.onrender.com"', count=4)
         self.assertContains(response, 'videoid="jiIRdV-4rUE"')
+        self.assertContains(response, 'videoid="MlocoEhWjAs"')
+        self.assertContains(response, 'videoid="pkkm0wvwgHY"')
 
     def test_home_shows_church_location_and_service_times(self):
         response = self.client.get(reverse('home'))
