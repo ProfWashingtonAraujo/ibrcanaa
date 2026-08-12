@@ -16,6 +16,8 @@
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.css">
   <script defer src="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="assets/app.css">
 </head>
 
@@ -139,6 +141,15 @@
       </div>
     </section>
 
+    <section class="visit" id="visita">
+      <div class="church-map reveal" id="church-map" role="region" aria-label="Mapa da Igreja Batista Regular Canaã"><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Abrir localização no Google Maps</a></div>
+      <div class="visit-details reveal">
+        <span class="eyebrow gold">Planeje sua visita</span><h2>Esperamos você na Canaã.</h2>
+        <div class="visit-address"><small>ENDEREÇO</small><address>R. Delmiro Gouvêia, 1074<br>Salesianos, Juazeiro do Norte - CE<br>63050-216, Brasil</address><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Como chegar <span aria-hidden="true">↗</span></a></div>
+        <div class="service-times"><h3>Horários dos encontros</h3><dl><div><dt>Quarta-feira</dt><dd>Culto de oração · 19h</dd></div><div><dt>Sexta-feira</dt><dd>EBEC · 19h</dd></div><div><dt>Sábado</dt><dd>Mocidade · 19h</dd></div><div><dt>Domingo</dt><dd>EBD · 9h<br>Culto · 18h</dd></div></dl></div>
+      </div>
+    </section>
+
     <section class="contact" id="contato">
       <div class="reveal">
         <span class="eyebrow gold">Vamos conversar</span>
@@ -172,6 +183,13 @@
     }, { threshold: 0.12 });
     document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
     addEventListener('scroll', () => header.classList.toggle('scrolled', scrollY > 32), { passive: true });
+    addEventListener('DOMContentLoaded', () => {
+      const churchLocation = [-7.2132769, -39.32141];
+      const churchMap = L.map('church-map', { scrollWheelZoom: false }).setView(churchLocation, 17);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(churchMap);
+      const churchMarker = L.divIcon({ className: 'church-map-marker', html: '<span></span>', iconSize: [34, 42], iconAnchor: [17, 42] });
+      L.marker(churchLocation, { icon: churchMarker }).addTo(churchMap).bindPopup('<strong>Igreja Batista Regular Canaã</strong><br>R. Delmiro Gouvêia, 1074').openPopup();
+    });
   </script>
 </body>
 

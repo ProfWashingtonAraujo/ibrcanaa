@@ -2,7 +2,7 @@
 {% load static crispy_forms_tags %}
 {% block title %}Igreja Batista Regular Canaã{% endblock %}
 {% block body_class %}public-body landing-page{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.css"><script defer src="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.js"></script><script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.css"><script defer src="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.js"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"><script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
@@ -43,8 +43,12 @@
     <div class="public-calendar-shell reveal"><div id="public-calendar" data-feed-url="{% url 'public_event_feed' %}"></div></div>
   </section>
   <dialog id="public-event-details" class="event-dialog public-event-dialog"><button type="button" class="dialog-close" aria-label="Fechar">×</button><span class="tag" data-event-kind></span><h2 data-event-title></h2><div class="public-dialog-meta"><span data-event-date></span><span data-event-location></span></div><p data-event-description></p><a class="button button-primary" href="#contato" data-dialog-contact>Quero participar</a></dialog>
+  <section class="visit-section" id="visita">
+    <div class="church-map reveal" id="church-map" role="region" aria-label="Mapa da Igreja Batista Regular Canaã"><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Abrir localização no Google Maps</a></div>
+    <div class="visit-details reveal"><span class="eyebrow gold">Planeje sua visita</span><h2>Esperamos você na Canaã.</h2><div class="visit-address"><small>ENDEREÇO</small><address>R. Delmiro Gouvêia, 1074<br>Salesianos, Juazeiro do Norte - CE<br>63050-216, Brasil</address><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Como chegar <span aria-hidden="true">↗</span></a></div><div class="service-times"><h3>Horários dos encontros</h3><dl><div><dt>Quarta-feira</dt><dd>Culto de oração · 19h</dd></div><div><dt>Sexta-feira</dt><dd>EBEC · 19h</dd></div><div><dt>Sábado</dt><dd>Mocidade · 19h</dd></div><div><dt>Domingo</dt><dd>EBD · 9h<br>Culto · 18h</dd></div></dl></div></div>
+  </section>
   <section class="contact-section" id="contato">
-    <div class="contact-copy reveal"><span class="eyebrow gold">Vamos conversar</span><h2>Sua primeira visita começa aqui.</h2><p>Conte um pouco sobre você. Nossa equipe responderá com atenção e ajudará em tudo que precisar.</p><div class="contact-meta"><span><small>ENDEREÇO</small>Rua da Comunidade, 123</span><span><small>CULTOS</small>Domingos, 9h e 18h</span></div></div>
+    <div class="contact-copy reveal"><span class="eyebrow gold">Vamos conversar</span><h2>Sua primeira visita começa aqui.</h2><p>Conte um pouco sobre você. Nossa equipe responderá com atenção e ajudará em tudo que precisar.</p><div class="contact-meta"><span><small>ENDEREÇO</small>R. Delmiro Gouvêia, 1074 · Salesianos</span><span><small>CULTOS</small>Quarta, 19h · Domingo, 9h e 18h</span></div></div>
     <form method="post" class="contact-form reveal">{% csrf_token %}{% crispy form %}<button class="button button-primary" type="submit">Enviar mensagem</button></form>
   </section>
 </main>
@@ -77,6 +81,11 @@ document.addEventListener('DOMContentLoaded', function () {
   calendar.render();
   dialog.querySelector('.dialog-close').addEventListener('click', function () { dialog.close(); });
   dialog.querySelector('[data-dialog-contact]').addEventListener('click', function () { dialog.close(); });
+  const churchLocation = [-7.2132769, -39.32141];
+  const churchMap = L.map('church-map', { scrollWheelZoom: false }).setView(churchLocation, 17);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(churchMap);
+  const churchMarker = L.divIcon({ className: 'church-map-marker', html: '<span></span>', iconSize: [34, 42], iconAnchor: [17, 42] });
+  L.marker(churchLocation, { icon: churchMarker }).addTo(churchMap).bindPopup('<strong>Igreja Batista Regular Canaã</strong><br>R. Delmiro Gouvêia, 1074').openPopup();
 });
 </script>
 {% endblock %}

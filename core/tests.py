@@ -34,6 +34,15 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
         self.assertContains(response, 'params="origin=https://ibrcanaa.onrender.com"', count=4)
 
+    def test_home_shows_church_location_and_service_times(self):
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'R. Delmiro Gouvêia, 1074')
+        self.assertContains(response, 'Culto de oração · 19h')
+        self.assertContains(response, 'EBEC · 19h')
+        self.assertContains(response, 'Mocidade · 19h')
+        self.assertContains(response, 'EBD · 9h')
+        self.assertContains(response, 'churchLocation = [-7.2132769, -39.32141]')
+
     def test_public_calendar_feed_exposes_only_public_event_details(self):
         from core.views import sync_calendar_event
 
