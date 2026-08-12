@@ -156,7 +156,9 @@ class AccessTests(TestCase):
 
     def test_staff_can_access_dashboard(self):
         self.client.login(username='staff', password='test-pass')
-        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="nav-symbol"><svg', count=7)
 
     def test_members_can_be_searched_and_filtered(self):
         ministry = Ministry.objects.create(name='Louvor', leader_name='Líder')
