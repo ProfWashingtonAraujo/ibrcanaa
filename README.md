@@ -71,10 +71,11 @@ Gunicorn e WhiteNoise através do Blueprint `render.yaml`.
 4. Confirme os recursos definidos em `render.yaml`.
 5. Aguarde o build, migrations e início do Gunicorn.
 
-O serviço web usa o plano `starter` porque fotos de usuários precisam de disco
-persistente em `/var/data`. O banco PostgreSQL está configurado no plano gratuito.
-Uploads locais não são enviados ao Git e devem ser adicionados novamente após o
-primeiro deploy.
+O serviço web e o banco PostgreSQL usam planos gratuitos. Como o serviço gratuito
+não possui disco persistente, fotos enviadas pelos usuários podem ser perdidas
+quando o Render reiniciar ou publicar uma nova versão. Para preservar uploads em
+produção, será necessário usar armazenamento externo ou migrar para um plano com
+disco persistente.
 
 Depois do deploy, crie o primeiro administrador no Shell do Render:
 

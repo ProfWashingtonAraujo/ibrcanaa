@@ -8,15 +8,11 @@ services:
   - type: web
     name: ibrcanaa
     runtime: python
-    plan: starter
+    plan: free
     buildCommand: bash build.sh
     startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /
     autoDeployTrigger: commit
-    disk:
-      name: ibrcanaa-media
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.14.0
@@ -24,8 +20,6 @@ services:
         generateValue: true
       - key: DJANGO_DEBUG
         value: "False"
-      - key: DJANGO_MEDIA_ROOT
-        value: /var/data/media
       - key: DATABASE_URL
         fromDatabase:
           name: ibrcanaa-db
