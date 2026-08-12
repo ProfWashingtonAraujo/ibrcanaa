@@ -22,7 +22,7 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Doutrina, comunhão e serviço')
         self.assertContains(response, 'Uma igreja fundamentada nas Escrituras')
-        self.assertContains(response, 'Ensino fiel e sistemático da Palavra de Deus')
+        self.assertContains(response, 'Ensino fiel da Palavra de Deus')
         self.assertContains(response, 'Fidelidade à Palavra, fé em Cristo e comunhão verdadeira.')
         self.assertContains(response, 'Desenvolvimento e criação por')
         self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
