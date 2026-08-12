@@ -2,11 +2,11 @@
 {% load static crispy_forms_tags %}
 {% block title %}Igreja Batista Regular Canaã{% endblock %}
 {% block body_class %}public-body landing-page{% endblock %}
-{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.css"><script defer src="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.js"></script><script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-  <nav><a href="#sobre">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
+  <nav><a href="#sobre">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
   <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
 </header>
 <main>
@@ -27,6 +27,17 @@
     <div class="feature-list"><article class="reveal"><span>01</span><div><h3>Ensino que transforma</h3><p>Conteúdo bíblico aplicado à vida, à família e ao serviço cristão.</p></div></article><article class="reveal"><span>02</span><div><h3>Relacionamentos que acolhem</h3><p>Uma comunidade preparada para caminhar ao seu lado em cada estação.</p></div></article><article class="reveal"><span>03</span><div><h3>Serviço com propósito</h3><p>Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.</p></div></article></div>
   </section>
   <section class="public-section ministry-section" id="ministerios"><div class="section-heading reveal"><span class="eyebrow gold">Vida da igreja</span><h2>Espaços para toda a família crescer.</h2></div><div class="ministry-grid"><article class="reveal"><span class="ministry-number">01</span><small>CRIANÇAS</small><h3>Canaã Kids</h3><p>Ensino seguro, criativo e centrado na Bíblia.</p><i>Aprender</i></article><article class="reveal"><span class="ministry-number">02</span><small>MOCIDADE</small><h3>Jovens</h3><p>Comunhão, discipulado e propósito para uma nova geração.</p><i>Conectar</i></article><article class="reveal"><span class="ministry-number">03</span><small>PEQUENOS GRUPOS</small><h3>Grupos e cuidado</h3><p>Conexões próximas para oração, apoio e crescimento.</p><i>Pertencer</i></article></div></section>
+  <section class="video-section" id="mensagens">
+    <div class="video-heading reveal"><div><span class="eyebrow gold">Palavra que edifica</span><h2>Mensagens e cultos</h2></div><a class="youtube-channel-link" href="https://www.youtube.com/@ibrcanaa" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
+    <div class="video-gallery">
+      <article class="video-featured reveal"><lite-youtube videoid="MlocoEhWjAs" title="Ansiedade na vida do cristão | Pr. Márcio Bastos" playlabel="Reproduzir Ansiedade na vida do cristão"></lite-youtube><div><small>MENSAGEM EM DESTAQUE</small><h3>Ansiedade na vida do cristão</h3><p>Pr. Márcio Bastos</p></div></article>
+      <div class="video-list">
+        <article class="reveal"><lite-youtube videoid="jAHRzidBFbw" title="Mentiras que o mundo conta sobre o sexo e as verdades bíblicas que libertam | Dia 02" playlabel="Reproduzir mensagem do dia 2"></lite-youtube><h3>Mentiras do mundo e verdades bíblicas</h3><p>Dia 02</p></article>
+        <article class="reveal"><lite-youtube videoid="nqrRU_lMifA" title="God and Intimacy: A Conversation About Sex | Day 1" playlabel="Reproduzir God and Intimacy"></lite-youtube><h3>God and Intimacy</h3><p>A Conversation About Sex | Day 1</p></article>
+        <article class="reveal"><lite-youtube videoid="4BMepGvISOs" title="Union with Christ – Part 7" playlabel="Reproduzir Union with Christ parte 7"></lite-youtube><h3>Union with Christ</h3><p>Part 7</p></article>
+      </div>
+    </div>
+  </section>
   <section class="public-calendar-section" id="agenda">
     <div class="public-calendar-intro reveal"><span class="eyebrow gold">Agenda aberta</span><h2>Veja o que está acontecendo.</h2><p>A programação publicada pela diretoria, disponível para toda a comunidade.</p><div class="calendar-legend"><span><i></i> Atualização em tempo real</span><span><i></i> Aberto ao público</span></div></div>
     <div class="public-calendar-shell reveal"><div id="public-calendar" data-feed-url="{% url 'public_event_feed' %}"></div></div>
