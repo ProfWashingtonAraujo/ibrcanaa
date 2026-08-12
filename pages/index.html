@@ -94,7 +94,7 @@
       <div class="section-heading reveal"><span class="eyebrow gold">Vida da igreja</span>
         <h2>Espaços para toda a família crescer.</h2>
       </div>
-      <div class="ministry-grid">
+      <div class="ministry-grid" id="public-ministry-grid" data-feed-url="https://ibrcanaa.onrender.com/ministerios/publicos/">
         <article class="reveal"><span>01</span><small>CRIANÇAS</small>
           <h3>Canaã Kids</h3>
           <p>Ensino seguro, criativo e centrado na Bíblia.</p><i>Aprender</i>
@@ -190,6 +190,32 @@
       const churchMarker = L.divIcon({ className: 'church-map-marker', html: '<span></span>', iconSize: [34, 42], iconAnchor: [17, 42] });
       L.marker(churchLocation, { icon: churchMarker }).addTo(churchMap).bindPopup('<strong>Igreja Batista Regular Canaã</strong><br>R. Delmiro Gouvêia, 1074').openPopup();
     });
+    const ministryGrid = document.getElementById('public-ministry-grid');
+    fetch(ministryGrid.dataset.feedUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error('Não foi possível carregar os ministérios.');
+        return response.json();
+      })
+      .then((ministries) => {
+        if (!ministries.length) return;
+        ministryGrid.replaceChildren(...ministries.map((ministry, index) => {
+          const card = document.createElement('article');
+          card.className = 'reveal visible';
+          const number = document.createElement('span');
+          number.textContent = String(index + 1).padStart(2, '0');
+          const status = document.createElement('small');
+          status.textContent = ministry.statusLabel.toUpperCase();
+          const name = document.createElement('h3');
+          name.textContent = ministry.name;
+          const leader = document.createElement('p');
+          leader.textContent = `Liderança: ${ministry.leader}`;
+          const action = document.createElement('i');
+          action.textContent = ministry.status === 'recruiting' ? 'Quero servir' : 'Conhecer';
+          card.append(number, status, name, leader, action);
+          return card;
+        }));
+      })
+      .catch(() => {});
   </script>
 </body>
 

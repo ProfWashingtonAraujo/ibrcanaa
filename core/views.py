@@ -72,7 +72,26 @@ def home(request):
         start_time__gte=timezone.now(),
         event__church_event__isnull=False,
     ).first()
-    return render(request, 'core/home.html', {'form': form, 'next_occurrence': next_occurrence})
+    return render(request, 'core/home.html', {
+        'form': form,
+        'next_occurrence': next_occurrence,
+        'public_ministries': Ministry.objects.all(),
+    })
+
+
+def public_ministry_feed(request):
+    response = JsonResponse([
+        {
+            'name': ministry.name,
+            'leader': ministry.leader_name,
+            'status': ministry.status,
+            'statusLabel': ministry.get_status_display(),
+        }
+        for ministry in Ministry.objects.all()
+    ], safe=False)
+    if request.headers.get('Origin') == 'https://profwashingtonaraujo.github.io':
+        response['Access-Control-Allow-Origin'] = 'https://profwashingtonaraujo.github.io'
+    return response
 
 
 def public_event_feed(request):

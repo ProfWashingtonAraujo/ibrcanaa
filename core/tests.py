@@ -46,6 +46,47 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'EBD · 9h')
         self.assertContains(response, 'churchLocation = [-7.2132769, -39.32141]')
 
+    def test_home_reflects_registered_ministries(self):
+        Ministry.objects.create(
+            name='Ação Social',
+            leader_name='Ana Liderança',
+            status=Ministry.Status.RECRUITING,
+        )
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'Ação Social')
+        self.assertContains(response, 'Liderança: Ana Liderança')
+        self.assertContains(response, 'PRECISA DE VOLUNTÁRIOS')
+
+    def test_public_ministry_feed_exposes_only_card_data(self):
+        ministry = Ministry.objects.create(name='Louvor', leader_name='Líder Público')
+        Member.objects.create(
+            name='Pessoa Privada',
+            email='privado@example.com',
+            phone='85999999999',
+            ministry=ministry,
+        )
+        response = self.client.get(
+            reverse('public_ministry_feed'),
+            HTTP_ORIGIN='https://profwashingtonaraujo.github.io',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
+        self.assertEqual(response.json(), [{
+            'name': 'Louvor',
+            'leader': 'Líder Público',
+            'status': Ministry.Status.ACTIVE,
+            'statusLabel': 'Ativo',
+        }])
+        self.assertNotContains(response, 'Pessoa Privada')
+        self.assertNotContains(response, 'privado@example.com')
+
+    def test_public_ministry_feed_rejects_unknown_cors_origin(self):
+        response = self.client.get(
+            reverse('public_ministry_feed'),
+            HTTP_ORIGIN='https://example.com',
+        )
+        self.assertNotIn('Access-Control-Allow-Origin', response.headers)
+
     def test_public_calendar_feed_exposes_only_public_event_details(self):
         from core.views import sync_calendar_event
 
