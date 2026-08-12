@@ -122,6 +122,51 @@ class AccessTests(TestCase):
         self.assertEqual(len(response.context['members']), 12)
         self.assertTrue(response.context['members'].has_next())
 
+    def test_staff_can_manage_ministries(self):
+        self.client.login(username='staff', password='test-pass')
+        create_response = self.client.post(reverse('ministry_create'), {
+            'name': 'Ação Social',
+            'leader_name': 'Líder Social',
+            'status': Ministry.Status.RECRUITING,
+        })
+        self.assertRedirects(create_response, reverse('ministries'))
+        ministry = Ministry.objects.get(name='Ação Social')
+
+        list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
+        self.assertContains(list_response, 'Ação Social')
+        self.assertContains(list_response, 'Líder Social')
+
+        edit_response = self.client.post(reverse('ministry_edit', args=[ministry.pk]), {
+            'name': 'Ação e Cuidado',
+            'leader_name': 'Nova Liderança',
+            'status': Ministry.Status.ACTIVE,
+        })
+        self.assertRedirects(edit_response, reverse('ministries'))
+        ministry.refresh_from_db()
+        self.assertEqual(ministry.name, 'Ação e Cuidado')
+        self.assertEqual(ministry.leader_name, 'Nova Liderança')
+
+        member = self.member_user.member_profile
+        member.ministry = ministry
+        member.save(update_fields=['ministry'])
+        delete_response = self.client.post(reverse('ministry_delete', args=[ministry.pk]))
+        self.assertRedirects(delete_response, reverse('ministries'))
+        member.refresh_from_db()
+        self.assertIsNone(member.ministry)
+
+    def test_ministry_delete_rejects_get(self):
+        ministry = Ministry.objects.create(name='Protegido', leader_name='Líder')
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.get(reverse('ministry_delete', args=[ministry.pk]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Ministry.objects.filter(pk=ministry.pk).exists())
+
+    def test_member_cannot_access_ministry_management(self):
+        self.client.login(username='member', password='test-pass')
+        response = self.client.get(reverse('ministries'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"{reverse('login')}?next={reverse('ministries')}")
+
     def test_staff_creates_member_with_individual_login(self):
         self.client.login(username='staff', password='test-pass')
         response = self.client.post(reverse('member_create'), {

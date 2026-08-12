@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-from .models import AccessProfile, BibleNote, ContactLead, Event, Member, Transaction
+from .models import AccessProfile, BibleNote, ContactLead, Event, Member, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -142,6 +142,12 @@ class EventForm(CrispyFormMixin, forms.ModelForm):
             'starts_at': forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}),
             'description': forms.Textarea(attrs={'rows': 4}),
         }
+
+
+class MinistryForm(CrispyFormMixin, forms.ModelForm):
+    class Meta:
+        model = Ministry
+        fields = ['name', 'leader_name', 'status']
 
 
 class TransactionForm(CrispyFormMixin, forms.ModelForm):

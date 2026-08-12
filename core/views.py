@@ -18,7 +18,7 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, TransactionForm, UserAccountForm
+from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, Ministry, Transaction
 
 
@@ -199,6 +199,54 @@ def member_form(request, pk=None):
         messages.success(request, 'Membro salvo com sucesso.')
         return redirect('members')
     return render(request, 'core/entity_form.html', {'form': form, 'title': 'Editar membro' if instance else 'Novo membro', 'back_url': 'members'})
+
+
+@staff_required
+def ministries(request):
+    search = request.GET.get('q', '').strip()
+    selected_status = request.GET.get('status', '').strip()
+    ministries_query = Ministry.objects.annotate(member_count=Count('members'))
+    if search:
+        ministries_query = ministries_query.filter(
+            Q(name__icontains=search) | Q(leader_name__icontains=search)
+        )
+    if selected_status:
+        ministries_query = ministries_query.filter(status=selected_status)
+    return render(request, 'core/ministries.html', {
+        'ministries': ministries_query,
+        'filtered_count': ministries_query.count(),
+        'active_count': Ministry.objects.filter(status=Ministry.Status.ACTIVE).count(),
+        'recruiting_count': Ministry.objects.filter(status=Ministry.Status.RECRUITING).count(),
+        'member_total': Member.objects.filter(ministry__isnull=False).count(),
+        'search': search,
+        'selected_status': selected_status,
+        'status_choices': Ministry.Status.choices,
+    })
+
+
+@staff_required
+def ministry_form(request, pk=None):
+    instance = get_object_or_404(Ministry, pk=pk) if pk else None
+    form = MinistryForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Ministério salvo com sucesso.')
+        return redirect('ministries')
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar ministério' if instance else 'Novo ministério',
+        'back_url': 'ministries',
+    })
+
+
+@staff_required
+def ministry_delete(request, pk):
+    ministry = get_object_or_404(Ministry, pk=pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para excluir.')
+    ministry.delete()
+    messages.success(request, 'Ministério excluído com sucesso.')
+    return redirect('ministries')
 
 
 @staff_required
