@@ -29,6 +29,11 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'id="public-calendar"')
         self.assertContains(response, reverse('public_event_feed'))
 
+    def test_home_allows_referrer_identity_for_embedded_players(self):
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
+        self.assertContains(response, 'params="origin=https://ibrcanaa.onrender.com"', count=4)
+
     def test_public_calendar_feed_exposes_only_public_event_details(self):
         from core.views import sync_calendar_event
 
