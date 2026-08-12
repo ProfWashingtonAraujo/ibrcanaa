@@ -53,8 +53,8 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
   <section class="mt-6 grid gap-4 md:grid-cols-3">
     {[
       { label: 'Saldo atual', value: formatCurrency(financeSummary.balance), detail: `+${financeSummary.trend.value}% no período`, tone: 'text-canaa-800' },
-      { label: 'Entradas', value: formatCurrency(income), detail: `${incomeShare}% do fluxo financeiro`, tone: 'text-emerald-600' },
-      { label: 'Saídas', value: formatCurrency(expense), detail: `${expenseShare}% do fluxo financeiro`, tone: 'text-rose-600' },
+      { label: 'Entradas', value: formatCurrency(income), detail: `${incomeShare}% do fluxo financeiro`, tone: 'text-canaa-800' },
+      { label: 'Saídas', value: formatCurrency(expense), detail: `${expenseShare}% do fluxo financeiro`, tone: 'text-gold-500' },
     ].map((card) => (
       <article class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-100/80">
         <p class="text-sm font-bold text-slate-500">{card.label}</p>
@@ -71,24 +71,24 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
           <p class="text-sm font-black uppercase tracking-[0.2em] text-canaa-800">Fluxo semanal</p>
           <h2 class="mt-2 text-2xl font-black">Comparativo de entradas e saídas</h2>
         </div>
-        <span class="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">Superávit {formatCurrency(financeSummary.balance)}</span>
+        <span class="rounded-full bg-gold-300/30 px-4 py-2 text-sm font-black text-canaa-950">Superávit {formatCurrency(financeSummary.balance)}</span>
       </div>
       <div class="mt-8 rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 to-canaa-50 p-5">
         <div class="grid grid-cols-4 gap-4">
           {cashflowSeries.map((item) => (
             <div class="space-y-3 text-center">
               <div class="flex h-56 items-end justify-center gap-3 rounded-[1.5rem] bg-white px-3 py-4 ring-1 ring-slate-100">
-                <div class="flex h-full w-10 items-end rounded-full bg-emerald-50">
-                  <div class="w-full rounded-full bg-emerald-500" style={`height: ${(item.income / maxCashflow) * 100}%`}></div>
+                <div class="flex h-full w-10 items-end rounded-full bg-canaa-50">
+                  <div class="w-full rounded-full bg-canaa-800" style={`height: ${(item.income / maxCashflow) * 100}%`}></div>
                 </div>
-                <div class="flex h-full w-10 items-end rounded-full bg-rose-50">
-                  <div class="w-full rounded-full bg-rose-500" style={`height: ${(item.expense / maxCashflow) * 100}%`}></div>
+                <div class="flex h-full w-10 items-end rounded-full bg-gold-300/20">
+                  <div class="w-full rounded-full bg-gold-500" style={`height: ${(item.expense / maxCashflow) * 100}%`}></div>
                 </div>
               </div>
               <div>
                 <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                <p class="mt-1 text-xs font-bold text-emerald-600">{formatCurrency(item.income)}</p>
-                <p class="text-xs font-bold text-rose-600">{formatCurrency(item.expense)}</p>
+                <p class="mt-1 text-xs font-bold text-canaa-800">{formatCurrency(item.income)}</p>
+                <p class="text-xs font-bold text-gold-500">{formatCurrency(item.expense)}</p>
               </div>
             </div>
           ))}
@@ -102,8 +102,8 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
         <div class="mx-auto">
           <svg viewBox="0 0 140 140" class="h-36 w-36" aria-label="Distribuição entre entradas e saídas">
             <circle cx="70" cy="70" r="54" fill="none" stroke="#e2e8f0" stroke-width="16" />
-            <circle cx="70" cy="70" r="54" fill="none" stroke="#10b981" stroke-width="16" stroke-linecap="round" stroke-dasharray={`${incomeStroke} ${financeCircumference}`} transform="rotate(-90 70 70)" />
-            <circle cx="70" cy="70" r="54" fill="none" stroke="#f43f5e" stroke-width="16" stroke-linecap="round" stroke-dasharray={`${financeCircumference - incomeStroke} ${financeCircumference}`} stroke-dashoffset={-incomeStroke} transform="rotate(-90 70 70)" />
+            <circle cx="70" cy="70" r="54" fill="none" stroke="#1e3a8a" stroke-width="16" stroke-linecap="round" stroke-dasharray={`${incomeStroke} ${financeCircumference}`} transform="rotate(-90 70 70)" />
+            <circle cx="70" cy="70" r="54" fill="none" stroke="#dba63a" stroke-width="16" stroke-linecap="round" stroke-dasharray={`${financeCircumference - incomeStroke} ${financeCircumference}`} stroke-dashoffset={-incomeStroke} transform="rotate(-90 70 70)" />
             <text x="70" y="62" text-anchor="middle" fill="#64748b" font-size="12" font-weight="800">Saldo</text>
             <text x="70" y="82" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="900">{formatCurrency(financeSummary.balance)}</text>
           </svg>
@@ -111,12 +111,12 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
         <div class="space-y-5">
           <div>
             <div class="flex justify-between text-sm font-black"><span>Entradas</span><span>{formatCurrency(income)}</span></div>
-            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style={`width: ${incomeShare}%`}></div></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-canaa-800" style={`width: ${incomeShare}%`}></div></div>
              <p class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{incomeShare}% do fluxo do período</p>
           </div>
           <div>
              <div class="flex justify-between text-sm font-black"><span>Saídas</span><span>{formatCurrency(expense)}</span></div>
-            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-rose-500" style={`width: ${expenseShare}%`}></div></div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-gold-500" style={`width: ${expenseShare}%`}></div></div>
              <p class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{expenseShare}% do fluxo do período</p>
           </div>
         </div>
@@ -170,7 +170,7 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-BR', { styl
                 <td class="px-5 py-4 text-sm text-slate-500">{new Date(item.date).toLocaleDateString('pt-BR')}</td>
                 <td class="px-5 py-4 font-bold text-slate-950">{item.description}</td>
                 <td class="px-5 py-4 text-slate-600">{item.category}</td>
-                <td class:list={["px-5 py-4 text-right font-black", item.amount > 0 ? 'text-emerald-600' : 'text-rose-600']}>
+                <td class:list={["px-5 py-4 text-right font-black", item.amount > 0 ? 'text-canaa-800' : 'text-gold-500']}>
                   {formatCurrency(item.amount)}
                 </td>
               </tr>
