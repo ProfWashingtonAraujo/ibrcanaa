@@ -623,6 +623,8 @@ class AccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-autocomplete-light-function="select2"')
         self.assertContains(response, reverse('member_autocomplete'))
+        self.assertContains(response, 'name="password1"')
+        self.assertContains(response, 'name="password2"')
 
     def test_user_photo_upload_is_saved_and_preserved(self):
         import base64
