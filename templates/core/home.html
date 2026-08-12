@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static crispy_forms_tags %}
+{% block title %}Igreja Batista Regular Canaã{% endblock %}
+{% block body_class %}public-body landing-page{% endblock %}
+{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
+{% block content %}
+<header class="public-nav" id="public-nav">
+  <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
+  <nav><a href="#sobre">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
+  <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
+</header>
+<main>
+  <section class="hero" id="inicio">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-copy reveal">
+      <span class="eyebrow gold">Comunidade, cuidado e fé</span>
+      <h1>Uma igreja para viver a fé <em>em comunidade.</em></h1>
+      <p>Comunhão bíblica, cuidado pastoral e oportunidades reais para crescer, servir e construir vínculos que permanecem.</p>
+      <div class="hero-actions"><a class="button button-gold" href="#contato">Planejar minha visita</a><a class="button button-outline-light" href="#agenda">Ver próximos eventos</a></div>
+      <div class="hero-proof"><strong>Há um lugar para você aqui.</strong><span>Cultos, ministérios e acompanhamento para toda a família.</span></div>
+    </div>
+    <div class="hero-visual church-front reveal reveal-delay"><img src="{% static 'frente_igreja.png' %}" alt="Fachada da Igreja Batista Regular Canaã"><div class="hero-orbit" aria-hidden="true"></div><div class="hero-card"><small>Próximo encontro</small>{% if next_occurrence %}<strong>{{ next_occurrence.event.title }}</strong><span>{{ next_occurrence.start_time|date:'l, d \d\e F · H:i' }} · {{ next_occurrence.event.church_event.location }}</span>{% else %}<strong>Em breve</strong><span>Acompanhe nossa agenda.</span>{% endif %}</div></div>
+    <a class="scroll-cue" href="#sobre"><span>Descubra</span><i></i></a>
+  </section>
+  <section class="public-section split-section" id="sobre">
+    <div class="reveal"><span class="eyebrow">Nossa essência</span><h2>Fé bíblica com cuidado próximo e vida compartilhada.</h2><p class="section-lead">Mais que um lugar para frequentar, somos uma família para caminhar junto.</p></div>
+    <div class="feature-list"><article class="reveal"><span>01</span><div><h3>Ensino que transforma</h3><p>Conteúdo bíblico aplicado à vida, à família e ao serviço cristão.</p></div></article><article class="reveal"><span>02</span><div><h3>Relacionamentos que acolhem</h3><p>Uma comunidade preparada para caminhar ao seu lado em cada estação.</p></div></article><article class="reveal"><span>03</span><div><h3>Serviço com propósito</h3><p>Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.</p></div></article></div>
+  </section>
+  <section class="public-section ministry-section" id="ministerios"><div class="section-heading reveal"><span class="eyebrow gold">Vida da igreja</span><h2>Espaços para toda a família crescer.</h2></div><div class="ministry-grid"><article class="reveal"><span class="ministry-number">01</span><small>CRIANÇAS</small><h3>Canaã Kids</h3><p>Ensino seguro, criativo e centrado na Bíblia.</p><i>Aprender</i></article><article class="reveal"><span class="ministry-number">02</span><small>JUVENTUDE</small><h3>Jovens</h3><p>Comunhão, discipulado e propósito para uma nova geração.</p><i>Conectar</i></article><article class="reveal"><span class="ministry-number">03</span><small>COMUNIDADE</small><h3>Grupos e cuidado</h3><p>Conexões próximas para oração, apoio e crescimento.</p><i>Pertencer</i></article></div></section>
+  <section class="public-calendar-section" id="agenda">
+    <div class="public-calendar-intro reveal"><span class="eyebrow gold">Agenda aberta</span><h2>Veja o que está acontecendo.</h2><p>A programação publicada pela diretoria, disponível para toda a comunidade.</p><div class="calendar-legend"><span><i></i> Atualização em tempo real</span><span><i></i> Aberto ao público</span></div></div>
+    <div class="public-calendar-shell reveal"><div id="public-calendar" data-feed-url="{% url 'public_event_feed' %}"></div></div>
+  </section>
+  <dialog id="public-event-details" class="event-dialog public-event-dialog"><button type="button" class="dialog-close" aria-label="Fechar">×</button><span class="tag" data-event-kind></span><h2 data-event-title></h2><div class="public-dialog-meta"><span data-event-date></span><span data-event-location></span></div><p data-event-description></p><a class="button button-primary" href="#contato" data-dialog-contact>Quero participar</a></dialog>
+  <section class="contact-section" id="contato">
+    <div class="contact-copy reveal"><span class="eyebrow gold">Vamos conversar</span><h2>Sua primeira visita começa aqui.</h2><p>Conte um pouco sobre você. Nossa equipe responderá com atenção e ajudará em tudo que precisar.</p><div class="contact-meta"><span><small>ENDEREÇO</small>Rua da Comunidade, 123</span><span><small>CULTOS</small>Domingos, 9h e 18h</span></div></div>
+    <form method="post" class="contact-form reveal">{% csrf_token %}{% crispy form %}<button class="button button-primary" type="submit">Enviar mensagem</button></form>
+  </section>
+</main>
+<footer class="public-footer"><a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt=""><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><span>© {% now 'Y' %} IBR Canaã. Uma comunidade para pertencer.</span><a href="{% url 'login' %}">Área restrita</a></footer>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const nav = document.getElementById('public-nav');
+  const dialog = document.getElementById('public-event-details');
+  const revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); revealObserver.unobserve(entry.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(function (element) { revealObserver.observe(element); });
+  window.addEventListener('scroll', function () { nav.classList.toggle('is-scrolled', window.scrollY > 32); }, { passive: true });
+  const calendar = new FullCalendar.Calendar(document.getElementById('public-calendar'), {
+    locale: 'pt-br', initialView: window.innerWidth < 760 ? 'listMonth' : 'dayGridMonth', firstDay: 0, height: 'auto', dayMaxEvents: 2, fixedWeekCount: false,
+    headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 760 ? '' : 'dayGridMonth,listMonth' },
+    buttonText: { today: 'Hoje', month: 'Mês', list: 'Lista' }, events: document.getElementById('public-calendar').dataset.feedUrl,
+    eventClick: function (info) {
+      const props = info.event.extendedProps;
+      dialog.querySelector('[data-event-kind]').textContent = props.kind;
+      dialog.querySelector('[data-event-title]').textContent = info.event.title;
+      dialog.querySelector('[data-event-date]').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short' }).format(info.event.start);
+      dialog.querySelector('[data-event-location]').textContent = props.location;
+      dialog.querySelector('[data-event-description]').textContent = props.description;
+      dialog.showModal();
+    }
+  });
+  calendar.render();
+  dialog.querySelector('.dialog-close').addEventListener('click', function () { dialog.close(); });
+  dialog.querySelector('[data-dialog-contact]').addEventListener('click', function () { dialog.close(); });
+});
+</script>
+{% endblock %}

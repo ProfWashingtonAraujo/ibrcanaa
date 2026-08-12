@@ -1,0 +1,6 @@
+{% extends 'core/admin_base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}Cadastro{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}<article class="panel form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% crispy form %}<div class="form-actions"><a class="button button-ghost" href="{% url back_url %}">Cancelar</a><button class="button button-primary" type="submit">Salvar</button></div></form></article>{% endblock %}
+{% block extra_head %}{{ form.media.css }}{% endblock %}
+{% block extra_scripts %}{{ form.media.js }}{% endblock %}

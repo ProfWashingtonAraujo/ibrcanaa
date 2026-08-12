@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_class %}admin-body{% endblock %}
+{% block content %}
+<div class="admin-shell">
+  <aside class="sidebar">
+    <a class="brand brand-dark" href="{% url 'dashboard' %}">
+      <img src="{% static 'logo_preto.png' %}" alt="IBR Canaã">
+      <span><small>IBR CANAÃ</small><strong>Gestão Eclesiástica</strong></span>
+    </a>
+    <div class="sidebar-label">Navegação</div>
+    <nav class="sidebar-nav">
+      <a class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="nav-symbol">01</span><span>Visão geral<small>Painel executivo</small></span></a>
+      <a class="{% if request.resolver_match.url_name == 'members' %}active{% endif %}" href="{% url 'members' %}"><span class="nav-symbol">02</span><span>Membros<small>Cadastro e cuidado</small></span></a>
+      <a class="{% if request.resolver_match.url_name == 'events' %}active{% endif %}" href="{% url 'events' %}"><span class="nav-symbol">03</span><span>Eventos<small>Agenda e presença</small></span></a>
+      <a class="{% if request.resolver_match.url_name == 'finance' %}active{% endif %}" href="{% url 'finance' %}"><span class="nav-symbol">04</span><span>Financeiro<small>Fluxo e prestação</small></span></a>
+      <a class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'reports' %}"><span class="nav-symbol">05</span><span>Relatórios<small>Análises e decisões</small></span></a>
+      {% if request.user.is_superuser or request.user.access_profile.can_manage_users %}<a class="{% if request.resolver_match.url_name == 'user_accounts' or request.resolver_match.url_name == 'user_account_create' or request.resolver_match.url_name == 'user_account_edit' %}active{% endif %}" href="{% url 'user_accounts' %}"><span class="nav-symbol">06</span><span>Configurações<small>Usuários e acessos</small></span></a>{% endif %}
+    </nav>
+    <div class="sidebar-user">
+      {% if request.user.access_profile.photo %}<img class="avatar-initials user-photo" src="{{ request.user.access_profile.photo.url }}" alt="">{% else %}<span class="avatar-initials">{{ request.user.first_name|first|default:'A' }}{{ request.user.last_name|first }}</span>{% endif %}
+      <span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ request.user.access_profile.get_role_display|default:'Diretoria' }}</small></span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="Sair">→</button></form>
+    </div>
+  </aside>
+  <main class="admin-main">
+    <header class="topbar">
+      <div><span class="eyebrow">Administração / {% block section_name %}Painel{% endblock %}</span><h1>{% block page_title %}Visão geral{% endblock %}</h1></div>
+      <div class="topbar-actions"><a class="button button-ghost" href="{% url 'home' %}">Ver site</a><span class="date-chip">{% now 'd M Y' %}</span></div>
+    </header>
+    <div class="admin-content">{% block admin_content %}{% endblock %}</div>
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Membros | IBR Canaã{% endblock %}{% block section_name %}Membros{% endblock %}{% block page_title %}Pessoas e cuidado{% endblock %}
+{% block admin_content %}
+<section class="members-overview">
+  <article class="members-highlight"><div><span class="eyebrow gold">Comunidade</span><h2>{{ member_count }} pessoas conectadas</h2><p>Uma visão clara para acompanhar, acolher e cuidar de cada pessoa.</p></div><a class="button button-gold" href="{% url 'member_create' %}">+ Novo membro</a></article>
+  <div class="member-stat-grid"><article><span class="stat-icon">AT</span><div><small>Ativos</small><strong>{{ active_count }}</strong><span>Membros e liderança</span></div></article><article><span class="stat-icon gold-icon">NV</span><div><small>Novos e visitantes</small><strong>{{ visitor_count }}</strong><span>Em integração</span></div></article><article><span class="stat-icon green-icon">BT</span><div><small>Batizados</small><strong>{{ baptized_count }}</strong><span>Na comunidade</span></div></article><article><span class="stat-icon red-icon">CD</span><div><small>Pedem cuidado</small><strong>{{ care_count }}</strong><span>Frequência abaixo de 60%</span></div></article></div>
+</section>
+<article class="panel members-panel">
+  <div class="members-panel-heading"><div><span class="eyebrow">Diretório</span><h2>Cadastro de membros</h2><p>{{ filtered_count }} registro{{ filtered_count|pluralize }} encontrado{{ filtered_count|pluralize }}</p></div><div class="average-chip"><span>Frequência média</span><strong>{{ average_frequency }}%</strong></div></div>
+  <form method="get" class="member-filters">
+    <label class="member-search"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ search }}" placeholder="Buscar por nome, e-mail ou telefone"></label>
+    <select name="status" aria-label="Filtrar por status"><option value="">Todos os status</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <select name="ministry" aria-label="Filtrar por ministério"><option value="">Todos os ministérios</option>{% for ministry in ministries %}<option value="{{ ministry.pk }}"{% if selected_ministry == ministry.pk|stringformat:'s' %} selected{% endif %}>{{ ministry.name }}</option>{% endfor %}</select>
+    <button class="button button-primary" type="submit">Filtrar</button>{% if search or selected_status or selected_ministry %}<a class="clear-filters" href="{% url 'members' %}">Limpar</a>{% endif %}
+  </form>
+  <div class="member-list">
+    <div class="member-list-header"><span>Pessoa</span><span>Contato</span><span>Jornada</span><span>Participação</span><span></span></div>
+    {% for member in members %}<article class="member-row">
+      <div class="member-identity">{% if member.user.access_profile.photo %}<img src="{{ member.user.access_profile.photo.url }}" alt="">{% elif member.avatar_url %}<img src="{{ member.avatar_url }}" alt="">{% else %}<span class="member-avatar">{{ member.name|first }}</span>{% endif %}<span><strong>{{ member.name }}</strong><small>{% if member.user_id %}<i class="access-dot"></i> Acesso: {{ member.user.username }}{% else %}<i class="access-dot pending"></i> Acesso não configurado{% endif %}</small></span></div>
+      <div class="member-contact"><span>{{ member.email }}</span><small>{{ member.phone|default:'Telefone não informado' }}</small></div>
+      <div class="member-journey"><span class="tag tag-{{ member.status }}">{{ member.get_status_display }}</span><small>{{ member.ministry|default:'Sem ministério' }}</small></div>
+      <div class="member-participation"><span><strong>{{ member.frequency }}%</strong><small>{% if member.frequency >= 75 %}Frequência saudável{% elif member.frequency >= 60 %}Acompanhar{% else %}Atenção pastoral{% endif %}</small></span><div class="progress"><i style="width:{{ member.frequency }}%"></i></div></div>
+      <a class="member-edit" href="{% url 'member_edit' member.pk %}" aria-label="Editar {{ member.name }}">Editar <span>→</span></a>
+    </article>{% empty %}<div class="members-empty"><span>⌕</span><h3>Nenhum membro encontrado</h3><p>Ajuste os filtros ou adicione uma nova pessoa à comunidade.</p></div>{% endfor %}
+  </div>
+  {% if members.paginator.num_pages > 1 %}<nav class="members-pagination"><span>Página {{ members.number }} de {{ members.paginator.num_pages }}</span><div>{% if members.has_previous %}<a href="?q={{ search|urlencode }}&status={{ selected_status|urlencode }}&ministry={{ selected_ministry|urlencode }}&page={{ members.previous_page_number }}">← Anterior</a>{% endif %}{% if members.has_next %}<a href="?q={{ search|urlencode }}&status={{ selected_status|urlencode }}&ministry={{ selected_ministry|urlencode }}&page={{ members.next_page_number }}">Próxima →</a>{% endif %}</div></nav>{% endif %}
+</article>
+{% endblock %}

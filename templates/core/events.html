@@ -1,0 +1,45 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Agenda | IBR Canaã{% endblock %}{% block section_name %}Eventos{% endblock %}{% block page_title %}Agenda e mobilização{% endblock %}
+{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.19/locales/pt-br.global.min.js"></script>{% endblock %}
+{% block admin_content %}
+<section class="calendar-hero"><div><span class="eyebrow gold">Swingtime + FullCalendar</span><h2>Agenda da comunidade</h2><p>Visualize cultos, encontros e mobilizações em um só lugar.</p></div><div class="calendar-hero-actions"><label><span>Filtrar agenda</span><select id="event-kind-filter"><option value="">Todos os eventos</option>{% for kind in event_kinds %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}</select></label><a class="button button-gold" href="{% url 'event_create' %}">Criar evento</a></div></section>
+<section class="fullcalendar-panel"><div id="church-calendar" data-feed-url="{% url 'event_feed' %}"></div></section>
+<dialog id="event-details" class="event-dialog"><button type="button" class="dialog-close" aria-label="Fechar">×</button><span class="tag" data-event-kind></span><h2 data-event-title></h2><div class="dialog-meta"><p><small>Quando</small><strong data-event-date></strong></p><p><small>Local</small><strong data-event-location></strong></p><p><small>Público esperado</small><strong data-event-attendance></strong></p></div><p data-event-description></p><div class="dialog-actions"><a class="button button-primary" data-event-edit>Editar evento</a><form method="post" data-event-delete>{% csrf_token %}<button class="button button-danger" type="submit">Excluir evento</button></form></div></dialog>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const calendarElement = document.getElementById('church-calendar');
+  const filter = document.getElementById('event-kind-filter');
+  const dialog = document.getElementById('event-details');
+  const calendar = new FullCalendar.Calendar(calendarElement, {
+    locale: 'pt-br',
+    initialView: window.innerWidth < 700 ? 'listMonth' : 'dayGridMonth',
+    firstDay: 0,
+    height: 'auto',
+    nowIndicator: true,
+    dayMaxEvents: 3,
+    eventDisplay: 'block',
+    buttonText: { today: 'Hoje', month: 'Mês', week: 'Semana', list: 'Lista' },
+    headerToolbar: { left: 'today prev,next', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+    events: { url: calendarElement.dataset.feedUrl, extraParams: function () { return { kind: filter.value }; } },
+    eventClick: function (info) {
+      const props = info.event.extendedProps;
+      dialog.querySelector('[data-event-kind]').textContent = props.kind;
+      dialog.querySelector('[data-event-title]').textContent = info.event.title;
+      dialog.querySelector('[data-event-date]').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short' }).format(info.event.start);
+      dialog.querySelector('[data-event-location]').textContent = props.location;
+      dialog.querySelector('[data-event-attendance]').textContent = props.expectedAttendance + ' pessoas';
+      dialog.querySelector('[data-event-description]').textContent = props.description;
+      dialog.querySelector('[data-event-edit]').href = '{% url "event_edit" 0 %}'.replace('/0/', '/' + props.churchEventId + '/');
+      dialog.querySelector('[data-event-delete]').action = '{% url "event_delete" 0 %}'.replace('/0/', '/' + props.churchEventId + '/');
+      dialog.showModal();
+    }
+  });
+  calendar.render();
+  filter.addEventListener('change', function () { calendar.refetchEvents(); });
+  dialog.querySelector('.dialog-close').addEventListener('click', function () { dialog.close(); });
+  dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+});
+</script>
+{% endblock %}

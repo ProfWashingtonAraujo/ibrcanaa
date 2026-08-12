@@ -1,0 +1,32 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('agenda/eventos/', views.public_event_feed, name='public_event_feed'),
+    path('obrigado/', views.contact_thanks, name='contact_thanks'),
+    path('entrar/', views.login_view, name='login'),
+    path('sair/', views.logout_view, name='logout'),
+    path('portal/', views.member_portal, name='member_portal'),
+    path('portal/biblia/', views.bible_reader, name='bible_reader'),
+    path('portal/biblia/anotacao/', views.bible_note_save, name='bible_note_save'),
+    path('portal/biblia/favorito/', views.bible_favorite_toggle, name='bible_favorite_toggle'),
+    path('admin/', views.dashboard, name='dashboard'),
+    path('admin/membros/', views.members, name='members'),
+    path('admin/membros/novo/', views.member_form, name='member_create'),
+    path('admin/membros/<int:pk>/editar/', views.member_form, name='member_edit'),
+    path('admin/eventos/', views.events, name='events'),
+    path('admin/eventos/feed/', views.event_feed, name='event_feed'),
+    path('admin/eventos/novo/', views.event_form, name='event_create'),
+    path('admin/eventos/<int:pk>/editar/', views.event_form, name='event_edit'),
+    path('admin/eventos/<int:pk>/excluir/', views.event_delete, name='event_delete'),
+    path('admin/financeiro/', views.finance, name='finance'),
+    path('admin/financeiro/novo/', views.transaction_form, name='transaction_create'),
+    path('admin/relatorios/', views.reports, name='reports'),
+    path('admin/configuracoes/usuarios/', views.user_accounts, name='user_accounts'),
+    path('admin/configuracoes/membros/autocomplete/', views.MemberAutocomplete.as_view(), name='member_autocomplete'),
+    path('admin/configuracoes/usuarios/novo/', views.user_account_form, name='user_account_create'),
+    path('admin/configuracoes/usuarios/<int:pk>/editar/', views.user_account_form, name='user_account_edit'),
+    path('admin/configuracoes/usuarios/<int:pk>/excluir/', views.user_account_delete, name='user_account_delete'),
+]

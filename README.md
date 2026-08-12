@@ -1,98 +1,63 @@
-# IBR Canaa Landing Page
+# IBR Canaã - Sistema Django
 
-Landing page premium desenvolvida com Astro, TypeScript e Tailwind CSS para a Igreja Batista Regular Canaa.
+Sistema local de gestão e comunidade da Igreja Batista Regular Canaã, reconstruído integralmente em Python com Django.
 
 ## Tecnologias
 
-- Astro 7
-- TypeScript
-- Tailwind CSS 4
-- HTML semantico
-- JavaScript leve para menu mobile, scroll reveal, eventos e validacao do formulario
+- Python 3.14
+- Django 6
+- SQLite para desenvolvimento local
+- Django Templates
+- CSS próprio e responsivo
+- Autenticação por sessão e proteção CSRF
 
-## Estrutura principal
+Não há dependência de Astro, Node.js, React, Vite ou Tailwind.
 
-```txt
-src/
-├── components/
-│   ├── Header.astro
-│   ├── Hero.astro
-│   ├── Benefits.astro
-│   ├── About.astro
-│   ├── HowItWorks.astro
-│   ├── Features.astro
-│   ├── Testimonials.astro
-│   ├── FAQ.astro
-│   ├── FinalCTA.astro
-│   ├── ContactForm.astro
-│   ├── Footer.astro
-│   └── Icon.astro
-├── data/
-│   └── landing.ts
-├── layouts/
-│   └── MainLayout.astro
-├── pages/
-│   ├── index.astro
-│   └── obrigado.astro
-└── styles/
-    └── global.css
+## Preparação
+
+No PowerShell:
+
+```powershell
+python -m venv .venv
+& ".venv\Scripts\python.exe" -m pip install -r requirements.txt
+& ".venv\Scripts\python.exe" manage.py migrate
+& ".venv\Scripts\python.exe" manage.py seed_demo
 ```
 
-Arquivos React antigos foram isolados em `src/legacy` e excluidos da checagem TypeScript.
+## Executar
 
-## Como rodar
-
-```bash
-npm ci
-npm run dev
+```powershell
+& ".venv\Scripts\python.exe" manage.py runserver
 ```
 
-Acesse `http://localhost:4321/ibrcanaa/` ou a URL exibida pelo Astro no terminal.
+Acesse `http://127.0.0.1:8000/`.
 
-Copie as variaveis de `.env.example` para um arquivo `.env` local quando precisar configurar integracoes. O modo demonstrativo dos paineis fica desativado por padrao; use `PUBLIC_ENABLE_DEMO=true` apenas em ambientes de demonstracao sem dados reais.
+## Acessos locais
 
-## Build
+- Diretoria: `diretoria` / `Canaa@2026`
+- Membro: `membro` / `Membro@2026`
 
-```bash
-npm run build
-npm run preview
+Troque essas senhas antes de utilizar dados reais.
+
+## Funcionalidades
+
+- Landing page com formulário salvo no banco
+- Login real com sessão Django
+- Portal individual do membro
+- Dashboard administrativo
+- Cadastro e edição de membros
+- Cadastro de eventos
+- Lançamentos financeiros
+- Relatórios consolidados
+- Django Admin em `/django-admin/`
+
+## Testes
+
+```powershell
+& ".venv\Scripts\python.exe" manage.py check
+& ".venv\Scripts\python.exe" manage.py test
 ```
 
-O projeto esta configurado com `base: /ibrcanaa` para publicacao no GitHub Pages.
+## Banco de produção
 
-## Formulario e backend
-
-O formulario esta em `src/components/ContactForm.astro` com validacao HTML e JavaScript basico. Por seguranca, o envio fica desabilitado ate que `PUBLIC_CONTACT_ENDPOINT` contenha a URL HTTPS de um backend.
-
-Para integrar com FastAPI ou Flask:
-
-1. Configure `PUBLIC_CONTACT_ENDPOINT=https://api.seudominio.com/leads`.
-2. No backend, aceite via `POST` os campos `name`, `email`, `whatsapp`, `interest`, `message` e `source`.
-3. Valide os campos, limite requisicoes, configure CORS para o dominio do site e armazene os dados conforme a LGPD.
-4. Retorne um redirecionamento para `/ibrcanaa/obrigado/` somente depois de salvar o contato.
-
-## SEO e performance
-
-- Meta title e description no `MainLayout.astro`.
-- Open Graph e Twitter Card basicos.
-- Apenas um H1 na pagina principal.
-- Secoes semanticas e conteudo escaneavel.
-- CSS gerado pelo Tailwind e JavaScript minimo.
-- Imagens com `alt`.
-
-## Pontos preparados
-
-- Eventos de analytics via `data-analytics`.
-- Fila placeholder para Meta Pixel em `MainLayout.astro`.
-- Depoimentos mockados em `src/data/landing.ts`.
-- Botao flutuante de WhatsApp.
-- Pagina de obrigado.
-
-## Melhorias futuras
-
-1. Substituir depoimentos mockados por relatos reais autorizados.
-2. Atualizar telefone, redes sociais e enderecos reais em `src/data/landing.ts`.
-3. Integrar formulario com FastAPI ou Flask.
-4. Configurar Google Analytics, Meta Pixel e eventos de conversao reais.
-5. Criar imagens sociais dedicadas para Open Graph.
-6. Rodar Lighthouse/PageSpeed depois do deploy e ajustar imagens, cache e fontes se necessario.
+O ambiente local usa SQLite. Quando houver hospedagem, a configuração poderá ser alterada para PostgreSQL sem mudar os modelos ou templates.

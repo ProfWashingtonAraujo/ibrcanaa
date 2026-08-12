@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Estude a Bíblia | IBR Canaã{% endblock %}{% block body_class %}member-body bible-body{% endblock %}
+{% block content %}
+<header class="member-nav portal-nav bible-nav"><a class="brand" href="{% url 'member_portal' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>MINHA JORNADA</small><strong>Estude a Bíblia</strong></span></a><div class="portal-nav-actions"><a href="{% url 'member_portal' %}">← Voltar ao portal</a><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="button button-outline-light">Sair</button></form></div></header>
+<main class="bible-shell">
+  <section class="bible-heading"><div><span class="eyebrow gold">Leitura e reflexão</span><h1>Palavra para sua jornada.</h1><p>Leia, favorite versículos e registre suas anotações pessoais.</p></div><div class="translation-badge"><small>Tradução</small><strong>João Ferreira de Almeida</strong><span>Domínio público</span></div></section>
+  <form method="get" class="bible-selector"><label><span>Livro</span><select name="livro" onchange="this.form.submit()">{% for slug, name, chapters in books %}<option value="{{ slug }}"{% if selected_book.0 == slug %} selected{% endif %}>{{ name }}</option>{% endfor %}</select></label><label><span>Capítulo</span><select name="capitulo" onchange="this.form.submit()">{% for number in chapter_numbers %}<option value="{{ number }}"{% if chapter_number == number %} selected{% endif %}>{{ number }}</option>{% endfor %}</select></label><button class="button button-gold" type="submit">Ler capítulo</button></form>
+  <div class="bible-layout">
+    <article class="bible-reader-card">
+      <header class="chapter-header"><div><span>{{ selected_book.1 }}</span><h2>Capítulo {{ chapter_number }}</h2></div><nav>{% if previous_chapter %}<a href="?livro={{ selected_book.0 }}&capitulo={{ previous_chapter }}">← Anterior</a>{% endif %}{% if next_chapter %}<a href="?livro={{ selected_book.0 }}&capitulo={{ next_chapter }}">Próximo →</a>{% endif %}</nav></header>
+      {% if chapter %}<div class="verses">{% for verse in chapter.verses %}<div class="verse" id="v{{ verse.verse }}"><sup>{{ verse.verse }}</sup><p>{{ verse.text|striptags }}</p><form method="post" action="{% url 'bible_favorite_toggle' %}">{% csrf_token %}<input type="hidden" name="book" value="{{ selected_book.0 }}"><input type="hidden" name="chapter" value="{{ chapter_number }}"><input type="hidden" name="verse" value="{{ verse.verse }}"><button type="submit" title="Favoritar versículo">☆</button></form></div>{% endfor %}</div>{% else %}<div class="bible-unavailable"><span>!</span><h3>Leitura indisponível no momento</h3><p>Verifique sua conexão e tente novamente. Suas anotações continuam seguras.</p></div>{% endif %}
+      <footer class="chapter-footer"><span>{{ chapter.translation_name|default:'João Ferreira de Almeida' }}</span><span>{{ chapter.translation_note|default:'Public Domain' }}</span><a href="https://bible-api.com" target="_blank" rel="noopener">Fonte: bible-api.com</a></footer>
+    </article>
+    <aside class="bible-study-side">
+      <article class="study-card" id="anotacao"><span class="eyebrow">Meu caderno</span><h2>Anotação de {{ selected_book.1 }} {{ chapter_number }}</h2><form method="post" action="{% url 'bible_note_save' %}">{% csrf_token %}<input type="hidden" name="book" value="{{ selected_book.0 }}"><input type="hidden" name="chapter" value="{{ chapter_number }}">{{ note_form.content }}<button class="button button-primary" type="submit">Salvar anotação</button></form><small>Visível somente para você.</small></article>
+      <article class="study-card"><span class="eyebrow">Favoritos</span><h2>Versículos guardados</h2><div class="saved-list">{% for favorite in recent_favorites %}<a href="{% url 'bible_reader' %}"><strong>{{ favorite.reference }}</strong><span>{{ favorite.text|truncatechars:90 }}</span></a>{% empty %}<p>Use a estrela ao lado de um versículo para guardá-lo.</p>{% endfor %}</div></article>
+      <article class="study-card"><span class="eyebrow">Anotações recentes</span><div class="note-links">{% for item in recent_notes %}<span><strong>{{ item.reference }}</strong><small>{{ item.updated_at|date:'d/m/Y' }}</small></span>{% empty %}<p>Suas reflexões aparecerão aqui.</p>{% endfor %}</div></article>
+    </aside>
+  </div>
+</main>
+<footer class="portal-footer bible-footer"><span>Adaptação inspirada no projeto EstudeBíblia, licença MIT.</span><span>Texto bíblico em domínio público.</span></footer>
+{% endblock %}

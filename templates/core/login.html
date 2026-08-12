@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Entrar | IBR Canaã{% endblock %}
+{% block body_class %}login-body{% endblock %}
+{% block content %}
+<main class="login-shell">
+  <section class="login-story"><a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><div><span class="eyebrow gold">Sistema integrado</span><h1>Cuidado, organização e transparência.</h1><p>Um ambiente seguro para membros, líderes e diretoria acompanharem a vida da igreja.</p></div><small>Ambiente local Django</small></section>
+  <section class="login-panel"><form method="post" class="login-card">{% csrf_token %}<span class="eyebrow">Acesso seguro</span><h2>Entre na sua conta</h2><p>Use suas credenciais para acessar o ambiente correspondente ao seu perfil.</p>{% if form.non_field_errors %}<div class="form-alert">Usuário ou senha inválidos.</div>{% endif %}{% crispy form %}<button class="button button-primary full-button" type="submit">Entrar no sistema</button><a class="back-link" href="{% url 'home' %}">← Voltar ao site</a></form></section>
+</main>
+{% endblock %}

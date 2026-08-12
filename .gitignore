@@ -8,6 +8,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.venv
+__pycache__/
+*.py[cod]
+db.sqlite3
+staticfiles/
+media/
 dist
 .astro
 dist-ssr
