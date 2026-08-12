@@ -3,11 +3,20 @@ from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from unittest.mock import patch
+from datetime import date
 
+from .bible import DAILY_VERSES, get_daily_verse
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
+    def test_daily_verse_changes_with_the_date(self):
+        first = get_daily_verse(date(2026, 8, 12))
+        second = get_daily_verse(date(2026, 8, 13))
+        self.assertNotEqual(first['reference'], second['reference'])
+        self.assertIn(first['reference'], {verse['reference'] for verse in DAILY_VERSES})
+        self.assertEqual(first['date'], '2026-08-12')
+
     def test_home_loads(self):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
@@ -86,6 +95,21 @@ class PublicViewsTests(TestCase):
             HTTP_ORIGIN='https://example.com',
         )
         self.assertNotIn('Access-Control-Allow-Origin', response.headers)
+
+    def test_home_and_public_feed_show_daily_verse(self):
+        home_response = self.client.get(reverse('home'))
+        verse = get_daily_verse()
+        self.assertContains(home_response, 'Versículo do dia')
+        self.assertContains(home_response, verse['text'])
+        self.assertContains(home_response, verse['reference'])
+
+        feed_response = self.client.get(
+            reverse('public_daily_verse'),
+            HTTP_ORIGIN='https://profwashingtonaraujo.github.io',
+        )
+        self.assertEqual(feed_response.json(), verse)
+        self.assertEqual(feed_response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
+        self.assertEqual(feed_response.headers['Cache-Control'], 'public, max-age=3600')
 
     def test_public_calendar_feed_exposes_only_public_event_details(self):
         from core.views import sync_calendar_event

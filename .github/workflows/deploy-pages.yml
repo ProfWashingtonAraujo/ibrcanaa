@@ -45,6 +45,7 @@ jobs:
           mkdir -p _site/assets
           cp pages/index.html _site/index.html
           cp pages/assets/app.css _site/assets/app.css
+          cp pages/assets/daily-verse.css _site/assets/daily-verse.css
           cp src/assets/logo.png _site/assets/logo.png
           cp src/assets/frente_igreja.png _site/assets/frente_igreja.png
           touch _site/.nojekyll

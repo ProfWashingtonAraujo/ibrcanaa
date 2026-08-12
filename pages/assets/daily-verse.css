@@ -1,0 +1,72 @@
+.daily-verse {
+  align-items: center;
+  background: linear-gradient(115deg, #0d2148, #07142f);
+  color: #fff;
+  display: grid;
+  gap: 34px;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  overflow: hidden;
+  padding: 80px clamp(24px, 7vw, 120px);
+  position: relative;
+}
+
+.daily-verse::after {
+  border: 1px solid rgb(217 170 71 / 18%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 55px rgb(217 170 71 / 3.5%), 0 0 0 110px rgb(217 170 71 / 2.5%);
+  content: "";
+  height: 380px;
+  position: absolute;
+  right: -180px;
+  top: -240px;
+  width: 380px;
+}
+
+.daily-verse-mark {
+  align-self: start;
+  color: #d9aa47;
+  font: 800 150px/1 Manrope, sans-serif;
+  opacity: .25;
+}
+
+.daily-verse-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.daily-verse-copy blockquote {
+  font: 700 clamp(1.7rem, 3.5vw, 2.9rem)/1.25 Manrope, sans-serif;
+  letter-spacing: -.035em;
+  margin: 0 0 20px;
+  max-width: 850px;
+}
+
+.daily-verse-copy cite {
+  color: #d9aa47;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.daily-verse-link {
+  border-bottom: 1px solid rgb(255 255 255 / 25%);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 14px;
+  padding: 16px 0;
+  position: relative;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+@media (max-width: 850px) {
+  .daily-verse { grid-template-columns: 70px 1fr; }
+  .daily-verse-mark { font-size: 100px; }
+  .daily-verse-link { grid-column: 2; width: max-content; }
+}
+
+@media (max-width: 560px) {
+  .daily-verse { grid-template-columns: 1fr; padding: 68px 22px; }
+  .daily-verse-mark { display: none; }
+  .daily-verse-link { grid-column: 1; }
+  .daily-verse-copy blockquote { font-size: 1.7rem; }
+}

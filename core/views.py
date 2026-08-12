@@ -16,7 +16,7 @@ from django.urls import reverse
 from django.utils import timezone
 from dal import autocomplete
 
-from .bible import BIBLE_BOOKS, fetch_chapter, get_book
+from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, Ministry, Transaction
@@ -76,6 +76,7 @@ def home(request):
         'form': form,
         'next_occurrence': next_occurrence,
         'public_ministries': Ministry.objects.all(),
+        'daily_verse': get_daily_verse(timezone.localdate()),
     })
 
 
@@ -91,6 +92,14 @@ def public_ministry_feed(request):
     ], safe=False)
     if request.headers.get('Origin') == 'https://profwashingtonaraujo.github.io':
         response['Access-Control-Allow-Origin'] = 'https://profwashingtonaraujo.github.io'
+    return response
+
+
+def public_daily_verse(request):
+    response = JsonResponse(get_daily_verse(timezone.localdate()))
+    if request.headers.get('Origin') == 'https://profwashingtonaraujo.github.io':
+        response['Access-Control-Allow-Origin'] = 'https://profwashingtonaraujo.github.io'
+    response['Cache-Control'] = 'public, max-age=3600'
     return response
 
 

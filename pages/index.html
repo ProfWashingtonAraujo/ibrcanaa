@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="assets/app.css">
+  <link rel="stylesheet" href="assets/daily-verse.css">
 </head>
 
 <body>
@@ -88,6 +89,10 @@
           </div>
         </article>
       </div>
+    </section>
+
+    <section class="daily-verse" id="versiculo-do-dia" data-feed-url="https://ibrcanaa.onrender.com/biblia/versiculo-do-dia/">
+      <div class="daily-verse-mark" aria-hidden="true">“</div><div class="daily-verse-copy reveal"><span class="eyebrow gold">Versículo do dia</span><blockquote data-verse-text>O Senhor é o meu pastor; nada me faltará.</blockquote><cite data-verse-reference>Salmos 23:1</cite></div><a class="daily-verse-link reveal" data-verse-link href="https://ibrcanaa.onrender.com/portal/biblia/">Ler e refletir <span aria-hidden="true">→</span></a>
     </section>
 
     <section class="section ministries" id="ministerios">
@@ -214,6 +219,18 @@
           card.append(number, status, name, leader, action);
           return card;
         }));
+      })
+      .catch(() => {});
+    const dailyVerse = document.getElementById('versiculo-do-dia');
+    fetch(dailyVerse.dataset.feedUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error('Não foi possível carregar o versículo do dia.');
+        return response.json();
+      })
+      .then((verse) => {
+        dailyVerse.querySelector('[data-verse-text]').textContent = verse.text;
+        dailyVerse.querySelector('[data-verse-reference]').textContent = verse.reference;
+        dailyVerse.querySelector('[data-verse-link]').href = `https://ibrcanaa.onrender.com/portal/biblia/?livro=${encodeURIComponent(verse.book)}&capitulo=${verse.chapter}#v${verse.verse}`;
       })
       .catch(() => {});
   </script>
