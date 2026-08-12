@@ -64,15 +64,21 @@ class PublicViewsTests(TestCase):
         Ministry.objects.create(
             name='Ação Social',
             leader_name='Ana Liderança',
+            description='Cuidado prático para famílias da comunidade.',
             status=Ministry.Status.RECRUITING,
         )
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Ação Social')
-        self.assertContains(response, 'Liderança: Ana Liderança')
+        self.assertContains(response, 'Cuidado prático para famílias da comunidade.')
+        self.assertNotContains(response, 'Ana Liderança')
         self.assertContains(response, 'PRECISA DE VOLUNTÁRIOS')
 
     def test_public_ministry_feed_exposes_only_card_data(self):
-        ministry = Ministry.objects.create(name='Louvor', leader_name='Líder Público')
+        ministry = Ministry.objects.create(
+            name='Louvor',
+            leader_name='Líder Privado',
+            description='Serviço da igreja por meio da música.',
+        )
         Member.objects.create(
             name='Pessoa Privada',
             email='privado@example.com',
@@ -87,10 +93,11 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
         self.assertEqual(response.json(), [{
             'name': 'Louvor',
-            'leader': 'Líder Público',
+            'description': 'Serviço da igreja por meio da música.',
             'status': Ministry.Status.ACTIVE,
             'statusLabel': 'Ativo',
         }])
+        self.assertNotContains(response, 'Líder Privado')
         self.assertNotContains(response, 'Pessoa Privada')
         self.assertNotContains(response, 'privado@example.com')
 
@@ -202,10 +209,15 @@ class AccessTests(TestCase):
         create_response = self.client.post(reverse('ministry_create'), {
             'name': 'Ação Social',
             'leader_name': 'Líder Social',
+            'description': 'Acolhimento e cuidado da comunidade.',
             'status': Ministry.Status.RECRUITING,
+            'members': [self.member_user.member_profile.pk],
         })
         self.assertRedirects(create_response, reverse('ministries'))
         ministry = Ministry.objects.get(name='Ação Social')
+        self.member_user.member_profile.refresh_from_db()
+        self.assertEqual(ministry.description, 'Acolhimento e cuidado da comunidade.')
+        self.assertEqual(self.member_user.member_profile.ministry, ministry)
 
         list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
         self.assertContains(list_response, 'Ação Social')
@@ -214,12 +226,17 @@ class AccessTests(TestCase):
         edit_response = self.client.post(reverse('ministry_edit', args=[ministry.pk]), {
             'name': 'Ação e Cuidado',
             'leader_name': 'Nova Liderança',
+            'description': 'Nova descrição pública.',
             'status': Ministry.Status.ACTIVE,
+            'members': [],
         })
         self.assertRedirects(edit_response, reverse('ministries'))
         ministry.refresh_from_db()
         self.assertEqual(ministry.name, 'Ação e Cuidado')
         self.assertEqual(ministry.leader_name, 'Nova Liderança')
+        self.assertEqual(ministry.description, 'Nova descrição pública.')
+        self.member_user.member_profile.refresh_from_db()
+        self.assertIsNone(self.member_user.member_profile.ministry)
 
         member = self.member_user.member_profile
         member.ministry = ministry

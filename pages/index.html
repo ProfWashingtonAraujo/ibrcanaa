@@ -274,11 +274,11 @@
           status.textContent = ministry.statusLabel.toUpperCase();
           const name = document.createElement('h3');
           name.textContent = ministry.name;
-          const leader = document.createElement('p');
-          leader.textContent = `Liderança: ${ministry.leader}`;
+          const description = document.createElement('p');
+          description.textContent = ministry.description || 'Um espaço para servir, crescer e viver em comunhão.';
           const action = document.createElement('i');
           action.textContent = ministry.status === 'recruiting' ? 'Quero servir' : 'Conhecer';
-          card.append(number, status, name, leader, action);
+          card.append(number, status, name, description, action);
           return card;
         }));
       })

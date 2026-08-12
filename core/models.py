@@ -40,6 +40,7 @@ class Ministry(models.Model):
 
     name = models.CharField('nome', max_length=120, unique=True)
     leader_name = models.CharField('líder', max_length=120)
+    description = models.TextField('descrição pública', blank=True, max_length=500)
     status = models.CharField('status', max_length=20, choices=Status, default=Status.ACTIVE)
 
     class Meta:

@@ -84,7 +84,7 @@ def public_ministry_feed(request):
     response = JsonResponse([
         {
             'name': ministry.name,
-            'leader': ministry.leader_name,
+            'description': ministry.description,
             'status': ministry.status,
             'statusLabel': ministry.get_status_display(),
         }
