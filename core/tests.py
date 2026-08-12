@@ -467,6 +467,8 @@ class AccessTests(TestCase):
         self.assertContains(response, 'Olá, Membro.')
         self.assertContains(response, 'R$ 150,00')
         self.assertContains(response, 'Minha frequência')
+        self.assertContains(response, 'tesouraria_001.png')
+        self.assertContains(response, 'Contribua também pelo QR Code')
 
     def test_member_contribution_updates_finance_dashboard(self):
         member = self.member_user.member_profile
