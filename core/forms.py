@@ -151,7 +151,7 @@ class MinistryForm(CrispyFormMixin, forms.ModelForm):
         queryset=Member.objects.none(),
         required=False,
         help_text='Informação interna. Estes nomes não serão exibidos publicamente.',
-        widget=forms.SelectMultiple(attrs={'size': 10}),
+        widget=forms.CheckboxSelectMultiple,
     )
     full_width_fields = {'description', 'members'}
 

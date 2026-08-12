@@ -222,6 +222,12 @@ class AccessTests(TestCase):
         list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
         self.assertContains(list_response, 'Ação Social')
         self.assertContains(list_response, 'Líder Social')
+        self.assertContains(list_response, '<strong>1</strong> participante', html=True)
+
+        form_response = self.client.get(reverse('ministry_edit', args=[ministry.pk]))
+        self.assertContains(form_response, 'type="checkbox"')
+        self.assertContains(form_response, 'Membro Teste')
+        self.assertIn(self.member_user.member_profile.pk, form_response.context['form']['members'].value())
 
         edit_response = self.client.post(reverse('ministry_edit', args=[ministry.pk]), {
             'name': 'Ação e Cuidado',
