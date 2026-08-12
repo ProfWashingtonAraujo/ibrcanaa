@@ -64,6 +64,7 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['ministry'].label = 'Ministério'
         if self.instance.pk and self.instance.user_id:
             self.fields['username'].initial = self.instance.user.username
             profile, _ = AccessProfile.objects.get_or_create(user=self.instance.user)

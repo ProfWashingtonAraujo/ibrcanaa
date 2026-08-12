@@ -283,6 +283,11 @@ class AccessTests(TestCase):
         self.assertContains(response, 'As senhas não coincidem')
         self.assertFalse(Member.objects.filter(email='divergente@example.com').exists())
 
+    def test_member_form_uses_portuguese_ministry_label(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.get(reverse('member_create'))
+        self.assertEqual(response.context['form'].fields['ministry'].label, 'Ministério')
+
     def test_staff_can_reset_member_password(self):
         self.client.login(username='staff', password='test-pass')
         member = self.member_user.member_profile
