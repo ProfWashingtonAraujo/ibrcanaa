@@ -1,0 +1,32 @@
+databases:
+  - name: ibrcanaa-db
+    plan: free
+    databaseName: ibrcanaa
+    user: ibrcanaa
+
+services:
+  - type: web
+    name: ibrcanaa
+    runtime: python
+    plan: starter
+    buildCommand: bash build.sh
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    healthCheckPath: /
+    autoDeploy: true
+    disk:
+      name: ibrcanaa-media
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_MEDIA_ROOT
+        value: /var/data/media
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ibrcanaa-db
+          property: connectionString

@@ -60,4 +60,24 @@ Troque essas senhas antes de utilizar dados reais.
 
 ## Banco de produção
 
-O ambiente local usa SQLite. Quando houver hospedagem, a configuração poderá ser alterada para PostgreSQL sem mudar os modelos ou templates.
+O ambiente local usa SQLite. Em produção no Render, o projeto usa PostgreSQL,
+Gunicorn e WhiteNoise através do Blueprint `render.yaml`.
+
+## Deploy no Render
+
+1. Faça push da branch `main` para o GitHub.
+2. No Render, escolha **New > Blueprint**.
+3. Conecte o repositório `ProfWashingtonAraujo/ibrcanaa`.
+4. Confirme os recursos definidos em `render.yaml`.
+5. Aguarde o build, migrations e início do Gunicorn.
+
+O serviço web usa o plano `starter` porque fotos de usuários precisam de disco
+persistente em `/var/data`. O banco PostgreSQL está configurado no plano gratuito.
+Uploads locais não são enviados ao Git e devem ser adicionados novamente após o
+primeiro deploy.
+
+Depois do deploy, crie o primeiro administrador no Shell do Render:
+
+```bash
+python manage.py createsuperuser
+```
