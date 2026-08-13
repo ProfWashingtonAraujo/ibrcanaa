@@ -211,42 +211,37 @@ class AccessTests(TestCase):
             'leader_name': 'Líder Social',
             'description': 'Acolhimento e cuidado da comunidade.',
             'status': Ministry.Status.RECRUITING,
-            'members': [self.member_user.member_profile.pk],
         })
         self.assertRedirects(create_response, reverse('ministries'))
         ministry = Ministry.objects.get(name='Ação Social')
-        self.member_user.member_profile.refresh_from_db()
         self.assertEqual(ministry.description, 'Acolhimento e cuidado da comunidade.')
-        self.assertEqual(self.member_user.member_profile.ministry, ministry)
 
         list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
         self.assertContains(list_response, 'Ação Social')
         self.assertContains(list_response, 'Líder Social')
-        self.assertContains(list_response, '<strong>1</strong> participante', html=True)
+        self.assertContains(list_response, '<strong>0</strong> participantes', html=True)
 
         form_response = self.client.get(reverse('ministry_edit', args=[ministry.pk]))
-        self.assertContains(form_response, 'type="checkbox"')
-        self.assertContains(form_response, 'Membro Teste')
-        self.assertIn(self.member_user.member_profile.pk, form_response.context['form']['members'].value())
+        self.assertNotIn('members', form_response.context['form'].fields)
+
+        member = self.member_user.member_profile
+        member.ministry = ministry
+        member.save(update_fields=['ministry'])
+        list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
+        self.assertContains(list_response, '<strong>1</strong> participante', html=True)
 
         edit_response = self.client.post(reverse('ministry_edit', args=[ministry.pk]), {
             'name': 'Ação e Cuidado',
             'leader_name': 'Nova Liderança',
             'description': 'Nova descrição pública.',
             'status': Ministry.Status.ACTIVE,
-            'members': [],
         })
         self.assertRedirects(edit_response, reverse('ministries'))
         ministry.refresh_from_db()
         self.assertEqual(ministry.name, 'Ação e Cuidado')
         self.assertEqual(ministry.leader_name, 'Nova Liderança')
         self.assertEqual(ministry.description, 'Nova descrição pública.')
-        self.member_user.member_profile.refresh_from_db()
-        self.assertIsNone(self.member_user.member_profile.ministry)
 
-        member = self.member_user.member_profile
-        member.ministry = ministry
-        member.save(update_fields=['ministry'])
         delete_response = self.client.post(reverse('ministry_delete', args=[ministry.pk]))
         self.assertRedirects(delete_response, reverse('ministries'))
         member.refresh_from_db()
@@ -267,11 +262,12 @@ class AccessTests(TestCase):
 
     def test_staff_creates_member_with_individual_login(self):
         self.client.login(username='staff', password='test-pass')
+        ministry = Ministry.objects.create(name='Recepção', leader_name='Líder')
         response = self.client.post(reverse('member_create'), {
             'name': 'Nova Pessoa',
             'email': 'nova@example.com',
             'phone': '85999999999',
-            'ministry': '',
+            'ministry': ministry.pk,
             'status': Member.Status.ACTIVE,
             'frequency': 70,
             'baptized': '',
@@ -284,6 +280,7 @@ class AccessTests(TestCase):
         self.assertRedirects(response, reverse('members'))
         member = Member.objects.get(email='nova@example.com')
         self.assertEqual(member.user.username, 'nova.pessoa')
+        self.assertEqual(member.ministry, ministry)
         self.client.logout()
         login_response = self.client.post(reverse('login'), {
             'username': 'nova.pessoa',

@@ -146,32 +146,11 @@ class EventForm(CrispyFormMixin, forms.ModelForm):
 
 
 class MinistryForm(CrispyFormMixin, forms.ModelForm):
-    members = forms.ModelMultipleChoiceField(
-        label='Membros participantes',
-        queryset=Member.objects.none(),
-        required=False,
-        help_text='Informação interna. Estes nomes não serão exibidos publicamente.',
-        widget=forms.CheckboxSelectMultiple,
-    )
-    full_width_fields = {'description', 'members'}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['members'].queryset = Member.objects.select_related('ministry').order_by('name')
-        if self.instance.pk:
-            self.fields['members'].initial = self.instance.members.all()
-
-    def save(self, commit=True):
-        ministry = super().save(commit=commit)
-        if commit:
-            selected_members = self.cleaned_data['members']
-            ministry.members.exclude(pk__in=selected_members).update(ministry=None)
-            selected_members.update(ministry=ministry)
-        return ministry
+    full_width_fields = {'description'}
 
     class Meta:
         model = Ministry
-        fields = ['name', 'leader_name', 'description', 'status', 'members']
+        fields = ['name', 'leader_name', 'description', 'status']
         widgets = {
             'description': forms.Textarea(attrs={
                 'rows': 4,
