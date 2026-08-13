@@ -18,8 +18,8 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
+from .forms import BibleNoteForm, ContactLeadForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -396,6 +396,99 @@ def ministry_delete(request, pk):
     ministry.delete()
     messages.success(request, 'Ministério excluído com sucesso.')
     return redirect('ministries')
+
+
+@staff_required
+def courses(request):
+    courses_query = Course.objects.annotate(lesson_count=Count('lessons'))
+    search = request.GET.get('q', '').strip()
+    if search:
+        courses_query = courses_query.filter(Q(title__icontains=search) | Q(instructor__icontains=search))
+    return render(request, 'core/courses.html', {
+        'courses': courses_query,
+        'search': search,
+        'course_count': Course.objects.count(),
+        'published_count': Course.objects.filter(published=True).count(),
+        'lesson_count': Lesson.objects.count(),
+    })
+
+
+@staff_required
+def course_form(request, pk=None):
+    instance = get_object_or_404(Course, pk=pk) if pk else None
+    form = CourseForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        course = form.save()
+        messages.success(request, 'Curso salvo com sucesso.')
+        return redirect('course_manage', pk=course.pk)
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar curso' if instance else 'Novo curso',
+        'back_url': 'courses',
+    })
+
+
+@staff_required
+def course_manage(request, pk):
+    course = get_object_or_404(Course.objects.prefetch_related('lessons'), pk=pk)
+    return render(request, 'core/course_manage.html', {'course': course})
+
+
+@staff_required
+def course_delete(request, pk):
+    course = get_object_or_404(Course, pk=pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para excluir.')
+    course.delete()
+    messages.success(request, 'Curso excluído com sucesso.')
+    return redirect('courses')
+
+
+@staff_required
+def lesson_form(request, course_pk, pk=None):
+    course = get_object_or_404(Course, pk=course_pk)
+    instance = get_object_or_404(Lesson, pk=pk, course=course) if pk else None
+    form = LessonForm(request.POST or None, instance=instance, course=course)
+    if request.method == 'POST' and form.is_valid():
+        lesson = form.save(commit=False)
+        lesson.course = course
+        lesson.save()
+        messages.success(request, 'Aula salva com sucesso.')
+        return redirect('course_manage', pk=course.pk)
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar aula' if instance else f'Nova aula: {course.title}',
+        'back_url': 'course_manage',
+        'back_url_arg': course.pk,
+    })
+
+
+@staff_required
+def lesson_delete(request, course_pk, pk):
+    lesson = get_object_or_404(Lesson, pk=pk, course_id=course_pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para excluir.')
+    lesson.delete()
+    messages.success(request, 'Aula excluída com sucesso.')
+    return redirect('course_manage', pk=course_pk)
+
+
+@login_required
+def member_courses(request):
+    courses_query = Course.objects.filter(published=True).prefetch_related('lessons')
+    return render(request, 'core/member_courses.html', {'courses': courses_query})
+
+
+@login_required
+def member_course_detail(request, pk, lesson_pk=None):
+    course = get_object_or_404(Course.objects.prefetch_related('lessons'), pk=pk, published=True)
+    lessons = list(course.lessons.all())
+    selected_lesson = get_object_or_404(course.lessons, pk=lesson_pk) if lesson_pk else (lessons[0] if lessons else None)
+    return render(request, 'core/member_course_detail.html', {
+        'course': course,
+        'lessons': lessons,
+        'selected_lesson': selected_lesson,
+    })
 
 
 @staff_required

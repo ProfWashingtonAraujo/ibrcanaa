@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -355,6 +355,43 @@ class MinistryForm(CrispyFormMixin, forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Apresente o propósito e as atividades do ministério.',
             }),
+        }
+
+
+class CourseForm(CrispyFormMixin, forms.ModelForm):
+    full_width_fields = {'title', 'description', 'cover_url', 'published'}
+
+    class Meta:
+        model = Course
+        fields = ['title', 'description', 'instructor', 'cover_url', 'published']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Apresente o conteúdo e os objetivos do curso.'}),
+            'cover_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+        }
+
+
+class LessonForm(CrispyFormMixin, forms.ModelForm):
+    full_width_fields = {'title', 'youtube_url', 'description'}
+
+    def __init__(self, *args, course=None, **kwargs):
+        self.course = course
+        super().__init__(*args, **kwargs)
+
+    def clean_position(self):
+        position = self.cleaned_data['position']
+        lessons = Lesson.objects.filter(course=self.course, position=position)
+        if self.instance.pk:
+            lessons = lessons.exclude(pk=self.instance.pk)
+        if lessons.exists():
+            raise ValidationError('Já existe uma aula nesta ordem.')
+        return position
+
+    class Meta:
+        model = Lesson
+        fields = ['title', 'youtube_url', 'position', 'description']
+        widgets = {
+            'youtube_url': forms.URLInput(attrs={'placeholder': 'https://www.youtube.com/watch?v=...'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
         }
 
 

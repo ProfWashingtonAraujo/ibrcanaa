@@ -7,7 +7,7 @@ from unittest.mock import patch
 from datetime import date, timedelta
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -166,7 +166,7 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-symbol"><svg', count=7)
+        self.assertContains(response, 'class="nav-symbol"><svg', count=8)
         self.assertContains(response, 'class="mobile-logout"')
         self.assertContains(response, 'aria-label="Sair do sistema"')
 
@@ -529,6 +529,70 @@ class AccessTests(TestCase):
         response = self.client.get(reverse('member_portal'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Membro Teste')
+
+    def test_staff_can_create_course_and_youtube_lesson(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.post(reverse('course_create'), {
+            'title': 'Fundamentos da Fé',
+            'description': 'Uma introdução às doutrinas cristãs.',
+            'instructor': 'Pr. Teste',
+            'cover_url': '',
+            'published': 'on',
+        })
+        course = Course.objects.get(title='Fundamentos da Fé')
+        self.assertRedirects(response, reverse('course_manage', args=[course.pk]))
+
+        response = self.client.post(reverse('lesson_create', args=[course.pk]), {
+            'title': 'A salvação',
+            'youtube_url': 'https://youtu.be/jiIRdV-4rUE',
+            'position': 1,
+            'description': 'Graça e fé.',
+        })
+        self.assertRedirects(response, reverse('course_manage', args=[course.pk]))
+        lesson = course.lessons.get()
+        self.assertEqual(lesson.youtube_id, 'jiIRdV-4rUE')
+        self.assertEqual(lesson.embed_url, 'https://www.youtube-nocookie.com/embed/jiIRdV-4rUE')
+
+    def test_lesson_rejects_invalid_youtube_url_and_duplicate_position(self):
+        course = Course.objects.create(title='Curso', description='Descrição')
+        Lesson.objects.create(
+            course=course, title='Primeira', youtube_url='https://www.youtube.com/watch?v=jiIRdV-4rUE', position=1,
+        )
+        self.client.login(username='staff', password='test-pass')
+        invalid = self.client.post(reverse('lesson_create', args=[course.pk]), {
+            'title': 'Inválida', 'youtube_url': 'https://example.com/video', 'position': 2,
+        })
+        self.assertContains(invalid, 'Informe uma URL válida de vídeo do YouTube.')
+        duplicate = self.client.post(reverse('lesson_create', args=[course.pk]), {
+            'title': 'Duplicada', 'youtube_url': 'https://youtu.be/MlocoEhWjAs', 'position': 1,
+        })
+        self.assertContains(duplicate, 'Já existe uma aula nesta ordem.')
+        self.assertEqual(course.lessons.count(), 1)
+
+    def test_member_sees_only_published_courses_and_can_watch_lesson(self):
+        published = Course.objects.create(title='Curso publicado', description='Disponível', published=True)
+        lesson = Lesson.objects.create(
+            course=published, title='Aula disponível', youtube_url='https://www.youtube.com/watch?v=jiIRdV-4rUE', position=1,
+        )
+        draft = Course.objects.create(title='Curso secreto', description='Rascunho', published=False)
+        self.client.login(username='member', password='test-pass')
+        catalog = self.client.get(reverse('member_courses'))
+        self.assertContains(catalog, published.title)
+        self.assertNotContains(catalog, draft.title)
+        classroom = self.client.get(reverse('member_course_lesson', args=[published.pk, lesson.pk]))
+        self.assertContains(classroom, 'youtube-nocookie.com/embed/jiIRdV-4rUE')
+        self.assertContains(classroom, lesson.title)
+        self.assertEqual(self.client.get(reverse('member_course_detail', args=[draft.pk])).status_code, 404)
+
+    def test_course_areas_require_the_correct_access(self):
+        self.assertRedirects(
+            self.client.get(reverse('member_courses')),
+            f"{reverse('login')}?next={reverse('member_courses')}",
+        )
+        self.client.login(username='member', password='test-pass')
+        response = self.client.get(reverse('courses'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, f"{reverse('login')}?next={reverse('courses')}")
 
     def test_member_portal_shows_personal_summary(self):
         Transaction.objects.create(
