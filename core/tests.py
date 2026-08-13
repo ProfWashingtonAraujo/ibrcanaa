@@ -168,6 +168,34 @@ class AccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="nav-symbol"><svg', count=7)
 
+    def test_pastor_cannot_access_or_see_financial_data(self):
+        pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+        Transaction.objects.create(
+            date='2026-08-12', description='Valor confidencial', category='Dízimos',
+            kind=Transaction.Kind.INCOME, amount='9876.54',
+        )
+        self.client.login(username='pastor.finance', password='test-pass')
+
+        dashboard = self.client.get(reverse('dashboard'))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertFalse(dashboard.context['show_finances'])
+        self.assertNotIn('balance', dashboard.context)
+        self.assertNotContains(dashboard, 'Financeiro')
+        self.assertNotContains(dashboard, 'Movimentação atual')
+        self.assertNotContains(dashboard, '9876,54')
+
+        reports = self.client.get(reverse('reports'))
+        self.assertEqual(reports.status_code, 200)
+        self.assertNotContains(reports, 'Saldo financeiro')
+        self.assertNotContains(reports, '9876,54')
+        self.assertEqual(self.client.get(reverse('finance')).status_code, 403)
+        self.assertEqual(self.client.get(reverse('transaction_create')).status_code, 403)
+
+        self.client.logout()
+        self.client.login(username='staff', password='test-pass')
+        self.assertEqual(self.client.get(reverse('finance')).status_code, 200)
+
     def test_members_can_be_searched_and_filtered(self):
         ministry = Ministry.objects.create(name='Louvor', leader_name='Líder')
         member = Member.objects.create(

@@ -58,6 +58,17 @@ def pastor_required(view):
     return wrapped
 
 
+def financial_access_required(view):
+    @wraps(view)
+    @login_required
+    def wrapped(request, *args, **kwargs):
+        role = AccessProfile.objects.filter(user=request.user).values_list('role', flat=True).first()
+        if not request.user.is_staff or role == AccessProfile.Role.PASTOR:
+            return HttpResponseForbidden('O perfil Pastor não possui acesso à área financeira.')
+        return view(request, *args, **kwargs)
+    return wrapped
+
+
 class MemberAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         can_manage = self.request.user.is_authenticated and (
@@ -174,28 +185,32 @@ def logout_view(request):
     return HttpResponseForbidden('Use POST para sair.')
 
 
-def dashboard_context():
+def dashboard_context(user=None):
     active_statuses = [Member.Status.ACTIVE, Member.Status.LEADERSHIP]
     members = Member.objects.prefetch_related('ministries')
-    transactions = Transaction.objects.all()
-    income = transactions.filter(kind=Transaction.Kind.INCOME).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    expense = transactions.filter(kind=Transaction.Kind.EXPENSE).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    return {
+    show_finances = not user or not AccessProfile.objects.filter(
+        user=user, role=AccessProfile.Role.PASTOR,
+    ).exists()
+    context = {
         'member_count': members.count(),
         'active_count': members.filter(status__in=active_statuses).count(),
         'visitor_count': members.filter(status__in=[Member.Status.VISITOR, Member.Status.NEW]).count(),
         'average_frequency': round(members.aggregate(avg=Avg('frequency'))['avg'] or 0),
         'event_count': Event.objects.count(),
-        'income': income,
-        'expense': expense,
-        'balance': income - expense,
+        'show_finances': show_finances,
         'upcoming_events': Event.objects.filter(starts_at__gte=timezone.now())[:4],
     }
+    if show_finances:
+        transactions = Transaction.objects.all()
+        income = transactions.filter(kind=Transaction.Kind.INCOME).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        expense = transactions.filter(kind=Transaction.Kind.EXPENSE).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        context.update({'income': income, 'expense': expense, 'balance': income - expense})
+    return context
 
 
 @staff_required
 def dashboard(request):
-    context = dashboard_context()
+    context = dashboard_context(request.user)
     context['recent_members'] = Member.objects.prefetch_related('ministries')[:5]
     context['attendance_chart'] = attendance_chart(Member.objects.all())
     return render(request, 'core/dashboard.html', context)
@@ -203,7 +218,7 @@ def dashboard(request):
 
 @staff_required
 def members(request):
-    context = dashboard_context()
+    context = dashboard_context(request.user)
     members_query = Member.objects.prefetch_related('ministries')
     search = request.GET.get('q', '').strip()
     selected_status = request.GET.get('status', '').strip()
@@ -387,7 +402,7 @@ def ministry_delete(request, pk):
 def events(request):
     return render(request, 'core/events.html', {
         'event_kinds': Event.objects.order_by('kind').values_list('kind', flat=True).distinct(),
-        **dashboard_context(),
+        **dashboard_context(request.user),
     })
 
 
@@ -492,9 +507,9 @@ def sync_calendar_event(event):
         event.save(update_fields=['calendar_event'])
 
 
-@staff_required
+@financial_access_required
 def finance(request):
-    context = dashboard_context()
+    context = dashboard_context(request.user)
     transactions = Transaction.objects.select_related('member')
     category_totals = transactions.values('category').annotate(total=Sum('amount')).order_by('-total')
     context.update({
@@ -506,7 +521,7 @@ def finance(request):
     return render(request, 'core/finance.html', context)
 
 
-@staff_required
+@financial_access_required
 def transaction_form(request):
     form = TransactionForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -518,7 +533,7 @@ def transaction_form(request):
 
 @staff_required
 def reports(request):
-    context = dashboard_context()
+    context = dashboard_context(request.user)
     context['ministries'] = Ministry.objects.annotate(member_count=Count('members'))
     context['contacts_pending'] = ContactLead.objects.filter(contacted=False).count()
     context['reports_chart'] = reports_chart(Member.objects.all())
