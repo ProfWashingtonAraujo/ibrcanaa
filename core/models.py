@@ -64,7 +64,7 @@ class Member(models.Model):
     name = models.CharField('nome', max_length=120)
     email = models.EmailField('e-mail', unique=True)
     phone = models.CharField('telefone', max_length=30, blank=True)
-    ministry = models.ForeignKey(Ministry, on_delete=models.SET_NULL, null=True, blank=True, related_name='members')
+    ministries = models.ManyToManyField(Ministry, blank=True, related_name='members', verbose_name='ministérios')
     status = models.CharField('status', max_length=20, choices=Status, default=Status.ACTIVE)
     frequency = models.PositiveSmallIntegerField('frequência', default=0)
     baptized = models.BooleanField('batizado', default=False)

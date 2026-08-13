@@ -5,9 +5,13 @@ from .models import AccessProfile, ContactLead, Event, Member, Ministry, Transac
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'status', 'ministry', 'frequency']
-    list_filter = ['status', 'ministry', 'baptized']
+    list_display = ['name', 'email', 'status', 'ministry_names', 'frequency']
+    list_filter = ['status', 'ministries', 'baptized']
     search_fields = ['name', 'email']
+
+    @admin.display(description='ministérios')
+    def ministry_names(self, member):
+        return ', '.join(member.ministries.values_list('name', flat=True)) or '-'
 
 
 @admin.register(Transaction)

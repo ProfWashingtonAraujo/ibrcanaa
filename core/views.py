@@ -162,7 +162,7 @@ def logout_view(request):
 
 def dashboard_context():
     active_statuses = [Member.Status.ACTIVE, Member.Status.LEADERSHIP]
-    members = Member.objects.select_related('ministry')
+    members = Member.objects.prefetch_related('ministries')
     transactions = Transaction.objects.all()
     income = transactions.filter(kind=Transaction.Kind.INCOME).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     expense = transactions.filter(kind=Transaction.Kind.EXPENSE).aggregate(total=Sum('amount'))['total'] or Decimal('0')
@@ -182,7 +182,7 @@ def dashboard_context():
 @staff_required
 def dashboard(request):
     context = dashboard_context()
-    context['recent_members'] = Member.objects.select_related('ministry')[:5]
+    context['recent_members'] = Member.objects.prefetch_related('ministries')[:5]
     context['attendance_chart'] = attendance_chart(Member.objects.all())
     return render(request, 'core/dashboard.html', context)
 
@@ -190,7 +190,7 @@ def dashboard(request):
 @staff_required
 def members(request):
     context = dashboard_context()
-    members_query = Member.objects.select_related('ministry')
+    members_query = Member.objects.prefetch_related('ministries')
     search = request.GET.get('q', '').strip()
     selected_status = request.GET.get('status', '').strip()
     selected_ministry = request.GET.get('ministry', '').strip()
@@ -201,7 +201,7 @@ def members(request):
     if selected_status:
         members_query = members_query.filter(status=selected_status)
     if selected_ministry.isdigit():
-        members_query = members_query.filter(ministry_id=selected_ministry)
+        members_query = members_query.filter(ministries__id=selected_ministry)
 
     context.update({
         'members': Paginator(members_query, 12).get_page(request.GET.get('page')),
@@ -245,7 +245,7 @@ def ministries(request):
         'filtered_count': ministries_query.count(),
         'active_count': Ministry.objects.filter(status=Ministry.Status.ACTIVE).count(),
         'recruiting_count': Ministry.objects.filter(status=Ministry.Status.RECRUITING).count(),
-        'member_total': Member.objects.filter(ministry__isnull=False).count(),
+        'member_total': Member.objects.filter(ministries__isnull=False).distinct().count(),
         'search': search,
         'selected_status': selected_status,
         'status_choices': Ministry.Status.choices,

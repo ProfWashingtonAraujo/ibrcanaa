@@ -60,11 +60,10 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         required=False,
         widget=forms.PasswordInput,
     )
-    full_width_fields = {'photo', 'username'}
+    full_width_fields = {'ministries', 'photo', 'username'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['ministry'].label = 'Ministério'
         if self.instance.pk and self.instance.user_id:
             self.fields['username'].initial = self.instance.user.username
             profile, _ = AccessProfile.objects.get_or_create(user=self.instance.user)
@@ -87,6 +86,12 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         if users.exists():
             raise ValidationError('Este usuário já está em uso.')
         return username
+
+    def clean_ministries(self):
+        ministries = self.cleaned_data['ministries']
+        if ministries.count() > 3:
+            raise ValidationError('Selecione no máximo 3 ministérios.')
+        return ministries
 
     def clean(self):
         cleaned_data = super().clean()
@@ -130,7 +135,8 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 
     class Meta:
         model = Member
-        fields = ['name', 'email', 'phone', 'ministry', 'status', 'frequency', 'baptized']
+        fields = ['name', 'email', 'phone', 'ministries', 'status', 'frequency', 'baptized']
+        widgets = {'ministries': forms.CheckboxSelectMultiple}
 
 
 class EventForm(CrispyFormMixin, forms.ModelForm):
@@ -240,7 +246,7 @@ class UserAccountForm(CrispyFormMixin, forms.ModelForm):
         else:
             self.fields['password1'].required = True
             self.fields['password2'].required = True
-        self.fields['member'].queryset = available_members.select_related('ministry')
+        self.fields['member'].queryset = available_members
 
     def clean_photo(self):
         photo = self.cleaned_data.get('photo')

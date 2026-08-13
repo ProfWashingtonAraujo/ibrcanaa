@@ -49,3 +49,5 @@
 .nav-symbol svg{width:19px;height:19px;fill:currentColor}.sidebar-nav a:hover .nav-symbol{background:#e8eef9;color:#173984}.sidebar-nav a.active .nav-symbol{color:#173984}
 
 .form-grid>.mb-3,.form-grid>.full{align-content:start}
+
+#div_id_ministries>fieldset>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;border:1px solid var(--line);border-radius:16px;background:#f7f9fc}#div_id_ministries .form-check{display:flex;align-items:center;gap:10px;min-height:46px;padding:10px 13px;border:1px solid #dfe5ef;border-radius:12px;background:white}#div_id_ministries .form-check:has(input:checked){border-color:var(--blue);background:#edf2fb;box-shadow:0 0 0 2px rgba(23,57,132,.08)}#div_id_ministries .form-check-input{flex:0 0 20px;margin:0}#div_id_ministries .form-check-label{font-size:13px;cursor:pointer}@media(max-width:900px){#div_id_ministries>fieldset>div{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){#div_id_ministries>fieldset>div{grid-template-columns:1fr}}

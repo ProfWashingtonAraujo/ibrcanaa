@@ -47,11 +47,11 @@ class Command(BaseCommand):
         for name, email, ministry, status, frequency, baptized in member_rows:
             members[name], _ = Member.objects.update_or_create(email=email, defaults={
                 'name': name,
-                'ministry': ministries.get(ministry),
                 'status': status,
                 'frequency': frequency,
                 'baptized': baptized,
             })
+            members[name].ministries.set([ministries[ministry]] if ministry else [])
 
         member_user, _ = User.objects.get_or_create(username='membro', defaults={'first_name': 'João', 'last_name': 'Silva', 'email': 'joao.silva@email.com'})
         member_user.set_password('Membro@2026')

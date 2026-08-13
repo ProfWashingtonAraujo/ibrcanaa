@@ -79,12 +79,12 @@ class PublicViewsTests(TestCase):
             leader_name='Líder Privado',
             description='Serviço da igreja por meio da música.',
         )
-        Member.objects.create(
+        member = Member.objects.create(
             name='Pessoa Privada',
             email='privado@example.com',
             phone='85999999999',
-            ministry=ministry,
         )
+        member.ministries.add(ministry)
         response = self.client.get(
             reverse('public_ministry_feed'),
             HTTP_ORIGIN='https://profwashingtonaraujo.github.io',
@@ -169,14 +169,14 @@ class AccessTests(TestCase):
 
     def test_members_can_be_searched_and_filtered(self):
         ministry = Ministry.objects.create(name='Louvor', leader_name='Líder')
-        Member.objects.create(
+        member = Member.objects.create(
             name='Ana Oliveira',
             email='ana@example.com',
             phone='85999990000',
-            ministry=ministry,
             status=Member.Status.LEADERSHIP,
             frequency=90,
         )
+        member.ministries.add(ministry)
         Member.objects.create(name='Bruno Lima', email='bruno@example.com', status=Member.Status.AWAY)
         self.client.login(username='staff', password='test-pass')
 
@@ -225,8 +225,7 @@ class AccessTests(TestCase):
         self.assertNotIn('members', form_response.context['form'].fields)
 
         member = self.member_user.member_profile
-        member.ministry = ministry
-        member.save(update_fields=['ministry'])
+        member.ministries.add(ministry)
         list_response = self.client.get(reverse('ministries'), {'q': 'Social'})
         self.assertContains(list_response, '<strong>1</strong> participante', html=True)
 
@@ -245,7 +244,7 @@ class AccessTests(TestCase):
         delete_response = self.client.post(reverse('ministry_delete', args=[ministry.pk]))
         self.assertRedirects(delete_response, reverse('ministries'))
         member.refresh_from_db()
-        self.assertIsNone(member.ministry)
+        self.assertFalse(member.ministries.exists())
 
     def test_ministry_delete_rejects_get(self):
         ministry = Ministry.objects.create(name='Protegido', leader_name='Líder')
@@ -267,7 +266,7 @@ class AccessTests(TestCase):
             'name': 'Nova Pessoa',
             'email': 'nova@example.com',
             'phone': '85999999999',
-            'ministry': ministry.pk,
+            'ministries': [ministry.pk],
             'status': Member.Status.ACTIVE,
             'frequency': 70,
             'baptized': '',
@@ -280,7 +279,7 @@ class AccessTests(TestCase):
         self.assertRedirects(response, reverse('members'))
         member = Member.objects.get(email='nova@example.com')
         self.assertEqual(member.user.username, 'nova.pessoa')
-        self.assertEqual(member.ministry, ministry)
+        self.assertQuerySetEqual(member.ministries.all(), [ministry])
         self.client.logout()
         login_response = self.client.post(reverse('login'), {
             'username': 'nova.pessoa',
@@ -303,10 +302,33 @@ class AccessTests(TestCase):
         self.assertContains(response, 'As senhas não coincidem')
         self.assertFalse(Member.objects.filter(email='divergente@example.com').exists())
 
-    def test_member_form_uses_portuguese_ministry_label(self):
+    def test_member_form_uses_ministry_checkboxes(self):
         self.client.login(username='staff', password='test-pass')
+        Ministry.objects.create(name='Louvor', leader_name='Líder')
         response = self.client.get(reverse('member_create'))
-        self.assertEqual(response.context['form'].fields['ministry'].label, 'Ministério')
+        field = response.context['form'].fields['ministries']
+        self.assertEqual(field.label, 'Ministérios')
+        self.assertContains(response, 'type="checkbox"')
+
+    def test_member_form_limits_ministries_to_three(self):
+        self.client.login(username='staff', password='test-pass')
+        ministries = [
+            Ministry.objects.create(name=f'Ministério {index}', leader_name='Líder')
+            for index in range(4)
+        ]
+        response = self.client.post(reverse('member_create'), {
+            'name': 'Muitos Ministérios',
+            'email': 'muitos@example.com',
+            'ministries': [ministry.pk for ministry in ministries],
+            'status': Member.Status.ACTIVE,
+            'frequency': 50,
+            'username': 'muitos.ministerios',
+            'password1': 'SenhaForte@2026',
+            'password2': 'SenhaForte@2026',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Selecione no máximo 3 ministérios.')
+        self.assertFalse(Member.objects.filter(email='muitos@example.com').exists())
 
     def test_staff_can_reset_member_password(self):
         self.client.login(username='staff', password='test-pass')
@@ -315,7 +337,7 @@ class AccessTests(TestCase):
             'name': member.name,
             'email': member.email,
             'phone': '',
-            'ministry': '',
+            'ministries': [],
             'status': member.status,
             'frequency': member.frequency,
             'baptized': '',
@@ -336,7 +358,7 @@ class AccessTests(TestCase):
             'name': member.name,
             'email': member.email,
             'phone': '85999990000',
-            'ministry': '',
+            'ministries': [],
             'status': member.status,
             'frequency': member.frequency,
             'baptized': '',
@@ -363,7 +385,7 @@ class AccessTests(TestCase):
             'name': member.name,
             'email': member.email,
             'phone': '',
-            'ministry': '',
+            'ministries': [],
             'status': member.status,
             'frequency': member.frequency,
             'baptized': '',
@@ -381,7 +403,7 @@ class AccessTests(TestCase):
             'name': member.name,
             'email': member.email,
             'phone': '',
-            'ministry': '',
+            'ministries': [],
             'status': member.status,
             'frequency': member.frequency,
             'baptized': '',
