@@ -9,6 +9,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import AccessProfile, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
 
@@ -189,6 +190,47 @@ class MembershipApplicationForm(forms.Form):
             for name, value in self.cleaned_data.items() if name in self.pastoral_fields
         }
         application.save()
+        return application
+
+
+class MembershipCandidateForm(MembershipApplicationForm):
+    consent = forms.BooleanField(
+        label='Declaro que forneço estas informações voluntariamente e autorizo seu uso exclusivo no processo pastoral de membresia.',
+        required=True,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('status')
+        for name in self.pastoral_fields:
+            self.fields.pop(name)
+        self.fields['consent'] = self.base_fields['consent']
+
+    @property
+    def sections(self):
+        return [
+            (title, description, [self[name] for name, _, _ in definitions])
+            for title, description, definitions in self.section_definitions
+            if title != 'Preenchimento pastoral'
+        ]
+
+    def save(self):
+        application = self.instance
+        application.candidate_name = self.cleaned_data['candidate_name']
+        application.candidate_email = self.cleaned_data['candidate_email']
+        application.form_date = self.cleaned_data['form_date']
+        application.responses = {
+            name: value.isoformat() if hasattr(value, 'isoformat') else value
+            for name, value in self.cleaned_data.items()
+            if name not in {'candidate_name', 'candidate_email', 'form_date', 'consent'}
+        }
+        application.status = MembershipApplication.Status.REVIEW
+        application.submitted_at = timezone.now()
+        application.consented_at = application.submitted_at
+        application.save(update_fields=[
+            'candidate_name', 'candidate_email', 'form_date', 'responses', 'status',
+            'submitted_at', 'consented_at', 'updated_at',
+        ])
         return application
 
 

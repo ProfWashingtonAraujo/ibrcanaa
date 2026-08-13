@@ -2,8 +2,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from unittest.mock import patch
-from datetime import date
+from datetime import date, timedelta
 
 from .bible import DAILY_VERSES, get_daily_verse
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
@@ -668,6 +669,92 @@ class AccessTests(TestCase):
         self.assertEqual(edit_response.status_code, 200)
         self.assertContains(edit_response, 'Candidato Teste')
         self.assertContains(edit_response, 'Entrevista inicial concluída.')
+
+    def test_candidate_link_excludes_pastoral_fields_and_requires_consent(self):
+        pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+        application = MembershipApplication.objects.create(
+            candidate_name='Candidato Externo',
+            candidate_email='externo@example.com',
+            created_by=pastor,
+        )
+        url = reverse('membership_candidate_form', args=[application.access_token])
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Candidato Externo')
+        self.assertContains(response, 'name="consent"')
+        self.assertNotContains(response, 'Preenchimento pastoral')
+        self.assertNotContains(response, 'name="recommended"')
+        self.assertNotContains(response, 'name="status"')
+
+        response = self.client.post(url, {
+            'candidate_name': 'Candidato Externo',
+            'candidate_email': 'externo@example.com',
+            'gospel_understanding': 'O Evangelho é a boa notícia de Cristo.',
+            'recommended': 'yes',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Este campo é obrigatório.')
+        application.refresh_from_db()
+        self.assertIsNone(application.submitted_at)
+
+    def test_candidate_submission_is_stored_and_link_is_locked(self):
+        pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+        application = MembershipApplication.objects.create(
+            candidate_name='Candidato Externo',
+            candidate_email='externo@example.com',
+            created_by=pastor,
+            pastoral_review={'pastoral_notes': 'Preservar esta anotação.'},
+        )
+        url = reverse('membership_candidate_form', args=[application.access_token])
+        response = self.client.post(url, {
+            'candidate_name': 'Candidato Atualizado',
+            'candidate_email': 'atualizado@example.com',
+            'gospel_understanding': 'Cristo salva pecadores.',
+            'recommended': 'yes',
+            'consent': 'on',
+        })
+        self.assertRedirects(response, reverse('membership_candidate_thanks'))
+        application.refresh_from_db()
+        self.assertEqual(application.status, MembershipApplication.Status.REVIEW)
+        self.assertIsNotNone(application.submitted_at)
+        self.assertIsNotNone(application.consented_at)
+        self.assertEqual(application.responses['gospel_understanding'], 'Cristo salva pecadores.')
+        self.assertNotIn('recommended', application.responses)
+        self.assertEqual(application.pastoral_review['pastoral_notes'], 'Preservar esta anotação.')
+
+        second_response = self.client.get(url)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertContains(second_response, 'Questionário já enviado')
+        self.assertNotContains(second_response, '<form method="post"')
+
+    def test_expired_and_revoked_candidate_links_are_unavailable(self):
+        pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+        expired = MembershipApplication.objects.create(
+            candidate_name='Link Expirado', candidate_email='expirado@example.com',
+            created_by=pastor, link_expires_at=timezone.now() - timedelta(minutes=1),
+        )
+        self.assertEqual(
+            self.client.get(reverse('membership_candidate_form', args=[expired.access_token])).status_code,
+            410,
+        )
+
+        active = MembershipApplication.objects.create(
+            candidate_name='Link Ativo', candidate_email='ativo@example.com', created_by=pastor,
+        )
+        self.client.login(username='pastor', password='test-pass')
+        response = self.client.post(reverse('membership_application_link_action', args=[active.pk, 'revoke']))
+        self.assertRedirects(response, reverse('membership_application_edit', args=[active.pk]))
+        active.refresh_from_db()
+        self.assertIsNotNone(active.link_revoked_at)
+        self.client.logout()
+        self.assertEqual(
+            self.client.get(reverse('membership_candidate_form', args=[active.access_token])).status_code,
+            410,
+        )
 
     def test_treasurer_cannot_manage_users(self):
         treasurer = User.objects.create_user('tesoureiro', password='test-pass', is_staff=True)

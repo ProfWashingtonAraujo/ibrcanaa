@@ -18,7 +18,7 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MinistryForm, TransactionForm, UserAccountForm
+from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
 
 
@@ -306,7 +306,71 @@ def membership_application_form(request, pk=None):
     return render(request, 'core/membership_application_form.html', {
         'form': form,
         'application': instance,
+        'candidate_link': request.build_absolute_uri(
+            reverse('membership_candidate_form', args=[instance.access_token])
+        ) if instance else '',
     })
+
+
+@pastor_required
+def membership_application_link_action(request, pk, action):
+    application = get_object_or_404(MembershipApplication, pk=pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para alterar o link.')
+    if action == 'renew':
+        import uuid
+        application.access_token = uuid.uuid4()
+        application.link_expires_at = timezone.now() + timedelta(days=14)
+        application.link_revoked_at = None
+        application.submitted_at = None
+        application.consented_at = None
+        application.status = MembershipApplication.Status.DRAFT
+        application.save(update_fields=[
+            'access_token', 'link_expires_at', 'link_revoked_at', 'submitted_at',
+            'consented_at', 'status', 'updated_at',
+        ])
+        messages.success(request, 'Novo link gerado com validade de 14 dias.')
+    elif action == 'revoke':
+        application.link_revoked_at = timezone.now()
+        application.save(update_fields=['link_revoked_at', 'updated_at'])
+        messages.success(request, 'Link de preenchimento revogado.')
+    else:
+        return HttpResponseForbidden('Ação inválida.')
+    return redirect('membership_application_edit', pk=application.pk)
+
+
+@transaction.atomic
+def membership_candidate_form(request, token):
+    applications = MembershipApplication.objects.select_for_update() if request.method == 'POST' else MembershipApplication.objects
+    application = get_object_or_404(applications, access_token=token)
+    if application.submitted_at:
+        response = render(request, 'core/membership_candidate_unavailable.html', {
+            'title': 'Questionário já enviado',
+            'message': 'Suas respostas já foram recebidas. Entre em contato com a igreja se precisar de ajuda.',
+        })
+        response['Cache-Control'] = 'no-store'
+        return response
+    if application.link_revoked_at or application.link_expires_at <= timezone.now():
+        response = render(request, 'core/membership_candidate_unavailable.html', {
+            'title': 'Link indisponível',
+            'message': 'Este link expirou ou foi revogado. Solicite um novo link ao responsável pastoral.',
+        }, status=410)
+        response['Cache-Control'] = 'no-store'
+        return response
+    form = MembershipCandidateForm(request.POST or None, instance=application)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('membership_candidate_thanks')
+    response = render(request, 'core/membership_candidate_form.html', {
+        'form': form,
+        'application': application,
+    })
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+def membership_candidate_thanks(request):
+    return render(request, 'core/membership_candidate_thanks.html')
 
 
 @staff_required

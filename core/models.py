@@ -1,5 +1,13 @@
+import uuid
+from datetime import timedelta
+
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
+
+def membership_link_expiry():
+    return timezone.now() + timedelta(days=14)
 
 
 class AccessProfile(models.Model):
@@ -162,6 +170,11 @@ class MembershipApplication(models.Model):
     status = models.CharField('situação', max_length=20, choices=Status, default=Status.DRAFT)
     responses = models.JSONField('respostas do candidato', default=dict, blank=True)
     pastoral_review = models.JSONField('avaliação pastoral', default=dict, blank=True)
+    access_token = models.UUIDField('token de acesso', default=uuid.uuid4, unique=True, editable=False)
+    link_expires_at = models.DateTimeField('link válido até', default=membership_link_expiry)
+    link_revoked_at = models.DateTimeField('link revogado em', null=True, blank=True)
+    submitted_at = models.DateTimeField('enviado pelo candidato em', null=True, blank=True)
+    consented_at = models.DateTimeField('consentimento registrado em', null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_membership_applications')
     created_at = models.DateTimeField('criado em', auto_now_add=True)
     updated_at = models.DateTimeField('atualizado em', auto_now=True)
@@ -173,6 +186,10 @@ class MembershipApplication(models.Model):
 
     def __str__(self):
         return self.candidate_name
+
+    @property
+    def link_is_available(self):
+        return not self.link_revoked_at and not self.submitted_at and self.link_expires_at > timezone.now()
 
 
 class BibleNote(models.Model):

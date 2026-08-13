@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Questionário recebido | IBR Canaã{% endblock %}{% block body_class %}candidate-body{% endblock %}
+{% block content %}<main class="candidate-state"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span class="eyebrow gold">Envio concluído</span><h1>Obrigado por compartilhar sua história.</h1><p>Seu questionário foi recebido com segurança e será analisado pelo responsável pastoral. Entraremos em contato para orientar os próximos passos.</p><a class="button button-primary" href="{% url 'home' %}">Conhecer o site da igreja</a></main>{% endblock %}

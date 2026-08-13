@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Candidatura à membresia | IBR Canaã{% endblock %}{% block body_class %}candidate-body{% endblock %}
+{% block content %}
+<header class="candidate-header"><a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA BATISTA REGULAR</small><strong>Canaã</strong></span></a><span>Formulário confidencial</span></header>
+<main class="candidate-shell"><section class="candidate-intro"><span class="eyebrow gold">Candidatura à membresia</span><h1>Olá, {{ application.candidate_name }}.</h1><p>Este questionário nos ajuda a conhecer sua história e oferecer cuidado pastoral responsável. Reserve um momento tranquilo para responder com sinceridade.</p><div><strong>Privacidade e cuidado</strong><span>Suas respostas serão acessíveis exclusivamente ao perfil Pastor e usadas somente no processo de membresia.</span></div></section>
+<form method="post" class="application-form candidate-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-alert">{{ form.non_field_errors }}</div>{% endif %}
+  {% for title, description, fields in form.sections %}<section class="application-section"><div class="application-section-heading"><span>{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ title }}</h3><p>{{ description }}</p></div></div><div class="application-fields">{% for field in fields %}<div class="application-field{% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'textarea' %} wide{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</div></section>{% endfor %}
+  <section class="candidate-consent"><div>{{ form.consent }}{{ form.consent.label_tag }}</div>{{ form.consent.errors }}<p>Ao enviar, o questionário será bloqueado. Para corrigir algo depois, entre em contato com a igreja.</p></section>
+  <div class="application-actions"><button class="button button-primary" type="submit">Enviar questionário</button></div>
+</form></main>
+{% endblock %}

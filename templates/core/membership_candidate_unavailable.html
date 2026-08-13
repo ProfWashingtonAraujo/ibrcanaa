@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title }} | IBR Canaã{% endblock %}{% block body_class %}candidate-body{% endblock %}
+{% block content %}<main class="candidate-state"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span class="eyebrow gold">Candidatura à membresia</span><h1>{{ title }}</h1><p>{{ message }}</p><a class="button button-primary" href="{% url 'home' %}">Ir para o site da igreja</a></main>{% endblock %}
