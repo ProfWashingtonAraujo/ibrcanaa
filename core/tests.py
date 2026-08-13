@@ -6,7 +6,7 @@ from unittest.mock import patch
 from datetime import date
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -621,6 +621,53 @@ class AccessTests(TestCase):
         user = User.objects.get(username='pastor.paulo')
         self.assertTrue(user.is_staff)
         self.assertEqual(user.access_profile.role, AccessProfile.Role.PASTOR)
+
+    def test_only_pastor_can_access_membership_applications(self):
+        pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+
+        self.client.login(username='staff', password='test-pass')
+        self.assertEqual(self.client.get(reverse('membership_applications')).status_code, 403)
+        self.client.logout()
+
+        self.client.login(username='member', password='test-pass')
+        self.assertEqual(self.client.get(reverse('membership_applications')).status_code, 403)
+        self.client.logout()
+
+        self.client.login(username='pastor', password='test-pass')
+        response = self.client.get(reverse('membership_applications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Conteúdo confidencial')
+
+    def test_pastor_can_create_and_edit_membership_application(self):
+        pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
+        self.client.login(username='pastor', password='test-pass')
+
+        response = self.client.post(reverse('membership_application_create'), {
+            'status': MembershipApplication.Status.REVIEW,
+            'candidate_name': 'Candidato Teste',
+            'candidate_email': 'candidato@example.com',
+            'mobile_phone': '88999990000',
+            'married': 'yes',
+            'gospel_understanding': 'Cristo morreu e ressuscitou para salvar pecadores.',
+            'recommended': 'yes',
+            'received_as': 'assembly',
+            'pastoral_notes': 'Entrevista inicial concluída.',
+        })
+        self.assertRedirects(response, reverse('membership_applications'))
+        application = MembershipApplication.objects.get(candidate_email='candidato@example.com')
+        self.assertEqual(application.created_by, pastor)
+        self.assertEqual(application.responses['mobile_phone'], '88999990000')
+        self.assertEqual(application.responses['gospel_understanding'], 'Cristo morreu e ressuscitou para salvar pecadores.')
+        self.assertNotIn('recommended', application.responses)
+        self.assertEqual(application.pastoral_review['recommended'], 'yes')
+        self.assertEqual(application.pastoral_review['pastoral_notes'], 'Entrevista inicial concluída.')
+
+        edit_response = self.client.get(reverse('membership_application_edit', args=[application.pk]))
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertContains(edit_response, 'Candidato Teste')
+        self.assertContains(edit_response, 'Entrevista inicial concluída.')
 
     def test_treasurer_cannot_manage_users(self):
         treasurer = User.objects.create_user('tesoureiro', password='test-pass', is_staff=True)

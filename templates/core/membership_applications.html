@@ -1,0 +1,10 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Candidaturas à membresia | IBR Canaã{% endblock %}{% block section_name %}Cuidado pastoral{% endblock %}{% block page_title %}Candidaturas à membresia{% endblock %}
+{% block admin_content %}
+<section class="application-hero"><div><span class="eyebrow gold">Conteúdo confidencial</span><h2>Acompanhamento de candidatos</h2><p>Registre entrevistas, histórico espiritual e a avaliação pastoral em um ambiente exclusivo.</p></div><a class="button button-gold" href="{% url 'membership_application_create' %}">+ Nova candidatura</a></section>
+<article class="panel applications-panel">
+  <div class="members-panel-heading"><div><span class="eyebrow">Membresia</span><h2>Questionários cadastrados</h2><p>Visível somente para usuários classificados como Pastor.</p></div></div>
+  <form method="get" class="member-filters"><label class="member-search"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ search }}" placeholder="Buscar por nome ou e-mail"></label><button class="button button-primary" type="submit">Buscar</button>{% if search %}<a class="clear-filters" href="{% url 'membership_applications' %}">Limpar</a>{% endif %}</form>
+  <div class="application-list">{% for application in applications %}<article><div><span class="application-initial">{{ application.candidate_name|first }}</span><span><strong>{{ application.candidate_name }}</strong><small>{{ application.candidate_email }}</small></span></div><span class="tag tag-{{ application.status }}">{{ application.get_status_display }}</span><time>Atualizado em {{ application.updated_at|date:'d/m/Y H:i' }}</time><a href="{% url 'membership_application_edit' application.pk %}">Abrir questionário →</a></article>{% empty %}<div class="members-empty"><span>⌕</span><h3>Nenhuma candidatura cadastrada</h3><p>Crie o primeiro questionário para iniciar o acompanhamento.</p></div>{% endfor %}</div>
+</article>
+{% endblock %}

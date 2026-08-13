@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
-from .models import AccessProfile, BibleNote, ContactLead, Event, Member, Ministry, Transaction
+from .models import AccessProfile, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -39,6 +39,157 @@ class ContactLeadForm(CrispyFormMixin, forms.ModelForm):
         model = ContactLead
         fields = ['name', 'email', 'whatsapp', 'interest', 'message']
         widgets = {'message': forms.Textarea(attrs={'rows': 4})}
+
+
+YES_NO_CHOICES = (('', 'Não informado'), ('yes', 'Sim'), ('no', 'Não'))
+
+
+class MembershipApplicationForm(forms.Form):
+    pastoral_fields = {
+        'recommended', 'recommendation_date', 'received_as', 'membership_baptism_date',
+        'letter_sent_to', 'received_by', 'pastoral_notes',
+    }
+    section_definitions = (
+        ('Informações pessoais', 'Identificação e contato do candidato.', (
+            ('form_date', 'Data do formulário', 'date'), ('candidate_name', 'Nome completo', 'text'),
+            ('birth_date', 'Data de nascimento', 'date'), ('address', 'Endereço completo', 'text'),
+            ('home_phone', 'Telefone residencial', 'text'), ('mobile_phone', 'Celular', 'text'),
+            ('profession', 'Profissão', 'text'), ('education', 'Escolaridade', 'text'),
+            ('work_phone', 'Telefone comercial', 'text'), ('candidate_email', 'E-mail', 'email'),
+        )),
+        ('Família e contexto pessoal', 'Informações familiares e situações que demandam cuidado pastoral.', (
+            ('married', 'É casado?', 'yes_no'), ('wedding_date', 'Data de casamento', 'date'),
+            ('widowed', 'Já passou por processo de viuvez?', 'yes_no'), ('widow_comments', 'Comentários sobre a viuvez', 'textarea'),
+            ('divorced', 'É divorciado?', 'yes_no'), ('divorce_comments', 'Comentários sobre o divórcio', 'textarea'),
+            ('married_to_divorced', 'É casado com alguém divorciado?', 'yes_no'),
+            ('spouse_divorce_comments', 'Comentários sobre o divórcio do cônjuge', 'textarea'),
+            ('child_1_name', 'Nome do filho 1', 'text'), ('child_1_birth_date', 'Nascimento do filho 1', 'date'),
+            ('child_2_name', 'Nome do filho 2', 'text'), ('child_2_birth_date', 'Nascimento do filho 2', 'date'),
+            ('child_3_name', 'Nome do filho 3', 'text'), ('child_3_birth_date', 'Nascimento do filho 3', 'date'),
+            ('child_4_name', 'Nome do filho 4', 'text'), ('child_4_birth_date', 'Nascimento do filho 4', 'date'),
+            ('family_composition', 'Composição familiar e com quem reside', 'textarea'),
+        )),
+        ('Saúde, justiça e cuidado', 'Conteúdo confidencial, acessível somente ao perfil pastoral.', (
+            ('legal_process', 'Responde ou já respondeu a processo na justiça?', 'yes_no'),
+            ('legal_process_comments', 'Comentários sobre o processo', 'textarea'),
+            ('serious_disease', 'Possui doença contagiosa ou grave que precisa comunicar?', 'yes_no'),
+            ('serious_disease_comments', 'Cuidados e comentários sobre saúde', 'textarea'),
+            ('drug_use', 'Faz ou fez uso de drogas?', 'yes_no'), ('drug_use_comments', 'Comentários sobre uso de drogas', 'textarea'),
+            ('psychotropic_or_mental_health', 'Faz ou fez uso de psicotrópicos, ou enfrenta depressão ou alguma síndrome?', 'yes_no'),
+            ('psychotropic_comments', 'Cuidados especiais e comentários', 'textarea'),
+            ('mental_health_followup', 'Faz acompanhamento com psicólogo ou psiquiatra?', 'yes_no'),
+            ('mental_health_comments', 'Comentários sobre acompanhamento', 'textarea'),
+            ('possible_tension', 'Existe possível ponto de tensão que precisa comunicar?', 'yes_no'),
+            ('possible_tension_comments', 'Comentários sobre o possível ponto de tensão', 'textarea'),
+        )),
+        ('Conversão e batismo', 'Histórico de fé e aproximação com a igreja.', (
+            ('conversion_details', 'Data e lugar da conversão', 'textarea'),
+            ('baptism_details', 'Data, lugar e informações do batismo', 'textarea'),
+            ('baptism_type', 'Tipo de batismo', 'baptism_type'),
+            ('baptism_by_woman', 'O batismo foi realizado por pastora ou mulher?', 'yes_no'),
+            ('baptism_neopentecostal', 'O batismo ocorreu em igreja neopentecostal?', 'yes_no'),
+            ('church_discovery', 'Como conheceu nossa igreja?', 'textarea'),
+            ('attendance_start', 'Como e quando começou a frequentar nossa igreja?', 'textarea'),
+            ('new_members_course_date', 'Data de conclusão do curso de novos membros', 'date'),
+            ('new_members_course_comments', 'Comentários sobre o curso', 'textarea'),
+            ('urgent_spiritual_help', 'Precisa de ajuda espiritual urgente?', 'yes_no'),
+            ('urgent_spiritual_help_comments', 'Comentários sobre a necessidade espiritual', 'textarea'),
+        )),
+        ('Percepção sobre a vida da igreja', 'Impressões do candidato sobre cultos e programações.', (
+            ('wednesday_service_comments', 'Culto de quarta-feira à noite', 'textarea'),
+            ('sunday_service_comments', 'Culto de domingo à noite', 'textarea'),
+            ('sunday_school_comments', 'Escola Bíblica Dominical', 'textarea'),
+            ('societies_service_comments', 'Culto de sociedades', 'textarea'),
+            ('youth_service_comments', 'Culto de jovens', 'textarea'),
+            ('couples_service_comments', 'Culto de casais', 'textarea'),
+            ('business_meeting_comments', 'Sessão administrativa', 'textarea'),
+            ('program_disagreement', 'Existe algo nas programações com que não concorda ou que incomoda?', 'yes_no'),
+            ('program_disagreement_comments', 'Comentários sobre as programações', 'textarea'),
+        )),
+        ('Serviço, comunhão e doutrina', 'Experiência anterior e compreensão da fé cristã.', (
+            ('accepts_pastoral_visit', 'Tem disposição para receber visita pastoral ou de oficiais?', 'yes_no'),
+            ('pastoral_visit_comments', 'Comentários sobre visitas', 'textarea'),
+            ('previous_discipline', 'Sofreu disciplina na igreja anterior?', 'yes_no'),
+            ('previous_discipline_comments', 'Motivo e comentários sobre a disciplina', 'textarea'),
+            ('service_interests', 'Em quais áreas da igreja gosta de servir?', 'textarea'),
+            ('leadership_experience', 'Já exerceu cargo de liderança em igreja?', 'yes_no'),
+            ('leadership_experience_comments', 'Cargo e experiência de liderança', 'textarea'),
+            ('demonic_experience', 'Possui experiência pessoal, familiar ou próxima com possessão demoníaca?', 'yes_no'),
+            ('demonic_experience_comments', 'Comentários sobre essa experiência', 'textarea'),
+            ('gospel_understanding', 'O que é o Evangelho?', 'textarea'),
+            ('conversion_understanding', 'O que é conversão?', 'textarea'),
+            ('ordinances_understanding', 'Qual o significado do batismo e da ceia?', 'textarea'),
+            ('communion_importance', 'Qual a importância da comunhão dos crentes?', 'textarea'),
+            ('salvation_loss_belief', 'Acredita que pode perder a salvação? Explique.', 'textarea'),
+            ('covenant_signed', 'Assinou o Pacto de Compromisso da igreja?', 'yes_no'),
+        )),
+        ('Preenchimento pastoral', 'Esta seção deve ser preenchida após entrevista e avaliação pastoral.', (
+            ('recommended', 'Candidato recomendado?', 'yes_no'), ('recommendation_date', 'Data da recomendação', 'date'),
+            ('received_as', 'Recebido como membro por', 'received_as'),
+            ('membership_baptism_date', 'Data do batismo para recebimento', 'date'),
+            ('letter_sent_to', 'Carta de transferência enviada a', 'text'),
+            ('received_by', 'Recebido por', 'text'), ('pastoral_notes', 'Observações pastorais', 'textarea'),
+        )),
+    )
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        initial = kwargs.setdefault('initial', {})
+        if instance:
+            initial.update(instance.responses)
+            initial.update(instance.pastoral_review)
+            initial.update({
+                'candidate_name': instance.candidate_name,
+                'candidate_email': instance.candidate_email,
+                'form_date': instance.form_date,
+                'status': instance.status,
+            })
+        super().__init__(*args, **kwargs)
+        self.fields['status'] = forms.ChoiceField(label='Situação', choices=MembershipApplication.Status)
+        for _, _, definitions in self.section_definitions:
+            for name, label, kind in definitions:
+                self.fields[name] = self._make_field(label, kind, required=name in {'candidate_name', 'candidate_email'})
+
+    @staticmethod
+    def _make_field(label, kind, required=False):
+        if kind == 'date':
+            return forms.DateField(label=label, required=required, widget=forms.DateInput(attrs={'type': 'date'}))
+        if kind == 'email':
+            return forms.EmailField(label=label, required=required)
+        if kind == 'textarea':
+            return forms.CharField(label=label, required=required, widget=forms.Textarea(attrs={'rows': 4}))
+        if kind == 'yes_no':
+            return forms.ChoiceField(label=label, required=False, choices=YES_NO_CHOICES, widget=forms.RadioSelect)
+        if kind == 'baptism_type':
+            return forms.ChoiceField(label=label, required=False, choices=(('', 'Não informado'), ('sprinkling', 'Aspersão'), ('pouring', 'Efusão'), ('immersion', 'Imersão')), widget=forms.RadioSelect)
+        if kind == 'received_as':
+            return forms.ChoiceField(label=label, required=False, choices=(('', 'Não informado'), ('baptism', 'Batismo'), ('assembly', 'Assembleia'), ('transfer_letter', 'Carta de transferência')), widget=forms.RadioSelect)
+        return forms.CharField(label=label, required=required)
+
+    @property
+    def sections(self):
+        return [
+            (title, description, [self[name] for name, _, _ in definitions])
+            for title, description, definitions in self.section_definitions
+        ]
+
+    def save(self, created_by):
+        application = self.instance or MembershipApplication(created_by=created_by)
+        application.candidate_name = self.cleaned_data['candidate_name']
+        application.candidate_email = self.cleaned_data['candidate_email']
+        application.form_date = self.cleaned_data['form_date']
+        application.status = self.cleaned_data['status']
+        application.responses = {
+            name: value.isoformat() if hasattr(value, 'isoformat') else value
+            for name, value in self.cleaned_data.items()
+            if name not in self.pastoral_fields | {'candidate_name', 'candidate_email', 'form_date', 'status'}
+        }
+        application.pastoral_review = {
+            name: value.isoformat() if hasattr(value, 'isoformat') else value
+            for name, value in self.cleaned_data.items() if name in self.pastoral_fields
+        }
+        application.save()
+        return application
 
 
 class MemberForm(CrispyFormMixin, forms.ModelForm):

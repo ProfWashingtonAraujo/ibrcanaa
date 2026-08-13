@@ -18,8 +18,8 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MinistryForm, TransactionForm, UserAccountForm
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, Ministry, Transaction
+from .forms import BibleNoteForm, ContactLeadForm, EventForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MinistryForm, TransactionForm, UserAccountForm
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Event, Member, MembershipApplication, Ministry, Transaction
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -41,6 +41,20 @@ def user_manager_required(view):
             return HttpResponseForbidden('Apenas Pastor e Diretoria podem gerenciar usuários.')
         return view(request, *args, **kwargs)
 
+    return wrapped
+
+
+def pastor_required(view):
+    @wraps(view)
+    @login_required
+    def wrapped(request, *args, **kwargs):
+        is_pastor = AccessProfile.objects.filter(
+            user=request.user,
+            role=AccessProfile.Role.PASTOR,
+        ).exists()
+        if not is_pastor:
+            return HttpResponseForbidden('Conteúdo confidencial restrito ao perfil Pastor.')
+        return view(request, *args, **kwargs)
     return wrapped
 
 
@@ -264,6 +278,34 @@ def ministry_form(request, pk=None):
         'form': form,
         'title': 'Editar ministério' if instance else 'Novo ministério',
         'back_url': 'ministries',
+    })
+
+
+@pastor_required
+def membership_applications(request):
+    search = request.GET.get('q', '').strip()
+    applications = MembershipApplication.objects.select_related('created_by')
+    if search:
+        applications = applications.filter(
+            Q(candidate_name__icontains=search) | Q(candidate_email__icontains=search)
+        )
+    return render(request, 'core/membership_applications.html', {
+        'applications': applications,
+        'search': search,
+    })
+
+
+@pastor_required
+def membership_application_form(request, pk=None):
+    instance = get_object_or_404(MembershipApplication, pk=pk) if pk else None
+    form = MembershipApplicationForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        form.save(request.user)
+        messages.success(request, 'Questionário de membresia salvo com segurança.')
+        return redirect('membership_applications')
+    return render(request, 'core/membership_application_form.html', {
+        'form': form,
+        'application': instance,
     })
 
 

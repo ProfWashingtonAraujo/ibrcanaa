@@ -150,6 +150,31 @@ class ContactLead(models.Model):
         return f'{self.name} - {self.get_interest_display()}'
 
 
+class MembershipApplication(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Rascunho'
+        REVIEW = 'review', 'Em avaliação pastoral'
+        COMPLETED = 'completed', 'Concluído'
+
+    candidate_name = models.CharField('nome do candidato', max_length=160)
+    candidate_email = models.EmailField('e-mail do candidato')
+    form_date = models.DateField('data do formulário', null=True, blank=True)
+    status = models.CharField('situação', max_length=20, choices=Status, default=Status.DRAFT)
+    responses = models.JSONField('respostas do candidato', default=dict, blank=True)
+    pastoral_review = models.JSONField('avaliação pastoral', default=dict, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_membership_applications')
+    created_at = models.DateTimeField('criado em', auto_now_add=True)
+    updated_at = models.DateTimeField('atualizado em', auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'candidatura à membresia'
+        verbose_name_plural = 'candidaturas à membresia'
+
+    def __str__(self):
+        return self.candidate_name
+
+
 class BibleNote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bible_notes')
     reference = models.CharField('referência', max_length=80)

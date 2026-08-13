@@ -1,0 +1,11 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{% if application %}Editar{% else %}Nova{% endif %} candidatura | IBR Canaã{% endblock %}{% block section_name %}Cuidado pastoral{% endblock %}{% block page_title %}{% if application %}Editar questionário{% else %}Novo questionário{% endif %}{% endblock %}
+{% block admin_content %}
+<section class="application-form-intro"><div><span class="eyebrow gold">Formulário candidato à membresia</span><h2>{% if application %}{{ application.candidate_name }}{% else %}Novo candidato{% endif %}</h2><p>As respostas contêm informações pessoais, familiares, médicas e espirituais. Trate este conteúdo como estritamente confidencial.</p></div><span class="confidential-chip">Acesso exclusivo do Pastor</span></section>
+<form method="post" class="application-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-alert">{{ form.non_field_errors }}</div>{% endif %}
+  <section class="application-section application-status"><div class="application-section-heading"><span>00</span><div><h3>Controle do questionário</h3><p>Acompanhe a etapa atual do processo.</p></div></div><div class="application-fields"><div class="application-field">{{ form.status.label_tag }}{{ form.status }}{{ form.status.errors }}</div></div></section>
+  {% for title, description, fields in form.sections %}<section class="application-section{% if title == 'Preenchimento pastoral' %} pastoral-section{% endif %}"><div class="application-section-heading"><span>{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ title }}</h3><p>{{ description }}</p></div></div><div class="application-fields">{% for field in fields %}<div class="application-field{% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'textarea' %} wide{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}</div></section>{% endfor %}
+  <div class="application-actions"><a class="button button-ghost" href="{% url 'membership_applications' %}">Cancelar</a><button class="button button-primary" type="submit">Salvar questionário</button></div>
+</form>
+{% endblock %}
