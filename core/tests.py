@@ -167,6 +167,8 @@ class AccessTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="nav-symbol"><svg', count=7)
+        self.assertContains(response, 'class="mobile-logout"')
+        self.assertContains(response, 'aria-label="Sair do sistema"')
 
     def test_pastor_cannot_access_or_see_financial_data(self):
         pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)

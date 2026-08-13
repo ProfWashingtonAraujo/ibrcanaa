@@ -28,7 +28,7 @@
   <main class="admin-main">
     <header class="topbar">
       <div><span class="eyebrow">Administração / {% block section_name %}Painel{% endblock %}</span><h1>{% block page_title %}Visão geral{% endblock %}</h1></div>
-      <div class="topbar-actions"><a class="button button-ghost" href="{% url 'home' %}">Ver site</a><span class="date-chip">{% now 'd M Y' %}</span></div>
+      <div class="topbar-actions"><a class="button button-ghost" href="{% url 'home' %}">Ver site</a><span class="date-chip">{% now 'd M Y' %}</span><form class="mobile-logout" method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" aria-label="Sair do sistema"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 4H5v16h5v-2H7V6h3V4Zm5.6 3.6L14.2 9l2 2H9v2h7.2l-2 2 1.4 1.4L20 12l-4.4-4.4Z"/></svg><span>Sair</span></button></form></div>
     </header>
     <div class="admin-content">{% block admin_content %}{% endblock %}</div>
   </main>
