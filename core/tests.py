@@ -552,6 +552,11 @@ class AccessTests(TestCase):
         lesson = course.lessons.get()
         self.assertEqual(lesson.youtube_id, 'jiIRdV-4rUE')
         self.assertEqual(lesson.embed_url, 'https://www.youtube-nocookie.com/embed/jiIRdV-4rUE')
+        self.assertEqual(course.cover_image_url, lesson.thumbnail_url)
+
+        course.cover_url = 'https://youtu.be/MlocoEhWjAs'
+        course.save(update_fields=['cover_url'])
+        self.assertEqual(course.cover_image_url, 'https://i.ytimg.com/vi/MlocoEhWjAs/hqdefault.jpg')
 
     def test_lesson_rejects_invalid_youtube_url_and_duplicate_position(self):
         course = Course.objects.create(title='Curso', description='Descrição')

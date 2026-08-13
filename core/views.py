@@ -400,7 +400,7 @@ def ministry_delete(request, pk):
 
 @staff_required
 def courses(request):
-    courses_query = Course.objects.annotate(lesson_count=Count('lessons'))
+    courses_query = Course.objects.prefetch_related('lessons').annotate(lesson_count=Count('lessons'))
     search = request.GET.get('q', '').strip()
     if search:
         courses_query = courses_query.filter(Q(title__icontains=search) | Q(instructor__icontains=search))

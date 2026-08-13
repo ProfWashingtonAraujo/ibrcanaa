@@ -262,6 +262,16 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def cover_image_url(self):
+        cover_video_id = youtube_video_id(self.cover_url)
+        if cover_video_id:
+            return f'https://i.ytimg.com/vi/{cover_video_id}/hqdefault.jpg'
+        if self.cover_url:
+            return self.cover_url
+        first_lesson = self.lessons.first()
+        return first_lesson.thumbnail_url if first_lesson else ''
+
 
 class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons', verbose_name='curso')
