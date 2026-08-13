@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -392,6 +392,23 @@ class LessonForm(CrispyFormMixin, forms.ModelForm):
         widgets = {
             'youtube_url': forms.URLInput(attrs={'placeholder': 'https://www.youtube.com/watch?v=...'}),
             'description': forms.Textarea(attrs={'rows': 4}),
+        }
+
+
+class CourseEvaluationForm(forms.ModelForm):
+    rating = forms.TypedChoiceField(
+        label='Como você avalia este curso?',
+        choices=((5, 'Excelente'), (4, 'Muito bom'), (3, 'Bom'), (2, 'Regular'), (1, 'Precisa melhorar')),
+        coerce=int,
+        widget=forms.RadioSelect,
+    )
+
+    class Meta:
+        model = CourseEvaluation
+        fields = ['rating', 'learning', 'feedback']
+        widgets = {
+            'learning': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Conte o que mais marcou sua caminhada.'}),
+            'feedback': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Opcional'}),
         }
 
 

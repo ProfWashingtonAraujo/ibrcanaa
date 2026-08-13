@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessProfile, ContactLead, Course, Event, Lesson, Member, Ministry, Transaction
+from .models import AccessProfile, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, Ministry, Transaction
 
 
 @admin.register(Member)
@@ -20,6 +20,6 @@ class TransactionAdmin(admin.ModelAdmin):
     list_filter = ['kind', 'category']
 
 
-admin.site.register([AccessProfile, Ministry, Event, ContactLead, Course, Lesson])
+admin.site.register([AccessProfile, Ministry, Event, ContactLead, Course, Lesson, LessonProgress, CourseEvaluation])
 
 # Register your models here.

@@ -1,6 +1,7 @@
 from decimal import Decimal
 from datetime import timedelta
 from functools import wraps
+from io import BytesIO
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -10,7 +11,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Avg, Count, Q, Sum
 from django.db.models.functions import TruncMonth
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -18,8 +19,8 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
+from .forms import BibleNoteForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -476,6 +477,13 @@ def lesson_delete(request, course_pk, pk):
 @login_required
 def member_courses(request):
     courses_query = Course.objects.filter(published=True).prefetch_related('lessons')
+    completed_lesson_ids = set(request.user.lesson_progress.values_list('lesson_id', flat=True))
+    evaluations = {item.course_id: item for item in request.user.course_evaluations.all()}
+    for course in courses_query:
+        lesson_ids = [lesson.pk for lesson in course.lessons.all()]
+        completed_count = len(completed_lesson_ids.intersection(lesson_ids))
+        course.progress_percent = round(completed_count * 100 / len(lesson_ids)) if lesson_ids else 0
+        course.evaluation = evaluations.get(course.pk)
     return render(request, 'core/member_courses.html', {'courses': courses_query})
 
 
@@ -484,11 +492,114 @@ def member_course_detail(request, pk, lesson_pk=None):
     course = get_object_or_404(Course.objects.prefetch_related('lessons'), pk=pk, published=True)
     lessons = list(course.lessons.all())
     selected_lesson = get_object_or_404(course.lessons, pk=lesson_pk) if lesson_pk else (lessons[0] if lessons else None)
+    completed_lesson_ids = set(request.user.lesson_progress.filter(
+        lesson__course=course,
+    ).values_list('lesson_id', flat=True))
+    completed_count = len(completed_lesson_ids)
+    progress_percent = round(completed_count * 100 / len(lessons)) if lessons else 0
+    evaluation = CourseEvaluation.objects.filter(user=request.user, course=course).first()
     return render(request, 'core/member_course_detail.html', {
         'course': course,
         'lessons': lessons,
         'selected_lesson': selected_lesson,
+        'completed_lesson_ids': completed_lesson_ids,
+        'completed_count': completed_count,
+        'progress_percent': progress_percent,
+        'evaluation': evaluation,
     })
+
+
+@login_required
+def lesson_complete(request, course_pk, pk):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para concluir uma aula.')
+    lesson = get_object_or_404(Lesson, pk=pk, course_id=course_pk, course__published=True)
+    LessonProgress.objects.get_or_create(user=request.user, lesson=lesson)
+    messages.success(request, 'Aula marcada como concluída.')
+    return redirect('member_course_lesson', pk=course_pk, lesson_pk=pk)
+
+
+@login_required
+@transaction.atomic
+def course_evaluation(request, pk):
+    course = get_object_or_404(Course, pk=pk, published=True)
+    existing = CourseEvaluation.objects.filter(user=request.user, course=course).first()
+    if existing:
+        return redirect('course_certificate', certificate_id=existing.certificate_id)
+    lesson_count = course.lessons.count()
+    completed_count = request.user.lesson_progress.filter(lesson__course=course).count()
+    if not lesson_count or completed_count != lesson_count:
+        messages.error(request, 'Conclua todas as aulas antes de realizar a avaliação.')
+        return redirect('member_course_detail', pk=course.pk)
+    form = CourseEvaluationForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        evaluation = form.save(commit=False)
+        evaluation.user = request.user
+        evaluation.course = course
+        evaluation.save()
+        messages.success(request, 'Avaliação enviada. Seu certificado está pronto!')
+        return redirect('course_certificate', certificate_id=evaluation.certificate_id)
+    return render(request, 'core/course_evaluation.html', {'course': course, 'form': form})
+
+
+@login_required
+def course_certificate(request, certificate_id):
+    from reportlab.lib.colors import HexColor
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.pdfgen import canvas
+
+    evaluation = get_object_or_404(
+        CourseEvaluation.objects.select_related('course', 'user'),
+        certificate_id=certificate_id,
+        user=request.user,
+    )
+    member = Member.objects.filter(user=request.user).first()
+    student_name = member.name if member else (request.user.get_full_name() or request.user.username)
+    buffer = BytesIO()
+    width, height = landscape(A4)
+    pdf = canvas.Canvas(buffer, pagesize=(width, height), pageCompression=1)
+    pdf.setTitle(f'Certificado - {evaluation.course.title}')
+    pdf.setAuthor('Igreja Batista Regular Canaã')
+    pdf.setFillColor(HexColor('#07142f'))
+    pdf.rect(0, 0, width, height, fill=1, stroke=0)
+    pdf.setStrokeColor(HexColor('#d9aa47'))
+    pdf.setLineWidth(3)
+    pdf.rect(28, 28, width - 56, height - 56, fill=0, stroke=1)
+    pdf.setLineWidth(1)
+    pdf.rect(38, 38, width - 76, height - 76, fill=0, stroke=1)
+    pdf.setFillColor(HexColor('#d9aa47'))
+    pdf.setFont('Helvetica-Bold', 13)
+    pdf.drawCentredString(width / 2, height - 95, 'IGREJA BATISTA REGULAR CANAA')
+    pdf.setFillColorRGB(1, 1, 1)
+    pdf.setFont('Helvetica-Bold', 34)
+    pdf.drawCentredString(width / 2, height - 155, 'CERTIFICADO DE CONCLUSAO')
+    pdf.setFont('Helvetica', 14)
+    pdf.drawCentredString(width / 2, height - 205, 'Certificamos que')
+    pdf.setFillColor(HexColor('#d9aa47'))
+    pdf.setFont('Helvetica-Bold', 27)
+    pdf.drawCentredString(width / 2, height - 250, student_name)
+    pdf.setFillColorRGB(1, 1, 1)
+    pdf.setFont('Helvetica', 14)
+    pdf.drawCentredString(width / 2, height - 295, 'concluiu integralmente o curso')
+    pdf.setFont('Helvetica-Bold', 22)
+    pdf.drawCentredString(width / 2, height - 335, evaluation.course.title)
+    instructor = f', ministrado por {evaluation.course.instructor}' if evaluation.course.instructor else ''
+    completion_text = f'em {timezone.localtime(evaluation.completed_at):%d/%m/%Y}{instructor}.'
+    pdf.setFont('Helvetica', 12)
+    pdf.drawCentredString(width / 2, height - 372, completion_text)
+    pdf.setStrokeColor(HexColor('#d9aa47'))
+    pdf.line(width / 2 - 120, 125, width / 2 + 120, 125)
+    pdf.setFont('Helvetica-Bold', 11)
+    pdf.drawCentredString(width / 2, 108, 'Igreja Batista Regular Canaa')
+    pdf.setFillColor(HexColor('#9eabc0'))
+    pdf.setFont('Helvetica', 8)
+    pdf.drawCentredString(width / 2, 70, f'Codigo de autenticidade: {evaluation.certificate_id}')
+    pdf.showPage()
+    pdf.save()
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="certificado-curso-{evaluation.course_id}.pdf"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
 
 
 @staff_required

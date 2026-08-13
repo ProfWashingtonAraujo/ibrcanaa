@@ -7,7 +7,7 @@ from unittest.mock import patch
 from datetime import date, timedelta
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -598,6 +598,79 @@ class AccessTests(TestCase):
         response = self.client.get(reverse('courses'))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, f"{reverse('login')}?next={reverse('courses')}")
+
+    def test_member_course_progress_is_private_and_calculated(self):
+        course = Course.objects.create(title='Curso progresso', description='Descrição', published=True)
+        first = Lesson.objects.create(
+            course=course, title='Primeira', youtube_url='https://youtu.be/jiIRdV-4rUE', position=1,
+        )
+        Lesson.objects.create(
+            course=course, title='Segunda', youtube_url='https://youtu.be/MlocoEhWjAs', position=2,
+        )
+        self.client.login(username='member', password='test-pass')
+        response = self.client.post(reverse('lesson_complete', args=[course.pk, first.pk]))
+        self.assertRedirects(response, reverse('member_course_lesson', args=[course.pk, first.pk]))
+        self.assertTrue(LessonProgress.objects.filter(user=self.member_user, lesson=first).exists())
+        classroom = self.client.get(reverse('member_course_detail', args=[course.pk]))
+        self.assertEqual(classroom.context['progress_percent'], 50)
+        self.assertContains(classroom, '50%')
+        self.assertContains(self.client.get(reverse('member_courses')), '50% concluído')
+
+        other = User.objects.create_user('course.other', password='test-pass')
+        self.client.logout()
+        self.client.login(username=other.username, password='test-pass')
+        self.assertEqual(
+            self.client.get(reverse('member_course_detail', args=[course.pk])).context['progress_percent'],
+            0,
+        )
+
+    def test_evaluation_requires_all_lessons_completed(self):
+        course = Course.objects.create(title='Curso bloqueado', description='Descrição', published=True)
+        Lesson.objects.create(
+            course=course, title='Pendente', youtube_url='https://youtu.be/jiIRdV-4rUE', position=1,
+        )
+        self.client.login(username='member', password='test-pass')
+        response = self.client.post(reverse('course_evaluation', args=[course.pk]), {
+            'rating': 5, 'learning': 'Aprendizado', 'feedback': '',
+        })
+        self.assertRedirects(response, reverse('member_course_detail', args=[course.pk]))
+        self.assertFalse(CourseEvaluation.objects.filter(user=self.member_user, course=course).exists())
+
+    def test_completed_member_evaluates_and_downloads_own_certificate(self):
+        course = Course.objects.create(
+            title='Fundamentos Bíblicos', description='Descrição', instructor='Pr. Carlos', published=True,
+        )
+        lessons = [
+            Lesson.objects.create(course=course, title=f'Aula {position}', youtube_url=url, position=position)
+            for position, url in [(1, 'https://youtu.be/jiIRdV-4rUE'), (2, 'https://youtu.be/MlocoEhWjAs')]
+        ]
+        LessonProgress.objects.bulk_create([
+            LessonProgress(user=self.member_user, lesson=lesson) for lesson in lessons
+        ])
+        self.client.login(username='member', password='test-pass')
+        self.assertContains(
+            self.client.get(reverse('course_evaluation', args=[course.pk])),
+            'Enviar e gerar certificado',
+        )
+        response = self.client.post(reverse('course_evaluation', args=[course.pk]), {
+            'rating': 5,
+            'learning': 'A importância da doutrina bíblica.',
+            'feedback': 'Excelente curso.',
+        })
+        evaluation = CourseEvaluation.objects.get(user=self.member_user, course=course)
+        self.assertRedirects(response, reverse('course_certificate', args=[evaluation.certificate_id]))
+        certificate = self.client.get(reverse('course_certificate', args=[evaluation.certificate_id]))
+        self.assertEqual(certificate['Content-Type'], 'application/pdf')
+        self.assertTrue(certificate.content.startswith(b'%PDF'))
+        self.assertIn('attachment;', certificate['Content-Disposition'])
+
+        other = User.objects.create_user('certificate.other', password='test-pass')
+        self.client.logout()
+        self.client.login(username=other.username, password='test-pass')
+        self.assertEqual(
+            self.client.get(reverse('course_certificate', args=[evaluation.certificate_id])).status_code,
+            404,
+        )
 
     def test_member_portal_shows_personal_summary(self):
         Transaction.objects.create(

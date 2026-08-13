@@ -301,4 +301,31 @@ class Lesson(models.Model):
     def thumbnail_url(self):
         return f'https://i.ytimg.com/vi/{self.youtube_id}/hqdefault.jpg'
 
+
+class LessonProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lesson_progress')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='progress_records')
+    completed_at = models.DateTimeField('concluída em', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'progresso de aula'
+        verbose_name_plural = 'progressos de aulas'
+        constraints = [models.UniqueConstraint(fields=['user', 'lesson'], name='unique_user_lesson_progress')]
+
+
+class CourseEvaluation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_evaluations')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='evaluations')
+    rating = models.PositiveSmallIntegerField('nota')
+    learning = models.TextField('principal aprendizado', max_length=2000)
+    feedback = models.TextField('comentários e sugestões', max_length=2000, blank=True)
+    certificate_id = models.UUIDField('código do certificado', default=uuid.uuid4, unique=True, editable=False)
+    completed_at = models.DateTimeField('concluído em', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+        verbose_name = 'avaliação de curso'
+        verbose_name_plural = 'avaliações de cursos'
+        constraints = [models.UniqueConstraint(fields=['user', 'course'], name='unique_user_course_evaluation')]
+
 # Create your models here.
