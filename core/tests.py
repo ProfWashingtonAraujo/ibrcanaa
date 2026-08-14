@@ -5,6 +5,9 @@ from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
 from datetime import date, timedelta
+from io import BytesIO
+
+from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
@@ -663,6 +666,11 @@ class AccessTests(TestCase):
         self.assertEqual(certificate['Content-Type'], 'application/pdf')
         self.assertTrue(certificate.content.startswith(b'%PDF'))
         self.assertIn('attachment;', certificate['Content-Disposition'])
+        certificate_text = PdfReader(BytesIO(certificate.content)).pages[0].extract_text()
+        self.assertIn('CERTIFICADO DE CONCLUSÃO', certificate_text)
+        self.assertIn('Membro Teste', certificate_text)
+        self.assertIn('Fundamentos Bíblicos', certificate_text)
+        self.assertIn(str(evaluation.certificate_id), certificate_text)
 
         other = User.objects.create_user('certificate.other', password='test-pass')
         self.client.logout()

@@ -544,8 +544,10 @@ def course_evaluation(request, pk):
 
 @login_required
 def course_certificate(request, certificate_id):
+    from django.contrib.staticfiles import finders
+    from pypdf import PdfReader, PdfWriter
     from reportlab.lib.colors import HexColor
-    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.pdfbase.pdfmetrics import stringWidth
     from reportlab.pdfgen import canvas
 
     evaluation = get_object_or_404(
@@ -555,48 +557,62 @@ def course_certificate(request, certificate_id):
     )
     member = Member.objects.filter(user=request.user).first()
     student_name = member.name if member else (request.user.get_full_name() or request.user.username)
-    buffer = BytesIO()
-    width, height = landscape(A4)
-    pdf = canvas.Canvas(buffer, pagesize=(width, height), pageCompression=1)
+    template_path = finders.find('certificado.pdf')
+    template = PdfReader(template_path)
+    page = template.pages[0]
+    width, height = float(page.mediabox.width), float(page.mediabox.height)
+    overlay = BytesIO()
+    pdf = canvas.Canvas(overlay, pagesize=(width, height), pageCompression=1)
     pdf.setTitle(f'Certificado - {evaluation.course.title}')
     pdf.setAuthor('Igreja Batista Regular Canaã')
-    pdf.setFillColor(HexColor('#07142f'))
-    pdf.rect(0, 0, width, height, fill=1, stroke=0)
-    pdf.setStrokeColor(HexColor('#d9aa47'))
-    pdf.setLineWidth(3)
-    pdf.rect(28, 28, width - 56, height - 56, fill=0, stroke=1)
+
+    def draw_fitted(text, y, max_size, max_width, font='Helvetica-Bold', min_size=10):
+        size = max_size
+        while size > min_size and stringWidth(text, font, size) > max_width:
+            size -= 1
+        pdf.setFont(font, size)
+        pdf.drawCentredString(width / 2, y, text)
+
+    navy = HexColor('#071f49')
+    gold = HexColor('#b4873b')
+    pdf.setFillColor(navy)
+    draw_fitted('CERTIFICADO DE CONCLUSÃO', 418, 30, width - 300)
+    pdf.setFont('Helvetica', 14)
+    pdf.drawCentredString(width / 2, 370, 'Certificamos que')
+    pdf.setFillColor(gold)
+    draw_fitted(student_name, 326, 27, width - 190, min_size=16)
+    pdf.setStrokeColor(gold)
     pdf.setLineWidth(1)
-    pdf.rect(38, 38, width - 76, height - 76, fill=0, stroke=1)
-    pdf.setFillColor(HexColor('#d9aa47'))
-    pdf.setFont('Helvetica-Bold', 13)
-    pdf.drawCentredString(width / 2, height - 95, 'IGREJA BATISTA REGULAR CANAA')
-    pdf.setFillColorRGB(1, 1, 1)
-    pdf.setFont('Helvetica-Bold', 34)
-    pdf.drawCentredString(width / 2, height - 155, 'CERTIFICADO DE CONCLUSAO')
+    pdf.line(150, 314, width - 150, 314)
+    pdf.setFillColor(navy)
     pdf.setFont('Helvetica', 14)
-    pdf.drawCentredString(width / 2, height - 205, 'Certificamos que')
-    pdf.setFillColor(HexColor('#d9aa47'))
-    pdf.setFont('Helvetica-Bold', 27)
-    pdf.drawCentredString(width / 2, height - 250, student_name)
-    pdf.setFillColorRGB(1, 1, 1)
-    pdf.setFont('Helvetica', 14)
-    pdf.drawCentredString(width / 2, height - 295, 'concluiu integralmente o curso')
-    pdf.setFont('Helvetica-Bold', 22)
-    pdf.drawCentredString(width / 2, height - 335, evaluation.course.title)
+    pdf.drawCentredString(width / 2, 280, 'concluiu integralmente o curso')
+    draw_fitted(evaluation.course.title, 242, 22, width - 190, min_size=13)
     instructor = f', ministrado por {evaluation.course.instructor}' if evaluation.course.instructor else ''
     completion_text = f'em {timezone.localtime(evaluation.completed_at):%d/%m/%Y}{instructor}.'
-    pdf.setFont('Helvetica', 12)
-    pdf.drawCentredString(width / 2, height - 372, completion_text)
-    pdf.setStrokeColor(HexColor('#d9aa47'))
-    pdf.line(width / 2 - 120, 125, width / 2 + 120, 125)
+    draw_fitted(completion_text, 205, 12, width - 220, font='Helvetica', min_size=9)
+    pdf.setStrokeColor(gold)
+    pdf.line(width / 2 - 120, 128, width / 2 + 120, 128)
+    pdf.setFillColor(navy)
     pdf.setFont('Helvetica-Bold', 11)
-    pdf.drawCentredString(width / 2, 108, 'Igreja Batista Regular Canaa')
-    pdf.setFillColor(HexColor('#9eabc0'))
+    pdf.drawCentredString(width / 2, 111, 'Igreja Batista Regular Canaã')
+    pdf.setFillColor(HexColor('#68758d'))
     pdf.setFont('Helvetica', 8)
-    pdf.drawCentredString(width / 2, 70, f'Codigo de autenticidade: {evaluation.certificate_id}')
+    pdf.drawCentredString(width / 2, 73, f'Código de autenticidade: {evaluation.certificate_id}')
     pdf.showPage()
     pdf.save()
-    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+
+    overlay.seek(0)
+    page.merge_page(PdfReader(overlay).pages[0])
+    output = BytesIO()
+    writer = PdfWriter()
+    writer.add_page(page)
+    writer.add_metadata({
+        '/Title': f'Certificado - {evaluation.course.title}',
+        '/Author': 'Igreja Batista Regular Canaã',
+    })
+    writer.write(output)
+    response = HttpResponse(output.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="certificado-curso-{evaluation.course_id}.pdf"'
     response['Cache-Control'] = 'private, no-store'
     return response
