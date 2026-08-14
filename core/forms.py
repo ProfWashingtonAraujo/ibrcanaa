@@ -249,7 +249,7 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
             'child_3_name', 'child_3_birth_date', 'child_4_name', 'child_4_birth_date',
         )),
         ('Vida na igreja', 'Situação, participação e ministérios do membro.', (
-            'ministries', 'status', 'frequency', 'baptized',
+            'ministries', 'status', 'conversion_date', 'baptism_date', 'church_entry_date',
         )),
         ('Acesso ao portal', 'Credenciais e foto usadas na área de membros.', (
             'username', 'photo', 'password1', 'password2',
@@ -309,7 +309,9 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         today = date.today()
-        date_fields = ['birth_date', 'wedding_date'] + [f'child_{index}_birth_date' for index in range(1, 5)]
+        date_fields = [
+            'birth_date', 'wedding_date', 'conversion_date', 'baptism_date', 'church_entry_date',
+        ] + [f'child_{index}_birth_date' for index in range(1, 5)]
         for field_name in date_fields:
             value = cleaned_data.get(field_name)
             if value and value > today:
@@ -318,6 +320,14 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         wedding_date = cleaned_data.get('wedding_date')
         if birth_date and wedding_date and wedding_date < birth_date:
             self.add_error('wedding_date', 'A data de casamento não pode ser anterior ao nascimento.')
+        for field_name in ['conversion_date', 'baptism_date', 'church_entry_date']:
+            value = cleaned_data.get(field_name)
+            if birth_date and value and value < birth_date:
+                self.add_error(field_name, 'A data não pode ser anterior ao nascimento.')
+        conversion_date = cleaned_data.get('conversion_date')
+        baptism_date = cleaned_data.get('baptism_date')
+        if conversion_date and baptism_date and baptism_date < conversion_date:
+            self.add_error('baptism_date', 'A data de batismo não pode ser anterior à conversão.')
         for index in range(1, 5):
             name_field = f'child_{index}_name'
             birth_field = f'child_{index}_birth_date'
@@ -348,6 +358,8 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 
     def save(self, commit=True):
         member = super().save(commit=False)
+        if member.baptism_date:
+            member.baptized = True
         user = member.user if member.user_id else User()
         names = member.name.split(maxsplit=1)
         user.username = self.cleaned_data['username']
@@ -376,7 +388,7 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
             'married_to_divorced',
             'child_1_name', 'child_1_birth_date', 'child_2_name', 'child_2_birth_date',
             'child_3_name', 'child_3_birth_date', 'child_4_name', 'child_4_birth_date',
-            'ministries', 'status', 'frequency', 'baptized',
+            'ministries', 'status', 'conversion_date', 'baptism_date', 'church_entry_date',
         ]
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
@@ -385,6 +397,9 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
             'child_2_birth_date': forms.DateInput(attrs={'type': 'date'}),
             'child_3_birth_date': forms.DateInput(attrs={'type': 'date'}),
             'child_4_birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'conversion_date': forms.DateInput(attrs={'type': 'date'}),
+            'baptism_date': forms.DateInput(attrs={'type': 'date'}),
+            'church_entry_date': forms.DateInput(attrs={'type': 'date'}),
             'married': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
             'widowed': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
             'divorced': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),

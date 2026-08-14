@@ -119,6 +119,9 @@ class Member(models.Model):
     child_4_birth_date = models.DateField('nascimento do filho 4', null=True, blank=True)
     ministries = models.ManyToManyField(Ministry, blank=True, related_name='members', verbose_name='ministérios')
     status = models.CharField('status', max_length=20, choices=Status, default=Status.ACTIVE)
+    conversion_date = models.DateField('data de conversão', null=True, blank=True)
+    baptism_date = models.DateField('data de batismo', null=True, blank=True)
+    church_entry_date = models.DateField('data de entrada na igreja', null=True, blank=True)
     frequency = models.PositiveSmallIntegerField('frequência', default=0)
     baptized = models.BooleanField('batizado', default=False)
     avatar_url = models.URLField('avatar', blank=True)
@@ -131,6 +134,30 @@ class Member(models.Model):
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def _duration_since(start_date):
+        if not start_date:
+            return 'Não informado'
+        today = timezone.localdate()
+        months = (today.year - start_date.year) * 12 + today.month - start_date.month
+        if today.day < start_date.day:
+            months -= 1
+        years, remaining_months = divmod(max(0, months), 12)
+        parts = []
+        if years:
+            parts.append(f'{years} ano' if years == 1 else f'{years} anos')
+        if remaining_months:
+            parts.append(f'{remaining_months} mês' if remaining_months == 1 else f'{remaining_months} meses')
+        return ' e '.join(parts) if parts else 'Menos de 1 mês'
+
+    @property
+    def converted_duration(self):
+        return self._duration_since(self.conversion_date)
+
+    @property
+    def church_duration(self):
+        return self._duration_since(self.church_entry_date)
 
 
 class Event(models.Model):

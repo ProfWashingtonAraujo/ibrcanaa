@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,7 +18,7 @@ from django.utils import timezone
 from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
-from .charts import attendance_chart, finance_composition_chart, reports_chart, weekly_cashflow_chart
+from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
@@ -192,11 +192,19 @@ def dashboard_context(user=None):
     show_finances = not user or not AccessProfile.objects.filter(
         user=user, role=AccessProfile.Role.PASTOR,
     ).exists()
+    church_entry_dates = list(
+        members.exclude(church_entry_date=None).values_list('church_entry_date', flat=True)
+    )
+    average_church_years = (
+        round(sum((timezone.localdate() - entry_date).days for entry_date in church_entry_dates) / 365.2425 / len(church_entry_dates), 1)
+        if church_entry_dates else 0
+    )
     context = {
         'member_count': members.count(),
         'active_count': members.filter(status__in=active_statuses).count(),
         'visitor_count': members.filter(status__in=[Member.Status.VISITOR, Member.Status.NEW]).count(),
-        'average_frequency': round(members.aggregate(avg=Avg('frequency'))['avg'] or 0),
+        'average_church_years': average_church_years,
+        'journey_count': len(church_entry_dates),
         'event_count': Event.objects.count(),
         'show_finances': show_finances,
         'upcoming_events': Event.objects.filter(starts_at__gte=timezone.now())[:4],
@@ -213,7 +221,7 @@ def dashboard_context(user=None):
 def dashboard(request):
     context = dashboard_context(request.user)
     context['recent_members'] = Member.objects.prefetch_related('ministries')[:5]
-    context['attendance_chart'] = attendance_chart(Member.objects.all())
+    context['membership_chart'] = membership_tenure_chart(Member.objects.all())
     return render(request, 'core/dashboard.html', context)
 
 
@@ -242,8 +250,7 @@ def members(request):
         'selected_ministry': selected_ministry,
         'status_choices': Member.Status.choices,
         'ministries': Ministry.objects.all(),
-        'baptized_count': Member.objects.filter(baptized=True).count(),
-        'care_count': Member.objects.filter(frequency__lt=60).count(),
+        'baptized_count': Member.objects.filter(Q(baptism_date__isnull=False) | Q(baptized=True)).count(),
     })
     return render(request, 'core/members.html', context)
 

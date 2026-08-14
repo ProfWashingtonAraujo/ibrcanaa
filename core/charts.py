@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import plotly.graph_objects as go
 from plotly.offline import plot
+from django.utils import timezone
 
 
 BLUE = '#173984'
@@ -35,10 +36,11 @@ def _render(figure, height=320):
     )
 
 
-def attendance_chart(members):
-    rows = list(members.order_by('-frequency')[:6])
+def membership_tenure_chart(members):
+    rows = list(members.exclude(church_entry_date=None).order_by('church_entry_date')[:6])
     labels = [member.name.split()[0] for member in rows]
-    values = [member.frequency for member in rows]
+    today = timezone.localdate()
+    values = [round(max(0, (today - member.church_entry_date).days) / 365.2425, 1) for member in rows]
     figure = go.Figure(go.Scatter(
         x=labels,
         y=values,
@@ -47,9 +49,9 @@ def attendance_chart(members):
         marker=dict(size=11, color=GOLD, line=dict(color=BLUE, width=3)),
         fill='tozeroy',
         fillcolor='rgba(23,57,132,.10)',
-        hovertemplate='<b>%{x}</b><br>Frequência: %{y}%<extra></extra>',
+        hovertemplate='<b>%{x}</b><br>Tempo de igreja: %{y:.1f} anos<extra></extra>',
     ))
-    figure.update_yaxes(range=[0, 110], ticksuffix='%', gridcolor=GRID, zeroline=False)
+    figure.update_yaxes(ticksuffix=' anos', gridcolor=GRID, zeroline=False, rangemode='tozero')
     figure.update_xaxes(showgrid=False)
     return _render(figure)
 

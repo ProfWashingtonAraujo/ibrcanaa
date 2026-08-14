@@ -351,6 +351,10 @@ class AccessTests(TestCase):
         self.assertContains(form_page, 'Família e estado civil')
         self.assertContains(form_page, 'Filhos')
         self.assertContains(form_page, 'type="date" name="birth_date"')
+        self.assertContains(form_page, 'type="date" name="conversion_date"')
+        self.assertContains(form_page, 'type="date" name="baptism_date"')
+        self.assertContains(form_page, 'type="date" name="church_entry_date"')
+        self.assertNotContains(form_page, 'name="frequency"')
 
         response = self.client.post(reverse('member_create'), {
             'name': 'Pessoa Completa',
@@ -371,8 +375,9 @@ class AccessTests(TestCase):
             'child_1_birth_date': '2015-02-03',
             'ministries': [],
             'status': Member.Status.ACTIVE,
-            'frequency': 80,
-            'baptized': 'on',
+            'conversion_date': '2006-08-14',
+            'baptism_date': '2007-01-20',
+            'church_entry_date': '2016-02-14',
             'username': 'pessoa.completa',
             'password1': 'SenhaForte@2026',
             'password2': 'SenhaForte@2026',
@@ -389,6 +394,13 @@ class AccessTests(TestCase):
         self.assertFalse(member.divorced)
         self.assertEqual(member.child_1_name, 'Filho Um')
         self.assertEqual(member.child_1_birth_date, date(2015, 2, 3))
+        self.assertEqual(member.conversion_date, date(2006, 8, 14))
+        self.assertEqual(member.baptism_date, date(2007, 1, 20))
+        self.assertEqual(member.church_entry_date, date(2016, 2, 14))
+        self.assertTrue(member.baptized)
+        with patch('core.models.timezone.localdate', return_value=date(2026, 8, 14)):
+            self.assertEqual(member.converted_duration, '20 anos')
+            self.assertEqual(member.church_duration, '10 anos e 6 meses')
 
     def test_member_form_rejects_future_family_dates(self):
         self.client.login(username='staff', password='test-pass')
@@ -745,6 +757,11 @@ class AccessTests(TestCase):
         )
 
     def test_member_portal_shows_personal_summary(self):
+        member = self.member_user.member_profile
+        member.conversion_date = date(2006, 8, 14)
+        member.baptism_date = date(2007, 1, 20)
+        member.church_entry_date = date(2016, 2, 14)
+        member.save(update_fields=['conversion_date', 'baptism_date', 'church_entry_date'])
         Transaction.objects.create(
             date='2026-08-01',
             description='Contribuição mensal',
@@ -760,7 +777,10 @@ class AccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Olá, Membro.')
         self.assertContains(response, 'R$ 150,00')
-        self.assertContains(response, 'Minha frequência')
+        self.assertContains(response, 'Tempo de convertido')
+        self.assertContains(response, 'Tempo de igreja')
+        self.assertContains(response, '20/01/2007')
+        self.assertNotContains(response, 'Minha frequência')
         self.assertContains(response, 'tesouraria_001.png')
         self.assertContains(response, 'Contribua também pelo QR Code')
 

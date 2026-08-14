@@ -11,9 +11,9 @@
   </section>
 
   <section class="portal-metrics">
-    <article class="frequency-metric"><div class="metric-copy"><span>Minha frequência</span><strong>{{ member.frequency }}%</strong><small>{% if member.frequency >= 75 %}Participação consistente{% elif member.frequency >= 60 %}Continue caminhando conosco{% else %}Sentimos sua falta{% endif %}</small></div><div class="frequency-ring" style="--frequency:{{ member.frequency }}"><span>{{ member.frequency }}%</span></div></article>
-    <article><span class="portal-metric-icon">JR</span><div><small>Minha jornada</small><strong>{{ member.get_status_display }}</strong><span>Membro desde {{ member.created_at|date:'M Y' }}</span></div></article>
-    <article><span class="portal-metric-icon gold-metric">BT</span><div><small>Batismo</small><strong>{{ member.baptized|yesno:'Confirmado,Pendente' }}</strong><span>{% if member.baptized %}Parte da sua caminhada{% else %}Converse com a liderança{% endif %}</span></div></article>
+    <article><span class="portal-metric-icon">CV</span><div><small>Tempo de convertido</small><strong>{{ member.converted_duration }}</strong><span>{% if member.conversion_date %}Desde {{ member.conversion_date|date:'d/m/Y' }}{% else %}Data de conversão não informada{% endif %}</span></div></article>
+    <article><span class="portal-metric-icon green-metric">JR</span><div><small>Tempo de igreja</small><strong>{{ member.church_duration }}</strong><span>{% if member.church_entry_date %}Desde {{ member.church_entry_date|date:'d/m/Y' }}{% else %}Data de entrada não informada{% endif %}</span></div></article>
+    <article><span class="portal-metric-icon gold-metric">BT</span><div><small>Batismo</small><strong>{% if member.baptism_date %}{{ member.baptism_date|date:'d/m/Y' }}{% elif member.baptized %}Confirmado{% else %}Não informado{% endif %}</strong><span>{% if member.baptism_date %}Data registrada{% elif member.baptized %}Data ainda não informada{% else %}Converse com a liderança{% endif %}</span></div></article>
     <article><span class="portal-metric-icon green-metric">CN</span><div><small>Contribuições</small><strong>{{ contribution_count }}</strong><span>R$ {{ contribution_total|floatformat:2 }} registrados</span></div></article>
   </section>
 

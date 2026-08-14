@@ -36,20 +36,22 @@ class Command(BaseCommand):
             ministries[name], _ = Ministry.objects.update_or_create(name=name, defaults={'leader_name': leader, 'status': status})
 
         member_rows = [
-            ('João Silva', 'joao.silva@email.com', 'Louvor e Adoração', Member.Status.ACTIVE, 95, True),
-            ('Maria Santos', 'maria.santos@email.com', 'Canaã Kids', Member.Status.LEADERSHIP, 100, True),
-            ('Pedro Oliveira', 'pedro.oliveira@email.com', 'Recepção', Member.Status.ACTIVE, 80, True),
-            ('Ana Costa', 'ana.costa@email.com', None, Member.Status.VISITOR, 20, False),
-            ('Lucas Souza', 'lucas.souza@email.com', 'Jovens', Member.Status.NEW, 50, False),
-            ('Carla Dias', 'carla.dias@email.com', 'Intercessão', Member.Status.AWAY, 5, True),
+            ('João Silva', 'joao.silva@email.com', 'Louvor e Adoração', Member.Status.ACTIVE, date(2005, 4, 10), date(2005, 9, 18), date(2014, 2, 2)),
+            ('Maria Santos', 'maria.santos@email.com', 'Canaã Kids', Member.Status.LEADERSHIP, date(1998, 7, 12), date(1999, 1, 24), date(2008, 5, 11)),
+            ('Pedro Oliveira', 'pedro.oliveira@email.com', 'Recepção', Member.Status.ACTIVE, date(2011, 3, 6), date(2011, 8, 21), date(2018, 10, 7)),
+            ('Ana Costa', 'ana.costa@email.com', None, Member.Status.VISITOR, None, None, None),
+            ('Lucas Souza', 'lucas.souza@email.com', 'Jovens', Member.Status.NEW, date(2025, 11, 9), None, date(2026, 1, 18)),
+            ('Carla Dias', 'carla.dias@email.com', 'Intercessão', Member.Status.AWAY, date(2001, 6, 17), date(2002, 2, 10), date(2010, 8, 15)),
         ]
         members = {}
-        for name, email, ministry, status, frequency, baptized in member_rows:
+        for name, email, ministry, status, conversion_date, baptism_date, church_entry_date in member_rows:
             members[name], _ = Member.objects.update_or_create(email=email, defaults={
                 'name': name,
                 'status': status,
-                'frequency': frequency,
-                'baptized': baptized,
+                'conversion_date': conversion_date,
+                'baptism_date': baptism_date,
+                'church_entry_date': church_entry_date,
+                'baptized': bool(baptism_date),
             })
             members[name].ministries.set([ministries[ministry]] if ministry else [])
 

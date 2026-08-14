@@ -5,8 +5,8 @@ from .models import AccessProfile, ContactLead, Course, CourseEvaluation, Event,
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'status', 'ministry_names', 'frequency']
-    list_filter = ['status', 'ministries', 'baptized']
+    list_display = ['name', 'email', 'status', 'church_entry_date', 'baptism_date', 'ministry_names']
+    list_filter = ['status', 'ministries', 'baptism_date', 'church_entry_date']
     search_fields = ['name', 'email']
 
     @admin.display(description='ministérios')
