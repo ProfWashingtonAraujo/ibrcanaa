@@ -242,8 +242,7 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
             'profession', 'education',
         )),
         ('Família e estado civil', 'Informações para acompanhamento e cuidado familiar.', (
-            'married', 'wedding_date', 'widowed', 'widow_comments', 'divorced',
-            'divorce_comments', 'married_to_divorced', 'spouse_divorce_comments',
+            'married', 'wedding_date', 'widowed', 'divorced', 'married_to_divorced',
         )),
         ('Filhos', 'Cadastre até quatro filhos e suas datas de nascimento.', (
             'child_1_name', 'child_1_birth_date', 'child_2_name', 'child_2_birth_date',
@@ -274,10 +273,7 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         required=False,
         widget=forms.PasswordInput,
     )
-    full_width_fields = {
-        'address', 'widow_comments', 'divorce_comments', 'spouse_divorce_comments',
-        'ministries', 'photo', 'username',
-    }
+    full_width_fields = {'address', 'ministries', 'photo', 'username'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -376,8 +372,8 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         model = Member
         fields = [
             'name', 'birth_date', 'address', 'email', 'home_phone', 'phone', 'work_phone',
-            'profession', 'education', 'married', 'wedding_date', 'widowed', 'widow_comments',
-            'divorced', 'divorce_comments', 'married_to_divorced', 'spouse_divorce_comments',
+            'profession', 'education', 'married', 'wedding_date', 'widowed', 'divorced',
+            'married_to_divorced',
             'child_1_name', 'child_1_birth_date', 'child_2_name', 'child_2_birth_date',
             'child_3_name', 'child_3_birth_date', 'child_4_name', 'child_4_birth_date',
             'ministries', 'status', 'frequency', 'baptized',
@@ -393,9 +389,6 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
             'widowed': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
             'divorced': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
             'married_to_divorced': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
-            'widow_comments': forms.Textarea(attrs={'rows': 3}),
-            'divorce_comments': forms.Textarea(attrs={'rows': 3}),
-            'spouse_divorce_comments': forms.Textarea(attrs={'rows': 3}),
             'ministries': forms.CheckboxSelectMultiple,
         }
 
