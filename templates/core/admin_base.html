@@ -22,7 +22,7 @@
     </nav>
     <div class="sidebar-user">
       {% if request.user.access_profile.photo %}<img class="avatar-initials user-photo" src="{{ request.user.access_profile.photo.url }}" alt="">{% else %}<span class="avatar-initials">{{ request.user.first_name|first|default:'A' }}{{ request.user.last_name|first }}</span>{% endif %}
-      <span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ request.user.access_profile.get_role_display|default:'Diretoria' }}</small></span>
+      <span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ request.user.access_profile.get_role_display|default:'Admin' }}</small></span>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="Sair">→</button></form>
     </div>
   </aside>

@@ -1070,6 +1070,8 @@ class AccessTests(TestCase):
         self.assertContains(response, reverse('member_autocomplete'))
         self.assertContains(response, 'name="password1"')
         self.assertContains(response, 'name="password2"')
+        self.assertContains(response, '<option value="board">Admin</option>', html=True)
+        self.assertNotContains(response, '<option value="board">Diretoria</option>', html=True)
 
     def test_user_photo_upload_is_saved_and_preserved(self):
         import base64

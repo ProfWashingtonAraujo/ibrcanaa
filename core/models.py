@@ -39,7 +39,7 @@ def validate_youtube_url(value):
 class AccessProfile(models.Model):
     class Role(models.TextChoices):
         PASTOR = 'pastor', 'Pastor'
-        BOARD = 'board', 'Diretoria'
+        BOARD = 'board', 'Admin'
         DEACON = 'deacon', 'Diácono'
         SECRETARY = 'secretary', 'Secretário'
         TREASURER = 'treasurer', 'Tesoureiro'
