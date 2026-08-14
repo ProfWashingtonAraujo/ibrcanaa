@@ -1,0 +1,12 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}Membros{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+<section class="application-form-intro"><div><span class="eyebrow gold">Cadastro de membros</span><h2>{% if member %}{{ member.name }}{% else %}Nova pessoa{% endif %}</h2><p>Centralize informações pessoais, familiares, ministeriais e de acesso ao portal.</p></div><span class="confidential-chip">Uso interno</span></section>
+<form method="post" enctype="multipart/form-data" class="application-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-alert">{{ form.non_field_errors }}</div>{% endif %}
+  {% for title, description, fields in form.sections %}<section class="application-section"><div class="application-section-heading"><span>{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ title }}</h3><p>{{ description }}</p></div></div><div class="application-fields">{% for field in fields %}<div class="application-field{% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'textarea' or field.name == 'address' or field.name == 'ministries' or field.name == 'photo' or field.name == 'username' %} wide{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}</div></section>{% endfor %}
+  <div class="application-actions"><a class="button button-ghost" href="{% url 'members' %}">Cancelar</a><button class="button button-primary" type="submit">Salvar membro</button></div>
+</form>
+{% endblock %}
+{% block extra_head %}{{ form.media.css }}{% endblock %}
+{% block extra_scripts %}{{ form.media.js }}{% endblock %}

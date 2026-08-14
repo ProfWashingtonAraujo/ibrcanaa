@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import date
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout
@@ -235,6 +236,26 @@ class MembershipCandidateForm(MembershipApplicationForm):
 
 
 class MemberForm(CrispyFormMixin, forms.ModelForm):
+    section_definitions = (
+        ('Informações pessoais', 'Identificação, contato e dados profissionais.', (
+            'name', 'birth_date', 'address', 'email', 'home_phone', 'phone', 'work_phone',
+            'profession', 'education',
+        )),
+        ('Família e estado civil', 'Informações para acompanhamento e cuidado familiar.', (
+            'married', 'wedding_date', 'widowed', 'widow_comments', 'divorced',
+            'divorce_comments', 'married_to_divorced', 'spouse_divorce_comments',
+        )),
+        ('Filhos', 'Cadastre até quatro filhos e suas datas de nascimento.', (
+            'child_1_name', 'child_1_birth_date', 'child_2_name', 'child_2_birth_date',
+            'child_3_name', 'child_3_birth_date', 'child_4_name', 'child_4_birth_date',
+        )),
+        ('Vida na igreja', 'Situação, participação e ministérios do membro.', (
+            'ministries', 'status', 'frequency', 'baptized',
+        )),
+        ('Acesso ao portal', 'Credenciais e foto usadas na área de membros.', (
+            'username', 'photo', 'password1', 'password2',
+        )),
+    )
     username = forms.CharField(label='Usuário de acesso', max_length=150)
     photo = forms.ImageField(
         label='Foto do membro',
@@ -253,7 +274,10 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
         required=False,
         widget=forms.PasswordInput,
     )
-    full_width_fields = {'ministries', 'photo', 'username'}
+    full_width_fields = {
+        'address', 'widow_comments', 'divorce_comments', 'spouse_divorce_comments',
+        'ministries', 'photo', 'username',
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -288,6 +312,21 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        today = date.today()
+        date_fields = ['birth_date', 'wedding_date'] + [f'child_{index}_birth_date' for index in range(1, 5)]
+        for field_name in date_fields:
+            value = cleaned_data.get(field_name)
+            if value and value > today:
+                self.add_error(field_name, 'A data não pode estar no futuro.')
+        birth_date = cleaned_data.get('birth_date')
+        wedding_date = cleaned_data.get('wedding_date')
+        if birth_date and wedding_date and wedding_date < birth_date:
+            self.add_error('wedding_date', 'A data de casamento não pode ser anterior ao nascimento.')
+        for index in range(1, 5):
+            name_field = f'child_{index}_name'
+            birth_field = f'child_{index}_birth_date'
+            if cleaned_data.get(birth_field) and not cleaned_data.get(name_field):
+                self.add_error(name_field, 'Informe o nome do filho associado a esta data.')
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
         if password1 or password2:
@@ -303,6 +342,13 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
                 except ValidationError as error:
                     self.add_error('password1', error)
         return cleaned_data
+
+    @property
+    def sections(self):
+        return [
+            (title, description, [self[name] for name in field_names])
+            for title, description, field_names in self.section_definitions
+        ]
 
     def save(self, commit=True):
         member = super().save(commit=False)
@@ -328,8 +374,30 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 
     class Meta:
         model = Member
-        fields = ['name', 'email', 'phone', 'ministries', 'status', 'frequency', 'baptized']
-        widgets = {'ministries': forms.CheckboxSelectMultiple}
+        fields = [
+            'name', 'birth_date', 'address', 'email', 'home_phone', 'phone', 'work_phone',
+            'profession', 'education', 'married', 'wedding_date', 'widowed', 'widow_comments',
+            'divorced', 'divorce_comments', 'married_to_divorced', 'spouse_divorce_comments',
+            'child_1_name', 'child_1_birth_date', 'child_2_name', 'child_2_birth_date',
+            'child_3_name', 'child_3_birth_date', 'child_4_name', 'child_4_birth_date',
+            'ministries', 'status', 'frequency', 'baptized',
+        ]
+        widgets = {
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'wedding_date': forms.DateInput(attrs={'type': 'date'}),
+            'child_1_birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'child_2_birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'child_3_birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'child_4_birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'married': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
+            'widowed': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
+            'divorced': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
+            'married_to_divorced': forms.RadioSelect(choices=((None, 'Não informado'), (True, 'Sim'), (False, 'Não'))),
+            'widow_comments': forms.Textarea(attrs={'rows': 3}),
+            'divorce_comments': forms.Textarea(attrs={'rows': 3}),
+            'spouse_divorce_comments': forms.Textarea(attrs={'rows': 3}),
+            'ministries': forms.CheckboxSelectMultiple,
+        }
 
 
 class EventForm(CrispyFormMixin, forms.ModelForm):

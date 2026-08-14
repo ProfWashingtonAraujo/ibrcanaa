@@ -344,6 +344,70 @@ class AccessTests(TestCase):
         self.assertEqual(field.label, 'Ministérios')
         self.assertContains(response, 'type="checkbox"')
 
+    def test_staff_registers_member_personal_and_family_information(self):
+        self.client.login(username='staff', password='test-pass')
+        form_page = self.client.get(reverse('member_create'))
+        self.assertContains(form_page, 'Informações pessoais')
+        self.assertContains(form_page, 'Família e estado civil')
+        self.assertContains(form_page, 'Filhos')
+        self.assertContains(form_page, 'type="date" name="birth_date"')
+
+        response = self.client.post(reverse('member_create'), {
+            'name': 'Pessoa Completa',
+            'birth_date': '1988-04-12',
+            'address': 'Rua das Flores, 100',
+            'email': 'completa@example.com',
+            'home_phone': '8533334444',
+            'phone': '85999998888',
+            'work_phone': '8532221111',
+            'profession': 'Professora',
+            'education': 'Ensino superior',
+            'married': 'True',
+            'wedding_date': '2012-06-09',
+            'widowed': 'False',
+            'divorced': 'False',
+            'married_to_divorced': 'False',
+            'child_1_name': 'Filho Um',
+            'child_1_birth_date': '2015-02-03',
+            'ministries': [],
+            'status': Member.Status.ACTIVE,
+            'frequency': 80,
+            'baptized': 'on',
+            'username': 'pessoa.completa',
+            'password1': 'SenhaForte@2026',
+            'password2': 'SenhaForte@2026',
+        })
+
+        self.assertRedirects(response, reverse('members'))
+        member = Member.objects.get(email='completa@example.com')
+        self.assertEqual(member.birth_date, date(1988, 4, 12))
+        self.assertEqual(member.address, 'Rua das Flores, 100')
+        self.assertEqual(member.home_phone, '8533334444')
+        self.assertEqual(member.phone, '85999998888')
+        self.assertEqual(member.profession, 'Professora')
+        self.assertTrue(member.married)
+        self.assertFalse(member.divorced)
+        self.assertEqual(member.child_1_name, 'Filho Um')
+        self.assertEqual(member.child_1_birth_date, date(2015, 2, 3))
+
+    def test_member_form_rejects_future_family_dates(self):
+        self.client.login(username='staff', password='test-pass')
+        future_date = (timezone.localdate() + timedelta(days=1)).isoformat()
+        response = self.client.post(reverse('member_create'), {
+            'name': 'Data Inválida',
+            'birth_date': future_date,
+            'email': 'data.invalida@example.com',
+            'status': Member.Status.ACTIVE,
+            'frequency': 0,
+            'username': 'data.invalida',
+            'password1': 'SenhaForte@2026',
+            'password2': 'SenhaForte@2026',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'A data não pode estar no futuro.')
+        self.assertFalse(Member.objects.filter(email='data.invalida@example.com').exists())
+
     def test_member_form_limits_ministries_to_three(self):
         self.client.login(username='staff', password='test-pass')
         ministries = [

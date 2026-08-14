@@ -227,6 +227,7 @@ def members(request):
     if search:
         members_query = members_query.filter(
             Q(name__icontains=search) | Q(email__icontains=search) | Q(phone__icontains=search)
+            | Q(home_phone__icontains=search) | Q(work_phone__icontains=search)
         )
     if selected_status:
         members_query = members_query.filter(status=selected_status)
@@ -256,7 +257,11 @@ def member_form(request, pk=None):
         form.save()
         messages.success(request, 'Membro salvo com sucesso.')
         return redirect('members')
-    return render(request, 'core/entity_form.html', {'form': form, 'title': 'Editar membro' if instance else 'Novo membro', 'back_url': 'members'})
+    return render(request, 'core/member_form.html', {
+        'form': form,
+        'title': 'Editar membro' if instance else 'Novo membro',
+        'member': instance,
+    })
 
 
 @staff_required
