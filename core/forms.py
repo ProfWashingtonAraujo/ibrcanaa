@@ -625,7 +625,8 @@ class UserAccountForm(CrispyFormMixin, forms.ModelForm):
             Member.objects.filter(user=user).exclude(pk=getattr(selected_member, 'pk', None)).update(user=None)
             if selected_member:
                 selected_member.user = user
-                selected_member.save(update_fields=['user'])
+                selected_member.name = user.get_full_name()
+                selected_member.save(update_fields=['user', 'name'])
         return user
 
 

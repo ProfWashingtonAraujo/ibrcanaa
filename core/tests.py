@@ -1073,6 +1073,26 @@ class AccessTests(TestCase):
         self.assertContains(response, '<option value="board">Admin</option>', html=True)
         self.assertNotContains(response, '<option value="board">Diretoria</option>', html=True)
 
+    def test_editing_user_name_updates_linked_member_profile(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.post(reverse('user_account_edit', args=[self.member_user.pk]), {
+            'first_name': 'Maria',
+            'last_name': 'Oliveira',
+            'email': 'member@example.com',
+            'username': 'member',
+            'is_active': 'on',
+            'role': AccessProfile.Role.MEMBER,
+            'member': self.member_user.member_profile.pk,
+            'password1': '',
+            'password2': '',
+        })
+
+        self.assertRedirects(response, reverse('user_accounts'))
+        self.member_user.refresh_from_db()
+        self.member_user.member_profile.refresh_from_db()
+        self.assertEqual(self.member_user.get_full_name(), 'Maria Oliveira')
+        self.assertEqual(self.member_user.member_profile.name, 'Maria Oliveira')
+
     def test_user_photo_upload_is_saved_and_preserved(self):
         import base64
 
