@@ -300,6 +300,12 @@
     const youtubeFeatured = youtubeSection.querySelector('[data-youtube-featured]');
     const youtubeList = youtubeSection.querySelector('[data-youtube-list]');
     const youtubeChannelLink = youtubeSection.querySelector('[data-youtube-channel-link]');
+    const formatPublished = (value) => {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(date);
+    };
     const createVideoCard = (video, featured = false) => {
       const article = document.createElement('article');
       article.className = featured ? 'video-featured reveal visible' : 'reveal visible';
@@ -312,7 +318,7 @@
       if (featured) {
         const copy = document.createElement('div');
         const label = document.createElement('small');
-        label.textContent = 'MENSAGEM EM DESTAQUE';
+        label.textContent = `MENSAGEM EM DESTAQUE${formatPublished(video.published) ? ` · ${formatPublished(video.published)}` : ''}`;
         const title = document.createElement('h3');
         title.textContent = video.title;
         const author = document.createElement('p');
@@ -325,6 +331,12 @@
         const author = document.createElement('p');
         author.textContent = video.channel_title || 'Igreja Batista Regular Canaã';
         article.append(title, author);
+        const date = formatPublished(video.published);
+        if (date) {
+          const published = document.createElement('small');
+          published.textContent = date;
+          article.append(published);
+        }
       }
       return article;
     };

@@ -35,12 +35,12 @@
     <div class="video-gallery">
       {% with youtube_videos|first as featured_video %}
       {% if featured_video %}
-      <article class="video-featured reveal"><lite-youtube videoid="{{ featured_video.video_id }}" title="{{ featured_video.title }}" playlabel="Reproduzir {{ featured_video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><div><small>MENSAGEM EM DESTAQUE</small><h3>{{ featured_video.title }}</h3><p>{{ featured_video.channel_title }}</p></div></article>
+      <article class="video-featured reveal"><lite-youtube videoid="{{ featured_video.video_id }}" title="{{ featured_video.title }}" playlabel="Reproduzir {{ featured_video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><div><small>MENSAGEM EM DESTAQUE{% if featured_video.published %} · {{ featured_video.published|date:'d/m/Y' }}{% endif %}</small><h3>{{ featured_video.title }}</h3><p>{{ featured_video.channel_title }}</p></div></article>
       {% endif %}
       {% endwith %}
       <div class="video-list">
         {% for video in youtube_videos|slice:"1:4" %}
-        <article class="reveal"><lite-youtube videoid="{{ video.video_id }}" title="{{ video.title }}" playlabel="Reproduzir {{ video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><h3>{{ video.title }}</h3><p>{{ video.channel_title }}</p></article>
+        <article class="reveal"><lite-youtube videoid="{{ video.video_id }}" title="{{ video.title }}" playlabel="Reproduzir {{ video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><h3>{{ video.title }}</h3><p>{{ video.channel_title }}</p>{% if video.published %}<small>{{ video.published|date:'d/m/Y' }}</small>{% endif %}</article>
         {% endfor %}
       </div>
     </div>

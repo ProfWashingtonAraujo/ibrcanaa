@@ -18,6 +18,7 @@ from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from dal import autocomplete
 
@@ -90,6 +91,7 @@ def _get_youtube_videos_from_feed(limit=4):
         video_id = entry.findtext('{http://www.youtube.com/xml/schemas/2015}videoId')
         if not video_id:
             continue
+        published = parse_datetime((entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip())
         videos.append({
             'video_id': video_id,
             'title': (entry.findtext('{http://www.w3.org/2005/Atom}title') or '').strip(),
@@ -97,7 +99,7 @@ def _get_youtube_videos_from_feed(limit=4):
                 entry.findtext('{http://www.w3.org/2005/Atom}author/{http://www.w3.org/2005/Atom}name')
                 or 'Igreja Batista Regular Canaã'
             ).strip(),
-            'published': (entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip(),
+            'published': published,
         })
         if len(videos) >= limit:
             break

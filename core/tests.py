@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone as dt_timezone
 from io import BytesIO
 
 from pypdf import PdfReader
@@ -50,10 +50,10 @@ class PublicViewsTests(TestCase):
     @patch('core.views.public_youtube_videos')
     def test_home_allows_referrer_identity_for_embedded_players(self, mocked_videos):
         mocked_videos.return_value = [
-            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
-            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
-            {'video_id': 'CCCCCCCCCCC', 'title': 'Terceiro vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
-            {'video_id': 'DDDDDDDDDDD', 'title': 'Quarto vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
+            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 24, 12, 0, tzinfo=dt_timezone.utc)},
+            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 23, 12, 0, tzinfo=dt_timezone.utc)},
+            {'video_id': 'CCCCCCCCCCC', 'title': 'Terceiro vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 22, 12, 0, tzinfo=dt_timezone.utc)},
+            {'video_id': 'DDDDDDDDDDD', 'title': 'Quarto vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 21, 12, 0, tzinfo=dt_timezone.utc)},
         ]
         response = self.client.get(reverse('home'))
         self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
@@ -62,12 +62,13 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'videoid="BBBBBBBBBBB"')
         self.assertContains(response, 'videoid="CCCCCCCCCCC"')
         self.assertContains(response, 'videoid="DDDDDDDDDDD"')
+        self.assertContains(response, 'MENSAGEM EM DESTAQUE · 24/08/2026')
 
     @patch('core.views.public_youtube_videos')
     def test_public_youtube_videos_feed_exposes_latest_videos(self, mocked_videos):
         mocked_videos.return_value = [
-            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': '2026-08-24T12:00:00Z'},
-            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': '2026-08-23T12:00:00Z'},
+            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 24, 12, 0, tzinfo=dt_timezone.utc)},
+            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 23, 12, 0, tzinfo=dt_timezone.utc)},
         ]
         response = self.client.get(
             reverse('public_youtube_videos_feed'),
@@ -77,6 +78,7 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
         self.assertEqual(response.headers['Cache-Control'], 'public, max-age=300')
         self.assertEqual(response.json()['videos'][0]['video_id'], 'AAAAAAAAAAA')
+        self.assertIn('2026-08-24', response.json()['videos'][0]['published'])
         self.assertEqual(response.json()['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
 
     def test_home_shows_church_location_and_service_times(self):
