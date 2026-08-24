@@ -2,11 +2,15 @@ from decimal import Decimal
 from datetime import timedelta
 from functools import wraps
 from io import BytesIO
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+from xml.etree import ElementTree
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
@@ -24,6 +28,37 @@ from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
+YOUTUBE_CHANNEL_ID = 'UCnJeIwpnusCcbJa9nAInb8Q'
+YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
+YOUTUBE_FEED_URL = f'https://www.youtube.com/feeds/videos.xml?channel_id={YOUTUBE_CHANNEL_ID}'
+YOUTUBE_CACHE_KEY = 'public_youtube_videos'
+YOUTUBE_CACHE_TTL = 300
+YOUTUBE_FALLBACK_VIDEOS = [
+    {
+        'video_id': 'jiIRdV-4rUE',
+        'title': 'Uma vitória com sabor de mel',
+        'channel_title': 'Igreja Batista Regular Canaã',
+        'published': '',
+    },
+    {
+        'video_id': 'jAHRzidBFbw',
+        'title': 'Mentiras do mundo e verdades bíblicas',
+        'channel_title': 'Igreja Batista Regular Canaã',
+        'published': '',
+    },
+    {
+        'video_id': 'MlocoEhWjAs',
+        'title': 'Ansiedade na vida do cristão',
+        'channel_title': 'Igreja Batista Regular Canaã',
+        'published': '',
+    },
+    {
+        'video_id': 'pkkm0wvwgHY',
+        'title': 'Crises e perdas na família',
+        'channel_title': 'Igreja Batista Regular Canaã',
+        'published': '',
+    },
+]
 
 
 def staff_required(view):
@@ -43,6 +78,62 @@ def user_manager_required(view):
         return view(request, *args, **kwargs)
 
     return wrapped
+
+
+def _get_youtube_videos_from_feed(limit=4):
+    request = Request(YOUTUBE_FEED_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    with urlopen(request, timeout=5) as response:
+        root = ElementTree.fromstring(response.read())
+
+    videos = []
+    for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
+        video_id = entry.findtext('{http://www.youtube.com/xml/schemas/2015}videoId')
+        if not video_id:
+            continue
+        videos.append({
+            'video_id': video_id,
+            'title': (entry.findtext('{http://www.w3.org/2005/Atom}title') or '').strip(),
+            'channel_title': (
+                entry.findtext('{http://www.w3.org/2005/Atom}author/{http://www.w3.org/2005/Atom}name')
+                or 'Igreja Batista Regular Canaã'
+            ).strip(),
+            'published': (entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip(),
+        })
+        if len(videos) >= limit:
+            break
+    return videos
+
+
+def public_youtube_videos(limit=4):
+    cache_key = f'{YOUTUBE_CACHE_KEY}:{limit}'
+    cached_videos = cache.get(cache_key)
+    if cached_videos is not None:
+        return cached_videos
+
+    try:
+        videos = _get_youtube_videos_from_feed(limit=limit)
+    except (ElementTree.ParseError, OSError, URLError, TimeoutError, ValueError):
+        videos = []
+
+    if not videos:
+        videos = YOUTUBE_FALLBACK_VIDEOS[:limit]
+
+    cache.set(cache_key, videos, YOUTUBE_CACHE_TTL)
+    return videos
+
+
+def _build_youtube_response(request):
+    response = JsonResponse({
+        'channel': {
+            'name': 'Igreja Batista Regular Canaã',
+            'url': YOUTUBE_CHANNEL_URL,
+        },
+        'videos': public_youtube_videos(),
+    })
+    if request.headers.get('Origin') == 'https://profwashingtonaraujo.github.io':
+        response['Access-Control-Allow-Origin'] = 'https://profwashingtonaraujo.github.io'
+        response['Vary'] = 'Origin'
+    return response
 
 
 def pastor_required(view):
@@ -103,7 +194,15 @@ def home(request):
         'next_occurrence': next_occurrence,
         'public_ministries': Ministry.objects.all(),
         'daily_verse': get_daily_verse(timezone.localdate()),
+        'youtube_videos': public_youtube_videos(),
+        'youtube_channel_url': YOUTUBE_CHANNEL_URL,
     })
+
+
+def public_youtube_videos_feed(request):
+    response = _build_youtube_response(request)
+    response['Cache-Control'] = 'public, max-age=300'
+    return response
 
 
 def public_ministry_feed(request):

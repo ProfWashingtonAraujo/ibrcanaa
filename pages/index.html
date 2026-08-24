@@ -122,16 +122,16 @@
       </div>
     </section>
 
-    <section class="videos" id="mensagens">
+    <section class="videos" id="mensagens" data-feed-url="https://ibrcanaa.onrender.com/videos/youtube/">
       <div class="video-heading reveal">
         <div><span class="eyebrow gold">Palavra que edifica</span>
           <h2>Mensagens e cultos</h2>
         </div>
-        <a class="channel-link" href="https://www.youtube.com/@ibrcanaa" target="_blank" rel="noopener">Ver canal no
+        <a class="channel-link" href="https://www.youtube.com/@ibrcanaa" target="_blank" rel="noopener" data-youtube-channel-link>Ver canal no
           YouTube <span aria-hidden="true">↗</span></a>
       </div>
-      <div class="video-gallery">
-        <article class="video-featured reveal"><lite-youtube videoid="jiIRdV-4rUE" title="Uma vitória com sabor de mel"
+      <div class="video-gallery" data-youtube-gallery>
+        <article class="video-featured reveal" data-youtube-featured><lite-youtube videoid="jiIRdV-4rUE" title="Uma vitória com sabor de mel"
             playlabel="Reproduzir Uma vitória com sabor de mel"
             params="origin=https://profwashingtonaraujo.github.io"></lite-youtube>
           <div><small>MENSAGEM EM DESTAQUE</small>
@@ -139,7 +139,7 @@
             <p>Igreja Batista Regular Canaã</p>
           </div>
         </article>
-        <div class="video-list">
+        <div class="video-list" data-youtube-list>
           <article class="reveal"><lite-youtube videoid="jAHRzidBFbw"
               title="Mentiras que o mundo conta sobre o sexo e as verdades bíblicas que libertam | Dia 02"
               playlabel="Reproduzir mensagem do dia 2"
@@ -294,6 +294,53 @@
         dailyVerse.querySelector('[data-verse-text]').textContent = verse.text;
         dailyVerse.querySelector('[data-verse-reference]').textContent = verse.reference;
         dailyVerse.querySelector('[data-verse-link]').href = `https://ibrcanaa.onrender.com/portal/biblia/?livro=${encodeURIComponent(verse.book)}&capitulo=${verse.chapter}#v${verse.verse}`;
+      })
+      .catch(() => { });
+    const youtubeSection = document.querySelector('[data-feed-url="https://ibrcanaa.onrender.com/videos/youtube/"]');
+    const youtubeFeatured = youtubeSection.querySelector('[data-youtube-featured]');
+    const youtubeList = youtubeSection.querySelector('[data-youtube-list]');
+    const youtubeChannelLink = youtubeSection.querySelector('[data-youtube-channel-link]');
+    const createVideoCard = (video, featured = false) => {
+      const article = document.createElement('article');
+      article.className = featured ? 'video-featured reveal visible' : 'reveal visible';
+      const player = document.createElement('lite-youtube');
+      player.setAttribute('videoid', video.video_id);
+      player.setAttribute('title', video.title);
+      player.setAttribute('playlabel', `Reproduzir ${video.title}`);
+      player.setAttribute('params', `origin=${location.origin}`);
+      article.append(player);
+      if (featured) {
+        const copy = document.createElement('div');
+        const label = document.createElement('small');
+        label.textContent = 'MENSAGEM EM DESTAQUE';
+        const title = document.createElement('h3');
+        title.textContent = video.title;
+        const author = document.createElement('p');
+        author.textContent = video.channel_title || 'Igreja Batista Regular Canaã';
+        copy.append(label, title, author);
+        article.append(copy);
+      } else {
+        const title = document.createElement('h3');
+        title.textContent = video.title;
+        const author = document.createElement('p');
+        author.textContent = video.channel_title || 'Igreja Batista Regular Canaã';
+        article.append(title, author);
+      }
+      return article;
+    };
+    fetch(youtubeSection.dataset.feedUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error('Não foi possível carregar os vídeos do YouTube.');
+        return response.json();
+      })
+      .then((payload) => {
+        const videos = payload.videos || [];
+        if (!videos.length) return;
+        if (payload.channel?.url) {
+          youtubeChannelLink.href = payload.channel.url;
+        }
+        youtubeFeatured.replaceWith(createVideoCard(videos[0], true));
+        youtubeList.replaceChildren(...videos.slice(1, 4).map((video) => createVideoCard(video)));
       })
       .catch(() => { });
   </script>

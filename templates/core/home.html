@@ -31,13 +31,17 @@
   </section>
   <section class="public-section ministry-section" id="ministerios"><div class="section-heading reveal"><span class="eyebrow gold">Vida da igreja</span><h2>Espaços para toda a família crescer.</h2></div><div class="ministry-grid">{% for ministry in public_ministries %}<article class="reveal"><span class="ministry-number">{{ forloop.counter|stringformat:'02d' }}</span><small>{{ ministry.get_status_display|upper }}</small><h3>{{ ministry.name }}</h3><p>{{ ministry.description|default:'Um espaço para servir, crescer e viver em comunhão.' }}</p><i>{% if ministry.status == 'recruiting' %}Quero servir{% else %}Conhecer{% endif %}</i></article>{% empty %}<article class="reveal ministry-empty"><span class="ministry-number">01</span><small>EM ORGANIZAÇÃO</small><h3>Novos ministérios</h3><p>Em breve, novas oportunidades para servir.</p><i>Acompanhe</i></article>{% endfor %}</div></section>
   <section class="video-section" id="mensagens">
-    <div class="video-heading reveal"><div><span class="eyebrow gold">Palavra que edifica</span><h2>Mensagens e cultos</h2></div><a class="youtube-channel-link" href="https://www.youtube.com/@ibrcanaa" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
+    <div class="video-heading reveal"><div><span class="eyebrow gold">Palavra que edifica</span><h2>Mensagens e cultos</h2></div><a class="youtube-channel-link" href="{{ youtube_channel_url }}" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
     <div class="video-gallery">
-      <article class="video-featured reveal"><lite-youtube videoid="jiIRdV-4rUE" title="Uma vitória com sabor de mel" playlabel="Reproduzir Uma vitória com sabor de mel" params="origin=https://ibrcanaa.onrender.com"></lite-youtube><div><small>MENSAGEM EM DESTAQUE</small><h3>Uma vitória com sabor de mel</h3><p>Igreja Batista Regular Canaã</p></div></article>
+      {% with youtube_videos|first as featured_video %}
+      {% if featured_video %}
+      <article class="video-featured reveal"><lite-youtube videoid="{{ featured_video.video_id }}" title="{{ featured_video.title }}" playlabel="Reproduzir {{ featured_video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><div><small>MENSAGEM EM DESTAQUE</small><h3>{{ featured_video.title }}</h3><p>{{ featured_video.channel_title }}</p></div></article>
+      {% endif %}
+      {% endwith %}
       <div class="video-list">
-        <article class="reveal"><lite-youtube videoid="jAHRzidBFbw" title="Mentiras que o mundo conta sobre o sexo e as verdades bíblicas que libertam | Dia 02" playlabel="Reproduzir mensagem do dia 2" params="origin=https://ibrcanaa.onrender.com"></lite-youtube><h3>Mentiras do mundo e verdades bíblicas</h3><p>Dia 02</p></article>
-        <article class="reveal"><lite-youtube videoid="MlocoEhWjAs" title="Ansiedade na vida do cristão | Pr. Márcio Bastos" playlabel="Reproduzir Ansiedade na vida do cristão" params="origin=https://ibrcanaa.onrender.com"></lite-youtube><h3>Ansiedade na vida do cristão</h3><p>Pr. Márcio Bastos</p></article>
-        <article class="reveal"><lite-youtube videoid="pkkm0wvwgHY" title="Lidando com crises e perdas na família" playlabel="Reproduzir Lidando com crises e perdas na família" params="origin=https://ibrcanaa.onrender.com"></lite-youtube><h3>Crises e perdas na família</h3><p>Igreja Batista Regular Canaã</p></article>
+        {% for video in youtube_videos|slice:"1:4" %}
+        <article class="reveal"><lite-youtube videoid="{{ video.video_id }}" title="{{ video.title }}" playlabel="Reproduzir {{ video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><h3>{{ video.title }}</h3><p>{{ video.channel_title }}</p></article>
+        {% endfor %}
       </div>
     </div>
   </section>

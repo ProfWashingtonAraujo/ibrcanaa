@@ -47,13 +47,37 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'id="public-calendar"')
         self.assertContains(response, reverse('public_event_feed'))
 
-    def test_home_allows_referrer_identity_for_embedded_players(self):
+    @patch('core.views.public_youtube_videos')
+    def test_home_allows_referrer_identity_for_embedded_players(self, mocked_videos):
+        mocked_videos.return_value = [
+            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
+            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
+            {'video_id': 'CCCCCCCCCCC', 'title': 'Terceiro vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
+            {'video_id': 'DDDDDDDDDDD', 'title': 'Quarto vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': ''},
+        ]
         response = self.client.get(reverse('home'))
         self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
-        self.assertContains(response, 'params="origin=https://ibrcanaa.onrender.com"', count=4)
-        self.assertContains(response, 'videoid="jiIRdV-4rUE"')
-        self.assertContains(response, 'videoid="MlocoEhWjAs"')
-        self.assertContains(response, 'videoid="pkkm0wvwgHY"')
+        self.assertContains(response, 'params="origin=http://testserver"', count=4)
+        self.assertContains(response, 'videoid="AAAAAAAAAAA"')
+        self.assertContains(response, 'videoid="BBBBBBBBBBB"')
+        self.assertContains(response, 'videoid="CCCCCCCCCCC"')
+        self.assertContains(response, 'videoid="DDDDDDDDDDD"')
+
+    @patch('core.views.public_youtube_videos')
+    def test_public_youtube_videos_feed_exposes_latest_videos(self, mocked_videos):
+        mocked_videos.return_value = [
+            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': '2026-08-24T12:00:00Z'},
+            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': '2026-08-23T12:00:00Z'},
+        ]
+        response = self.client.get(
+            reverse('public_youtube_videos_feed'),
+            HTTP_ORIGIN='https://profwashingtonaraujo.github.io',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
+        self.assertEqual(response.headers['Cache-Control'], 'public, max-age=300')
+        self.assertEqual(response.json()['videos'][0]['video_id'], 'AAAAAAAAAAA')
+        self.assertEqual(response.json()['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
 
     def test_home_shows_church_location_and_service_times(self):
         response = self.client.get(reverse('home'))
