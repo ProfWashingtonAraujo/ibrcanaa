@@ -1,7 +1,9 @@
 from decimal import Decimal
 from datetime import timedelta
+from email.utils import parsedate_to_datetime
 from functools import wraps
 from io import BytesIO
+from html import unescape
 from textwrap import shorten
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -167,27 +169,88 @@ def _fallback_member_portal_news(member, upcoming_events, contributions, limit=3
     return news[:limit]
 
 
-def _fetch_portal_news_from_url(url):
-    if Article is None:
-        return None
+def _extract_feed_link(entry):
+    link = entry.findtext('{http://www.w3.org/2005/Atom}link')
+    if link:
+        return link.strip()
+    link_el = entry.find('{http://www.w3.org/2005/Atom}link')
+    if link_el is not None:
+        href = link_el.attrib.get('href')
+        if href:
+            return href.strip()
+    return None
 
-    article = Article(url, language='pt')
+
+def _fetch_portal_news_from_source(url):
+    request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
-        article.download()
-        article.parse()
-    except Exception:  # pragma: no cover - optional network integration
+        with urlopen(request, timeout=8) as response:
+            raw = response.read()
+    except (OSError, URLError, TimeoutError):
         return None
 
-    excerpt = (article.meta_description or article.text or '').strip().replace('\n', ' ')
+    try:
+        root = ElementTree.fromstring(raw)
+    except ElementTree.ParseError:
+        root = None
+
+    candidates = []
+    if root is not None:
+        for entry in root.findall('{http://www.w3.org/2005/Atom}entry')[:3]:
+            link = _extract_feed_link(entry)
+            if link:
+                published = parse_datetime((entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip())
+                candidates.append({
+                    'title': unescape((entry.findtext('{http://www.w3.org/2005/Atom}title') or '').strip()),
+                    'url': link,
+                    'published': published,
+                    'source': (entry.findtext('{http://www.w3.org/2005/Atom}author/{http://www.w3.org/2005/Atom}name') or '').strip(),
+                })
+        if not candidates:
+            for item in root.findall('.//item')[:3]:
+                link = (item.findtext('link') or '').strip()
+                if link:
+                    candidates.append({
+                        'title': unescape((item.findtext('title') or '').strip()),
+                        'url': link,
+                        'published': parsedate_to_datetime((item.findtext('pubDate') or '').strip()) if item.findtext('pubDate') else None,
+                        'source': (item.findtext('source') or '').strip(),
+                    })
+
+    if not candidates:
+        candidates = [{'url': url, 'title': '', 'published': None, 'source': ''}]
+
+    candidate = candidates[0]
+    article_title = candidate['title']
+    article_url = candidate['url']
+    excerpt = ''
+    source_name = candidate['source']
+
+    if Article is not None:
+        article = Article(article_url, language='pt')
+        try:
+            article.download()
+            article.parse()
+            if article.title:
+                article_title = article.title.strip()
+            excerpt = (article.meta_description or article.text or '').strip().replace('\n', ' ')
+            source_name = (article.source_url or article_url).replace('https://', '').replace('http://', '').split('/')[0]
+            published = article.publish_date or candidate['published']
+        except Exception:  # pragma: no cover - optional network integration
+            published = candidate['published']
+    else:
+        published = candidate['published']
+
     if excerpt:
         excerpt = shorten(excerpt, width=180, placeholder='...')
+
     return {
         'tag': 'Notícia',
-        'title': (article.title or 'Notícia externa').strip(),
+        'title': article_title or 'Notícia externa',
         'excerpt': excerpt or 'Conteúdo externo disponível na íntegra no link da matéria.',
-        'source': (article.source_url or url).replace('https://', '').replace('http://', '').split('/')[0],
-        'url': url,
-        'published': article.publish_date,
+        'source': source_name or url.replace('https://', '').replace('http://', '').split('/')[0],
+        'url': article_url,
+        'published': published,
     }
 
 
@@ -199,7 +262,7 @@ def member_portal_news(member, upcoming_events, contributions, limit=3):
 
     news = []
     for url in PORTAL_NEWS_SOURCES:
-        item = _fetch_portal_news_from_url(url)
+        item = _fetch_portal_news_from_source(url)
         if item:
             news.append(item)
         if len(news) >= limit:

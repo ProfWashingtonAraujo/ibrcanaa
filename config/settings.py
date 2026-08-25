@@ -178,7 +178,7 @@ PORTAL_NEWS_SOURCES = [
     source.strip()
     for source in os.environ.get(
         'PORTAL_NEWS_SOURCES',
-        'https://www.bbc.com/portuguese,https://g1.globo.com,https://www.reuters.com/world/',
+        'https://feeds.bbci.co.uk/portuguese/rss.xml,https://g1.globo.com/rss/g1/,https://feeds.reuters.com/reuters/worldNews',
     ).split(',')
     if source.strip()
 ]
