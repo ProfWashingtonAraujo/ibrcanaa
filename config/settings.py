@@ -173,3 +173,12 @@ LOGOUT_REDIRECT_URL = 'home'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
+PORTAL_NEWS_SOURCES = [
+    source.strip()
+    for source in os.environ.get(
+        'PORTAL_NEWS_SOURCES',
+        'https://www.bbc.com/portuguese,https://g1.globo.com,https://www.reuters.com/world/',
+    ).split(',')
+    if source.strip()
+]
