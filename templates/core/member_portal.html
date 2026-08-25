@@ -23,6 +23,28 @@
     </aside>
   </section>
 
+  <section class="news-feed">
+    <article class="news-feature-card">
+      <div class="news-feature-copy">
+        <span class="eyebrow gold">Últimas notícias</span>
+        <h2>{{ portal_news.0.title }}</h2>
+        <p>{{ portal_news.0.excerpt }}</p>
+        <div class="news-meta"><span>{{ portal_news.0.tag }}</span><span>{{ portal_news.0.source }}</span>{% if portal_news.0.published %}<span>{{ portal_news.0.published|date:'d/m/Y' }}</span>{% endif %}</div>
+        {% if portal_news.0.url %}<a class="button button-primary" href="{{ portal_news.0.url }}"{% if portal_news.0.url != '#agenda-pessoal' and portal_news.0.url != '#contribuicoes-pessoais' %} target="_blank" rel="noopener"{% endif %}>Ler matéria</a>{% endif %}
+      </div>
+    </article>
+    <div class="news-list">
+      {% for news in portal_news|slice:"1:" %}
+      <article class="news-card">
+        <span class="news-card-tag">{{ news.tag }}</span>
+        <h3>{{ news.title }}</h3>
+        <p>{{ news.excerpt }}</p>
+        <footer><span>{{ news.source }}</span>{% if news.published %}<span>{{ news.published|date:'d/m/Y' }}</span>{% endif %}</footer>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="portal-metrics news-strip">
     <article><span class="portal-metric-icon">CV</span><div><small>Tempo de convertido</small><strong>{{ member.converted_duration }}</strong><span>{% if member.conversion_date %}Desde {{ member.conversion_date|date:'d/m/Y' }}{% else %}Data de conversão não informada{% endif %}</span></div></article>
     <article><span class="portal-metric-icon green-metric">JR</span><div><small>Tempo de igreja</small><strong>{{ member.church_duration }}</strong><span>{% if member.church_entry_date %}Desde {{ member.church_entry_date|date:'d/m/Y' }}{% else %}Data de entrada não informada{% endif %}</span></div></article>
@@ -34,7 +56,7 @@
     <article class="portal-panel portal-agenda newspaper-feature" id="agenda-pessoal"><header><div><span class="eyebrow">Agenda</span><h2>Próximos encontros</h2><p>As notas de hoje sobre cultos, estudos e momentos de comunhão.</p></div><a href="{% url 'home' %}#agenda">Ver pauta completa</a></header><div class="portal-event-list">{% for event in upcoming_events %}<div class="portal-event"><time><strong>{{ event.starts_at|date:'d' }}</strong><span>{{ event.starts_at|date:'M' }}</span></time><span class="event-line"></span><div><span class="tag">{{ event.kind }}</span><strong>{{ event.title }}</strong><small>{{ event.location }} · {{ event.starts_at|date:'H:i' }}</small></div></div>{% empty %}<div class="portal-empty"><span>AG</span><strong>Nenhum encontro futuro</strong><small>Novas matérias aparecerão aqui.</small></div>{% endfor %}</div></article>
     <aside class="portal-side newspaper-aside">
       <article class="portal-panel portal-giving"><div class="giving-visual"><img src="{% static 'tesouraria_001.png' %}" alt="Generosidade: QR Code para contribuição à Igreja Batista Regular Canaã"><span>Contribua também pelo QR Code</span></div><header><div><span class="eyebrow">Generosidade</span><h2>Registrar contribuição</h2><p>Envie seu dízimo ou oferta para compor o boletim financeiro.</p></div></header><form method="post" class="giving-form">{% csrf_token %}<div class="giving-types">{% for radio in contribution_form.category %}<label>{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}</div>{% if contribution_form.category.errors %}<small class="giving-error">{{ contribution_form.category.errors|striptags }}</small>{% endif %}<label class="giving-amount"><span>Valor da contribuição</span><div><b>R$</b>{{ contribution_form.amount }}</div></label>{% if contribution_form.amount.errors %}<small class="giving-error">{{ contribution_form.amount.errors|striptags }}</small>{% endif %}<label class="giving-note"><span>Observação <small>opcional</small></span>{{ contribution_form.note }}</label>{% if contribution_form.note.errors %}<small class="giving-error">{{ contribution_form.note.errors|striptags }}</small>{% endif %}<button class="button button-primary" type="submit">Registrar contribuição</button><p class="giving-notice">Este formulário registra a contribuição no sistema. Ele não realiza transferência ou cobrança bancária.</p></form></article>
-      <article class="portal-panel contribution-panel"><header><div><span class="eyebrow">Contribuições</span><h2>Histórico pessoal</h2></div><strong class="contribution-total">R$ {{ contribution_total|floatformat:2 }}</strong></header><div class="portal-contributions">{% for item in contributions %}<div><span class="contribution-mark">{{ item.category|first }}</span><span><strong>{{ item.category }}</strong><small>{{ item.date|date:'d/m/Y' }}</small></span><b>R$ {{ item.amount|floatformat:2 }}</b></div>{% empty %}<div class="portal-empty compact"><span>CN</span><strong>Sem registros</strong><small>Suas contribuições vinculadas aparecerão aqui.</small></div>{% endfor %}</div></article>
+      <article class="portal-panel contribution-panel" id="contribuicoes-pessoais"><header><div><span class="eyebrow">Contribuições</span><h2>Histórico pessoal</h2></div><strong class="contribution-total">R$ {{ contribution_total|floatformat:2 }}</strong></header><div class="portal-contributions">{% for item in contributions %}<div><span class="contribution-mark">{{ item.category|first }}</span><span><strong>{{ item.category }}</strong><small>{{ item.date|date:'d/m/Y' }}</small></span><b>R$ {{ item.amount|floatformat:2 }}</b></div>{% empty %}<div class="portal-empty compact"><span>CN</span><strong>Sem registros</strong><small>Suas contribuições vinculadas aparecerão aqui.</small></div>{% endfor %}</div></article>
       <article class="portal-care-card"><span class="eyebrow gold">Estamos por perto</span><h3>Precisa conversar?</h3><p>Nossa liderança está disponível para ouvir, orar e caminhar com você.</p><a href="{% url 'home' %}#contato">Solicitar contato →</a></article>
     </aside>
   </section>
