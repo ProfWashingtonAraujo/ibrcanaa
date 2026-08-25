@@ -1,15 +1,11 @@
 from decimal import Decimal
 from datetime import timedelta
-from email.utils import parsedate_to_datetime
 from functools import wraps
 from io import BytesIO
-from html import unescape
-from textwrap import shorten
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -25,11 +21,6 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from dal import autocomplete
-
-try:
-    from newspaper import Article
-except ImportError:  # pragma: no cover - optional dependency
-    Article = None
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
@@ -69,9 +60,6 @@ YOUTUBE_FALLBACK_VIDEOS = [
         'published': '',
     },
 ]
-PORTAL_NEWS_CACHE_KEY = 'member_portal_news'
-PORTAL_NEWS_CACHE_TTL = 600
-PORTAL_NEWS_SOURCES = getattr(settings, 'PORTAL_NEWS_SOURCES', ())
 
 
 def staff_required(view):
@@ -134,145 +122,6 @@ def public_youtube_videos(limit=4):
 
     cache.set(cache_key, videos, YOUTUBE_CACHE_TTL)
     return videos
-
-
-def _fallback_member_portal_news(member, upcoming_events, contributions, limit=3):
-    news = []
-    next_event = upcoming_events[0] if upcoming_events else None
-    if next_event:
-        news.append({
-            'tag': 'Agenda',
-            'title': next_event.title,
-            'excerpt': f"{next_event.kind} em {next_event.location} no dia {timezone.localdate().strftime('%d/%m/%Y')}.",
-            'source': 'Boletim interno',
-            'url': '#agenda-pessoal',
-            'published': next_event.starts_at,
-        })
-
-    contribution_total = contributions.aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    news.append({
-        'tag': 'Financeiro',
-        'title': 'Contribuições registradas no portal',
-        'excerpt': f"R$ {contribution_total:.2f}".replace('.', ',') + ' já foram lançados no histórico pessoal do membro.',
-        'source': 'Tesouraria',
-        'url': '#contribuicoes-pessoais',
-        'published': timezone.now(),
-    })
-    news.append({
-        'tag': 'Perfil',
-        'title': f'Jornada de {member.name.split()[0]} em destaque',
-        'excerpt': f'Convertido há {member.converted_duration}, na igreja há {member.church_duration}.',
-        'source': 'Portal do membro',
-        'url': '#',
-        'published': timezone.now(),
-    })
-    return news[:limit]
-
-
-def _extract_feed_link(entry):
-    link = entry.findtext('{http://www.w3.org/2005/Atom}link')
-    if link:
-        return link.strip()
-    link_el = entry.find('{http://www.w3.org/2005/Atom}link')
-    if link_el is not None:
-        href = link_el.attrib.get('href')
-        if href:
-            return href.strip()
-    return None
-
-
-def _fetch_portal_news_from_source(url):
-    request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    try:
-        with urlopen(request, timeout=8) as response:
-            raw = response.read()
-    except (OSError, URLError, TimeoutError):
-        return None
-
-    try:
-        root = ElementTree.fromstring(raw)
-    except ElementTree.ParseError:
-        root = None
-
-    candidates = []
-    if root is not None:
-        for entry in root.findall('{http://www.w3.org/2005/Atom}entry')[:3]:
-            link = _extract_feed_link(entry)
-            if link:
-                published = parse_datetime((entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip())
-                candidates.append({
-                    'title': unescape((entry.findtext('{http://www.w3.org/2005/Atom}title') or '').strip()),
-                    'url': link,
-                    'published': published,
-                    'source': (entry.findtext('{http://www.w3.org/2005/Atom}author/{http://www.w3.org/2005/Atom}name') or '').strip(),
-                })
-        if not candidates:
-            for item in root.findall('.//item')[:3]:
-                link = (item.findtext('link') or '').strip()
-                if link:
-                    candidates.append({
-                        'title': unescape((item.findtext('title') or '').strip()),
-                        'url': link,
-                        'published': parsedate_to_datetime((item.findtext('pubDate') or '').strip()) if item.findtext('pubDate') else None,
-                        'source': (item.findtext('source') or '').strip(),
-                    })
-
-    if not candidates:
-        candidates = [{'url': url, 'title': '', 'published': None, 'source': ''}]
-
-    candidate = candidates[0]
-    article_title = candidate['title']
-    article_url = candidate['url']
-    excerpt = ''
-    source_name = candidate['source']
-
-    if Article is not None:
-        article = Article(article_url, language='pt')
-        try:
-            article.download()
-            article.parse()
-            if article.title:
-                article_title = article.title.strip()
-            excerpt = (article.meta_description or article.text or '').strip().replace('\n', ' ')
-            source_name = (article.source_url or article_url).replace('https://', '').replace('http://', '').split('/')[0]
-            published = article.publish_date or candidate['published']
-        except Exception:  # pragma: no cover - optional network integration
-            published = candidate['published']
-    else:
-        published = candidate['published']
-
-    if excerpt:
-        excerpt = shorten(excerpt, width=180, placeholder='...')
-
-    return {
-        'tag': 'Notícia',
-        'title': article_title or 'Notícia externa',
-        'excerpt': excerpt or 'Conteúdo externo disponível na íntegra no link da matéria.',
-        'source': source_name or url.replace('https://', '').replace('http://', '').split('/')[0],
-        'url': article_url,
-        'published': published,
-    }
-
-
-def member_portal_news(member, upcoming_events, contributions, limit=3):
-    cache_key = f'{PORTAL_NEWS_CACHE_KEY}:{member.pk}:{limit}'
-    cached_news = cache.get(cache_key)
-    if cached_news is not None:
-        return cached_news
-
-    news = []
-    for url in PORTAL_NEWS_SOURCES:
-        item = _fetch_portal_news_from_source(url)
-        if item:
-            news.append(item)
-        if len(news) >= limit:
-            break
-
-    if len(news) < limit:
-        news.extend(_fallback_member_portal_news(member, list(upcoming_events), contributions, limit=limit - len(news)))
-
-    cache.set(cache_key, news[:limit], PORTAL_NEWS_CACHE_TTL)
-    return news[:limit]
 
 
 def _build_youtube_response(request):
@@ -1118,7 +967,6 @@ def member_portal(request):
     upcoming = Event.objects.filter(starts_at__gte=timezone.now())[:4]
     contribution_total = contributions.aggregate(total=Sum('amount'))['total'] or Decimal('0')
     first_name = member.name.split()[0]
-    portal_news = member_portal_news(member, upcoming, contributions)
     return render(request, 'core/member_portal.html', {
         'member': member,
         'first_name': first_name,
@@ -1128,7 +976,6 @@ def member_portal(request):
         'contribution_form': contribution_form,
         'upcoming_events': upcoming,
         'next_event': upcoming.first(),
-        'portal_news': portal_news,
     })
 
 

@@ -23,28 +23,6 @@
     </aside>
   </section>
 
-  <section class="news-feed">
-    <article class="news-feature-card">
-      <div class="news-feature-copy">
-        <span class="eyebrow gold">Últimas notícias</span>
-        <h2>{{ portal_news.0.title }}</h2>
-        <p>{{ portal_news.0.excerpt }}</p>
-        <div class="news-meta"><span>{{ portal_news.0.tag }}</span><span>{{ portal_news.0.source }}</span>{% if portal_news.0.published %}<span>{{ portal_news.0.published|date:'d/m/Y' }}</span>{% endif %}</div>
-        {% if portal_news.0.url %}<a class="button button-primary" href="{{ portal_news.0.url }}"{% if portal_news.0.url != '#agenda-pessoal' and portal_news.0.url != '#contribuicoes-pessoais' %} target="_blank" rel="noopener"{% endif %}>Ler matéria</a>{% endif %}
-      </div>
-    </article>
-    <div class="news-list">
-      {% for news in portal_news|slice:"1:" %}
-      <article class="news-card">
-        <span class="news-card-tag">{{ news.tag }}</span>
-        <h3>{{ news.title }}</h3>
-        <p>{{ news.excerpt }}</p>
-        <footer><span>{{ news.source }}</span>{% if news.published %}<span>{{ news.published|date:'d/m/Y' }}</span>{% endif %}</footer>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-
   <section class="portal-metrics news-strip">
     <article><span class="portal-metric-icon">CV</span><div><small>Tempo de convertido</small><strong>{{ member.converted_duration }}</strong><span>{% if member.conversion_date %}Desde {{ member.conversion_date|date:'d/m/Y' }}{% else %}Data de conversão não informada{% endif %}</span></div></article>
     <article><span class="portal-metric-icon green-metric">JR</span><div><small>Tempo de igreja</small><strong>{{ member.church_duration }}</strong><span>{% if member.church_entry_date %}Desde {{ member.church_entry_date|date:'d/m/Y' }}{% else %}Data de entrada não informada{% endif %}</span></div></article>

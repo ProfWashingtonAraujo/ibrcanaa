@@ -113,19 +113,6 @@
 .portal-care-card p{margin:0 0 16px;color:#66758d;line-height:1.6}
 .portal-care-card a{color:var(--blue);font-weight:800}
 .portal-footer{max-width:1240px;margin:auto;padding:16px 24px 28px;color:#7f899b;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.news-feed{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:18px;margin:18px 0 20px}
-.news-feature-card{padding:26px;border:1px solid #dfe5ef;border-radius:22px;background:linear-gradient(135deg,#ffffff,#f8fbff);box-shadow:var(--shadow)}
-.news-feature-copy{display:grid;align-content:start;min-height:100%}
-.news-feature-card h2{margin:12px 0 10px;font-size:clamp(28px,3vw,38px);line-height:1.08;letter-spacing:-.04em}
-.news-feature-card p{margin:0;color:#68758d;line-height:1.65}
-.news-meta{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
-.news-meta span{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#edf2fb;color:var(--blue);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-.news-list{display:grid;gap:14px}
-.news-card{padding:20px;border:1px solid #dfe5ef;border-radius:20px;background:linear-gradient(180deg,#fff,#fbfcfe);box-shadow:var(--shadow)}
-.news-card-tag{display:inline-flex;width:max-content;padding:6px 9px;border-radius:999px;background:#fff3d9;color:#8c6311;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-.news-card h3{margin:10px 0 8px;font-size:18px;letter-spacing:-.02em}
-.news-card p{margin:0;color:#6e7b91;line-height:1.55}
-.news-card footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;color:#8b96a9;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
 
 @media(max-width:1000px){
   .portal-welcome{grid-template-columns:1fr;min-height:0}
@@ -134,7 +121,6 @@
   .portal-next{position:relative;right:auto;bottom:auto;width:auto;grid-column:1/-1}
   .portal-metrics{grid-template-columns:1fr 1fr}
   .portal-content-grid{grid-template-columns:1fr}
-  .news-feed{grid-template-columns:1fr}
 }
 
 @media(max-width:700px){
@@ -146,8 +132,6 @@
   .portal-shell{padding:12px 14px 55px}
   .newspaper-masthead{justify-items:start;text-align:left;padding:10px 2px 12px}
   .newspaper-masthead h1{font-size:38px}
-  .news-feed{gap:12px;margin:14px 0 16px}
-  .news-feature-card,.news-card{padding:20px;border-radius:18px}
   .portal-welcome{gap:22px;padding:30px 24px;border-radius:24px}
   .portal-welcome h1{font-size:44px}
   .portal-welcome-actions{align-items:stretch;flex-direction:column}

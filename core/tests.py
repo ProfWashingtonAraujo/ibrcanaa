@@ -810,36 +810,6 @@ class AccessTests(TestCase):
         self.assertContains(response, 'tesouraria_001.png')
         self.assertContains(response, 'Contribua também pelo QR Code')
 
-    @patch('core.views.member_portal_news')
-    def test_member_portal_shows_news_cards(self, mocked_news):
-        mocked_news.return_value = [
-            {
-                'tag': 'Notícia',
-                'title': 'Manchete principal',
-                'excerpt': 'Resumo da matéria principal.',
-                'source': 'Agência Externa',
-                'url': 'https://example.com/noticia-principal',
-                'published': datetime(2026, 8, 24, 12, 0, tzinfo=dt_timezone.utc),
-            },
-            {
-                'tag': 'Agenda',
-                'title': 'Boletim da semana',
-                'excerpt': 'Resumo da segunda nota.',
-                'source': 'Boletim interno',
-                'url': '#agenda-pessoal',
-                'published': datetime(2026, 8, 23, 12, 0, tzinfo=dt_timezone.utc),
-            },
-        ]
-        self.client.login(username='member', password='test-pass')
-
-        response = self.client.get(reverse('member_portal'))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Últimas notícias')
-        self.assertContains(response, 'Manchete principal')
-        self.assertContains(response, 'Resumo da matéria principal.')
-        self.assertContains(response, 'Boletim da semana')
-
     def test_member_contribution_updates_finance_dashboard(self):
         member = self.member_user.member_profile
         self.client.login(username='member', password='test-pass')
