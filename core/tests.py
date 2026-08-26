@@ -28,7 +28,7 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'Uma igreja fundamentada nas Escrituras')
         self.assertContains(response, 'Ensino fiel da Palavra de Deus')
         self.assertContains(response, 'Conheça a identidade da Canaã.')
-        self.assertContains(response, reverse('church_about'))
+        self.assertContains(response, '#nossa-igreja')
         self.assertContains(response, 'Desenvolvimento e criação por')
         self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
 
@@ -57,11 +57,8 @@ class PublicViewsTests(TestCase):
         self.assertContains(bookstore_response, 'R$ 39,90')
 
     def test_new_church_pages_load(self):
-        about_response = self.client.get(reverse('church_about'))
         history_response = self.client.get(reverse('church_history'))
-        self.assertEqual(about_response.status_code, 200)
         self.assertEqual(history_response.status_code, 200)
-        self.assertContains(about_response, 'Conheça a identidade da Canaã.')
         self.assertContains(history_response, 'A caminhada da Canaã ao longo do tempo.')
 
     def test_contact_form_saves(self):

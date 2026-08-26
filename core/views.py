@@ -213,13 +213,6 @@ def bookstore(request):
         'books': books,
         'featured_books': featured_books,
     })
-
-
-def church_about(request):
-    page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
-    return render(request, 'core/church_about.html', {'page': page})
-
-
 def church_history(request):
     page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
     return render(request, 'core/church_history.html', {'page': page})

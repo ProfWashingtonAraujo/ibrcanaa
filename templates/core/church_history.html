@@ -5,7 +5,7 @@
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-  <nav><a href="{% url 'church_about' %}">Nossa igreja</a><a href="{% url 'bookstore' %}">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <nav><a href="{% url 'home' %}#nossa-igreja">Nossa igreja</a><a href="{% url 'bookstore' %}">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
   <a class="button button-gold" href="{% url 'home' %}">Voltar ao site</a>
 </header>
 <main>
