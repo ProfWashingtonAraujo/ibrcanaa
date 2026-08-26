@@ -62,7 +62,7 @@ class PublicViewsTests(TestCase):
         history_response = self.client.get(reverse('church_history'))
         self.assertEqual(about_response.status_code, 200)
         self.assertEqual(history_response.status_code, 200)
-        self.assertContains(about_response, 'Uma comunidade firmada nas Escrituras.')
+        self.assertContains(about_response, 'Conheça a identidade da Canaã.')
         self.assertContains(history_response, 'A caminhada da Canaã ao longo do tempo.')
 
     def test_contact_form_saves(self):
@@ -229,8 +229,9 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-symbol"><svg', count=9)
+        self.assertContains(response, 'class="nav-symbol"><svg', count=10)
         self.assertContains(response, 'Livraria')
+        self.assertContains(response, 'Conteúdo')
         self.assertContains(response, 'class="mobile-logout"')
         self.assertContains(response, 'aria-label="Sair do sistema"')
 
@@ -240,6 +241,14 @@ class AccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Livraria')
         self.assertContains(response, 'Novo livro')
+
+    def test_staff_can_access_institutional_content_admin(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.get(reverse('institutional_content'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Conteúdo institucional')
+        self.assertContains(response, 'Nossa igreja')
+        self.assertContains(response, 'Histórico')
 
     def test_pastor_cannot_access_or_see_financial_data(self):
         pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)

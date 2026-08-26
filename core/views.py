@@ -24,8 +24,8 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, BookForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
-from .models import AccessProfile, BibleFavorite, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -191,11 +191,15 @@ def home(request):
         start_time__gte=timezone.now(),
         event__church_event__isnull=False,
     ).first()
+    church_about_page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+    church_history_page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
     return render(request, 'core/home.html', {
         'form': form,
         'next_occurrence': next_occurrence,
         'public_ministries': Ministry.objects.all(),
         'pastor_books': Book.objects.filter(is_available=True).order_by('sort_order', 'title')[:3],
+        'church_about_page': church_about_page,
+        'church_history_page': church_history_page,
         'daily_verse': get_daily_verse(timezone.localdate()),
         'youtube_videos': public_youtube_videos(),
         'youtube_channel_url': YOUTUBE_CHANNEL_URL,
@@ -212,22 +216,52 @@ def bookstore(request):
 
 
 def church_about(request):
-    return render(request, 'core/church_about.html', {
-        'highlights': [
-            'Ensino fiel das Escrituras',
-            'Cuidado pastoral e comunhão',
-            'Ministérios para toda a família',
-        ],
-    })
+    page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+    return render(request, 'core/church_about.html', {'page': page})
 
 
 def church_history(request):
-    return render(request, 'core/church_history.html', {
-        'timeline': [
-            ('Fundação', 'A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.'),
-            ('Crescimento', 'A família da fé se expandiu com novos ministérios, discipulado e presença ativa na cidade.'),
-            ('Hoje', 'Seguimos servindo com ensino, adoração, ação social e cuidado pastoral contínuo.'),
-        ],
+    page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
+    return render(request, 'core/church_history.html', {'page': page})
+
+
+@staff_required
+def institutional_content(request):
+    about_page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+    history_page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
+    return render(request, 'core/institutional_content.html', {
+        'about_page': about_page,
+        'history_page': history_page,
+    })
+
+
+@staff_required
+def church_about_edit(request):
+    instance, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+    form = ChurchAboutPageForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Conteúdo de Nossa igreja salvo com sucesso.')
+        return redirect('institutional_content')
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar Nossa igreja',
+        'back_url': 'institutional_content',
+    })
+
+
+@staff_required
+def church_history_edit(request):
+    instance, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
+    form = ChurchHistoryPageForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Conteúdo do Histórico salvo com sucesso.')
+        return redirect('institutional_content')
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar Histórico',
+        'back_url': 'institutional_content',
     })
 
 

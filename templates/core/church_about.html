@@ -11,9 +11,9 @@
 <main>
   <section class="bookstore-hero church-page-hero">
     <div class="reveal">
-      <span class="eyebrow gold">Nossa igreja</span>
-      <h1>Uma comunidade firmada nas Escrituras.</h1>
-      <p>A Igreja Batista Regular Canaã existe para adorar a Deus, anunciar o Evangelho e cuidar de pessoas com verdade e graça.</p>
+      <span class="eyebrow gold">{{ page.eyebrow }}</span>
+      <h1>{{ page.heading }}</h1>
+      <p>{{ page.intro }}</p>
       <div class="bookstore-hero-actions">
         <a class="button button-primary" href="{% url 'church_history' %}">Ver histórico</a>
         <a class="button button-outline-light" href="{% url 'home' %}#contato">Planejar visita</a>
@@ -29,15 +29,9 @@
   <section class="public-section bookstore-section">
     <div class="section-heading reveal"><span class="eyebrow gold">Nossa essência</span><h2>O que nos move.</h2></div>
     <div class="book-grid full-grid">
-      {% for highlight in highlights %}
-      <article class="book-card reveal">
-        <div class="book-copy">
-          <span class="eyebrow">Destaque</span>
-          <h3>{{ highlight }}</h3>
-          <p>Buscamos refletir esse valor em cada culto, ministério e ação de cuidado pastoral.</p>
-        </div>
-      </article>
-      {% endfor %}
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">01</span><h3>{{ page.highlight_1_title }}</h3><p>{{ page.highlight_1_text }}</p></div></article>
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">02</span><h3>{{ page.highlight_2_title }}</h3><p>{{ page.highlight_2_text }}</p></div></article>
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">03</span><h3>{{ page.highlight_3_title }}</h3><p>{{ page.highlight_3_text }}</p></div></article>
     </div>
   </section>
 </main>

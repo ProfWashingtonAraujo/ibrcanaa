@@ -86,6 +86,52 @@ class Ministry(models.Model):
         return self.name
 
 
+class ChurchAboutPage(models.Model):
+    site_key = models.CharField(max_length=20, unique=True, default='about', editable=False)
+    eyebrow = models.CharField('faixa', max_length=80, default='Nossa igreja')
+    heading = models.CharField('título', max_length=140, default='Conheça a identidade da Canaã.')
+    intro = models.TextField(
+        'introdução',
+        default='Firmados nas Escrituras e comprometidos com o Evangelho, somos uma família que adora, serve e caminha unida para a glória de Deus.',
+    )
+    highlight_1_title = models.CharField('destaque 1', max_length=120, default='Ensino que transforma')
+    highlight_1_text = models.TextField('texto 1', default='Conteúdo bíblico aplicado à vida, à família e ao serviço cristão.')
+    highlight_2_title = models.CharField('destaque 2', max_length=120, default='Relacionamentos que acolhem')
+    highlight_2_text = models.TextField('texto 2', default='Uma comunidade preparada para caminhar ao seu lado em cada estação.')
+    highlight_3_title = models.CharField('destaque 3', max_length=120, default='Serviço com propósito')
+    highlight_3_text = models.TextField('texto 3', default='Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.')
+
+    class Meta:
+        verbose_name = 'conteúdo da página Nossa igreja'
+        verbose_name_plural = 'conteúdo da página Nossa igreja'
+
+    def __str__(self):
+        return 'Nossa igreja'
+
+
+class ChurchHistoryPage(models.Model):
+    site_key = models.CharField(max_length=20, unique=True, default='history', editable=False)
+    eyebrow = models.CharField('faixa', max_length=80, default='Histórico da igreja')
+    heading = models.CharField('título', max_length=140, default='A caminhada da Canaã ao longo do tempo.')
+    intro = models.TextField(
+        'introdução',
+        default='Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
+    )
+    milestone_1_title = models.CharField('marco 1', max_length=120, default='Fundação')
+    milestone_1_text = models.TextField('texto 1', default='A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.')
+    milestone_2_title = models.CharField('marco 2', max_length=120, default='Crescimento')
+    milestone_2_text = models.TextField('texto 2', default='A família da fé se expandiu com novos ministérios, discipulado e presença ativa na cidade.')
+    milestone_3_title = models.CharField('marco 3', max_length=120, default='Hoje')
+    milestone_3_text = models.TextField('texto 3', default='Seguimos servindo com ensino, adoração, ação social e cuidado pastoral contínuo.')
+
+    class Meta:
+        verbose_name = 'conteúdo da página Histórico'
+        verbose_name_plural = 'conteúdo da página Histórico'
+
+    def __str__(self):
+        return 'Histórico'
+
+
 class Book(models.Model):
     title = models.CharField('título', max_length=140)
     subtitle = models.CharField('subtítulo', max_length=180, blank=True)

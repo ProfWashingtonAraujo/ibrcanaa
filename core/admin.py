@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AccessProfile, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, Ministry, Transaction
+from .models import AccessProfile, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, Ministry, Transaction
 
 
 @admin.register(Member)
@@ -28,5 +28,6 @@ class BookAdmin(admin.ModelAdmin):
 
 
 admin.site.register([AccessProfile, Ministry, Event, ContactLead, Course, Lesson, LessonProgress, CourseEvaluation])
+admin.site.register([ChurchAboutPage, ChurchHistoryPage])
 
 # Register your models here.

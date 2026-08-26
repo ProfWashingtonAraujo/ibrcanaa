@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -431,6 +431,44 @@ class MinistryForm(CrispyFormMixin, forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Apresente o propósito e as atividades do ministério.',
             }),
+        }
+
+
+class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
+    full_width_fields = {'intro', 'highlight_1_text', 'highlight_2_text', 'highlight_3_text'}
+
+    class Meta:
+        model = ChurchAboutPage
+        fields = [
+            'eyebrow', 'heading', 'intro',
+            'highlight_1_title', 'highlight_1_text',
+            'highlight_2_title', 'highlight_2_text',
+            'highlight_3_title', 'highlight_3_text',
+        ]
+        widgets = {
+            'intro': forms.Textarea(attrs={'rows': 4}),
+            'highlight_1_text': forms.Textarea(attrs={'rows': 3}),
+            'highlight_2_text': forms.Textarea(attrs={'rows': 3}),
+            'highlight_3_text': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class ChurchHistoryPageForm(CrispyFormMixin, forms.ModelForm):
+    full_width_fields = {'intro', 'milestone_1_text', 'milestone_2_text', 'milestone_3_text'}
+
+    class Meta:
+        model = ChurchHistoryPage
+        fields = [
+            'eyebrow', 'heading', 'intro',
+            'milestone_1_title', 'milestone_1_text',
+            'milestone_2_title', 'milestone_2_text',
+            'milestone_3_title', 'milestone_3_text',
+        ]
+        widgets = {
+            'intro': forms.Textarea(attrs={'rows': 4}),
+            'milestone_1_text': forms.Textarea(attrs={'rows': 3}),
+            'milestone_2_text': forms.Textarea(attrs={'rows': 3}),
+            'milestone_3_text': forms.Textarea(attrs={'rows': 3}),
         }
 
 

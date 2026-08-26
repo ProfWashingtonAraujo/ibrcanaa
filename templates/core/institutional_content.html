@@ -1,0 +1,25 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Conteúdo | IBR Canaã{% endblock %}{% block section_name %}Conteúdo{% endblock %}{% block page_title %}Nossa igreja e histórico{% endblock %}
+{% block admin_content %}
+<section class="ministry-admin-hero bookstore-admin-hero"><div><span class="eyebrow gold">Conteúdo institucional</span><h2>Edite as páginas públicas da igreja.</h2><p>Mantenha os textos de apresentação e histórico atualizados sem mexer no código.</p></div></section>
+<section class="ministry-admin-metrics"><article><span>Página</span><strong>2</strong><small>Editáveis no painel</small></article><article><span>Nossa igreja</span><strong>{{ about_page.heading|truncatechars:18 }}</strong><small>Texto de apresentação</small></article><article><span>Histórico</span><strong>{{ history_page.heading|truncatechars:18 }}</strong><small>Linha do tempo</small></article><article><span>Status</span><strong>OK</strong><small>Pronto para editar</small></article></section>
+<article class="panel ministry-admin-panel">
+  <div class="members-panel-heading"><div><span class="eyebrow">Páginas públicas</span><h2>Conteúdo disponível</h2><p>Atualize uma seção por vez.</p></div></div>
+  <div class="ministry-admin-grid bookstore-admin-grid">
+    <article>
+      <div class="ministry-admin-card-head"><span class="ministry-admin-initial">N</span><span class="tag tag-active">Público</span></div>
+      <h3>Nossa igreja</h3>
+      <p><small>TÍTULO</small>{{ about_page.heading }}</p>
+      <p><small>INTRODUÇÃO</small>{{ about_page.intro|truncatechars:180 }}</p>
+      <div class="ministry-admin-card-foot"><span><strong>3 destaques</strong></span><div><a href="{% url 'church_about_edit' %}">Editar</a></div></div>
+    </article>
+    <article>
+      <div class="ministry-admin-card-head"><span class="ministry-admin-initial">H</span><span class="tag tag-active">Público</span></div>
+      <h3>Histórico</h3>
+      <p><small>TÍTULO</small>{{ history_page.heading }}</p>
+      <p><small>INTRODUÇÃO</small>{{ history_page.intro|truncatechars:180 }}</p>
+      <div class="ministry-admin-card-foot"><span><strong>3 marcos</strong></span><div><a href="{% url 'church_history_edit' %}">Editar</a></div></div>
+    </article>
+  </div>
+</article>
+{% endblock %}

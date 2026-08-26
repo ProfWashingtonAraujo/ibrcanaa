@@ -11,9 +11,9 @@
 <main>
   <section class="bookstore-hero church-page-hero">
     <div class="reveal">
-      <span class="eyebrow gold">Histórico da igreja</span>
-      <h1>A caminhada da Canaã ao longo do tempo.</h1>
-      <p>Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.</p>
+      <span class="eyebrow gold">{{ page.eyebrow }}</span>
+      <h1>{{ page.heading }}</h1>
+      <p>{{ page.intro }}</p>
     </div>
     <div class="bookstore-summary reveal">
       <article><strong>Origem</strong><span>fundação e primeiros passos</span></article>
@@ -25,15 +25,9 @@
   <section class="public-section bookstore-section">
     <div class="section-heading reveal"><span class="eyebrow gold">Linha do tempo</span><h2>Marcos importantes.</h2></div>
     <div class="book-grid full-grid">
-      {% for step, text in timeline %}
-      <article class="book-card reveal">
-        <div class="book-copy">
-          <span class="eyebrow">{{ forloop.counter|stringformat:'02d' }}</span>
-          <h3>{{ step }}</h3>
-          <p>{{ text }}</p>
-        </div>
-      </article>
-      {% endfor %}
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">01</span><h3>{{ page.milestone_1_title }}</h3><p>{{ page.milestone_1_text }}</p></div></article>
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">02</span><h3>{{ page.milestone_2_title }}</h3><p>{{ page.milestone_2_text }}</p></div></article>
+      <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">03</span><h3>{{ page.milestone_3_title }}</h3><p>{{ page.milestone_3_text }}</p></div></article>
     </div>
   </section>
 </main>
