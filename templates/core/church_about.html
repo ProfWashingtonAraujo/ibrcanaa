@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Nossa Igreja | IBR Canaã{% endblock %}
+{% block body_class %}public-body landing-page{% endblock %}
+{% block content %}
+<header class="public-nav" id="public-nav">
+  <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
+  <nav><a href="{% url 'church_about' %}">Nossa igreja</a><a href="{% url 'church_history' %}">Histórico</a><a href="{% url 'bookstore' %}">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
+</header>
+<main>
+  <section class="bookstore-hero church-page-hero">
+    <div class="reveal">
+      <span class="eyebrow gold">Nossa igreja</span>
+      <h1>Uma comunidade firmada nas Escrituras.</h1>
+      <p>A Igreja Batista Regular Canaã existe para adorar a Deus, anunciar o Evangelho e cuidar de pessoas com verdade e graça.</p>
+      <div class="bookstore-hero-actions">
+        <a class="button button-primary" href="{% url 'church_history' %}">Ver histórico</a>
+        <a class="button button-outline-light" href="{% url 'home' %}#contato">Planejar visita</a>
+      </div>
+    </div>
+    <div class="bookstore-summary reveal">
+      <article><strong>Fé</strong><span>na Palavra de Deus</span></article>
+      <article><strong>Cristo</strong><span>no centro da igreja</span></article>
+      <article><strong>Comunhão</strong><span>para toda a família</span></article>
+    </div>
+  </section>
+
+  <section class="public-section bookstore-section">
+    <div class="section-heading reveal"><span class="eyebrow gold">Nossa essência</span><h2>O que nos move.</h2></div>
+    <div class="book-grid full-grid">
+      {% for highlight in highlights %}
+      <article class="book-card reveal">
+        <div class="book-copy">
+          <span class="eyebrow">Destaque</span>
+          <h3>{{ highlight }}</h3>
+          <p>Buscamos refletir esse valor em cada culto, ministério e ação de cuidado pastoral.</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

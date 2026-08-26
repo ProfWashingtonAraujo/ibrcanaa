@@ -211,6 +211,26 @@ def bookstore(request):
     })
 
 
+def church_about(request):
+    return render(request, 'core/church_about.html', {
+        'highlights': [
+            'Ensino fiel das Escrituras',
+            'Cuidado pastoral e comunhão',
+            'Ministérios para toda a família',
+        ],
+    })
+
+
+def church_history(request):
+    return render(request, 'core/church_history.html', {
+        'timeline': [
+            ('Fundação', 'A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.'),
+            ('Crescimento', 'A família da fé se expandiu com novos ministérios, discipulado e presença ativa na cidade.'),
+            ('Hoje', 'Seguimos servindo com ensino, adoração, ação social e cuidado pastoral contínuo.'),
+        ],
+    })
+
+
 def public_youtube_videos_feed(request):
     response = _build_youtube_response(request)
     response['Cache-Control'] = 'public, max-age=300'

@@ -6,7 +6,7 @@
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-   <nav><a href="#sobre">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#livraria">Livraria</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
+    <nav><a href="{% url 'church_about' %}">Nossa igreja</a><a href="{% url 'church_history' %}">Histórico</a><a href="#ministerios">Ministérios</a><a href="#livraria">Livraria</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
   <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
 </header>
 <main>
@@ -20,10 +20,10 @@
       <div class="hero-proof"><strong>Há um lugar para você aqui.</strong><span>Cultos, ministérios e acompanhamento para toda a família.</span></div>
     </div>
     <div class="hero-visual church-front reveal reveal-delay"><img src="{% static 'frente_igreja.png' %}" alt="Fachada da Igreja Batista Regular Canaã"><div class="hero-orbit" aria-hidden="true"></div><div class="hero-card"><small>Próximo encontro</small>{% if next_occurrence %}<strong>{{ next_occurrence.event.title }}</strong><span>{{ next_occurrence.start_time|date:'l, d \d\e F · H:i' }} · {{ next_occurrence.event.church_event.location }}</span>{% else %}<strong>Em breve</strong><span>Acompanhe nossa agenda.</span>{% endif %}</div></div>
-    <a class="scroll-cue" href="#sobre"><span>Descubra</span><i></i></a>
+    <a class="scroll-cue" href="{% url 'church_about' %}"><span>Descubra</span><i></i></a>
   </section>
   <section class="public-section split-section" id="sobre">
-    <div class="reveal"><span class="eyebrow">Nossa essência</span><h2>Fidelidade à Palavra, fé em Cristo e comunhão verdadeira.</h2><p class="section-lead">Firmados nas Escrituras e comprometidos com o Evangelho, somos mais que uma igreja para frequentar: somos uma família que adora, serve e caminha unida para a glória de Deus.</p></div>
+    <div class="reveal"><span class="eyebrow">Nossa igreja</span><h2>Conheça a identidade da Canaã.</h2><p class="section-lead">Firmados nas Escrituras e comprometidos com o Evangelho, somos uma família que adora, serve e caminha unida para a glória de Deus.</p><div class="hero-actions"><a class="button button-primary" href="{% url 'church_about' %}">Abrir página</a><a class="button button-ghost" href="{% url 'church_history' %}">Ver histórico</a></div></div>
     <div class="feature-list"><article class="reveal"><span>01</span><div><h3>Ensino que transforma</h3><p>Conteúdo bíblico aplicado à vida, à família e ao serviço cristão.</p></div></article><article class="reveal"><span>02</span><div><h3>Relacionamentos que acolhem</h3><p>Uma comunidade preparada para caminhar ao seu lado em cada estação.</p></div></article><article class="reveal"><span>03</span><div><h3>Serviço com propósito</h3><p>Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.</p></div></article></div>
   </section>
   <section class="daily-verse-section" id="versiculo-do-dia">

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Histórico | IBR Canaã{% endblock %}
+{% block body_class %}public-body landing-page{% endblock %}
+{% block content %}
+<header class="public-nav" id="public-nav">
+  <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
+  <nav><a href="{% url 'church_about' %}">Nossa igreja</a><a href="{% url 'church_history' %}">Histórico</a><a href="{% url 'bookstore' %}">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <a class="button button-gold" href="{% url 'home' %}">Voltar ao site</a>
+</header>
+<main>
+  <section class="bookstore-hero church-page-hero">
+    <div class="reveal">
+      <span class="eyebrow gold">Histórico da igreja</span>
+      <h1>A caminhada da Canaã ao longo do tempo.</h1>
+      <p>Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.</p>
+    </div>
+    <div class="bookstore-summary reveal">
+      <article><strong>Origem</strong><span>fundação e primeiros passos</span></article>
+      <article><strong>Crescimento</strong><span>expansão e discipulado</span></article>
+      <article><strong>Missão</strong><span>serviço até hoje</span></article>
+    </div>
+  </section>
+
+  <section class="public-section bookstore-section">
+    <div class="section-heading reveal"><span class="eyebrow gold">Linha do tempo</span><h2>Marcos importantes.</h2></div>
+    <div class="book-grid full-grid">
+      {% for step, text in timeline %}
+      <article class="book-card reveal">
+        <div class="book-copy">
+          <span class="eyebrow">{{ forloop.counter|stringformat:'02d' }}</span>
+          <h3>{{ step }}</h3>
+          <p>{{ text }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}
