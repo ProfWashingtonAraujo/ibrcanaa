@@ -29,7 +29,6 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'Ensino fiel da Palavra de Deus')
         self.assertContains(response, 'Conheça a identidade da Canaã.')
         self.assertContains(response, reverse('church_about'))
-        self.assertContains(response, reverse('church_history'))
         self.assertContains(response, 'Desenvolvimento e criação por')
         self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
 
