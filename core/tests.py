@@ -10,7 +10,7 @@ from io import BytesIO
 from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -30,6 +30,30 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'Fidelidade à Palavra, fé em Cristo e comunhão verdadeira.')
         self.assertContains(response, 'Desenvolvimento e criação por')
         self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
+
+    def test_home_and_bookstore_show_registered_books(self):
+        Book.objects.create(
+            title='Crescendo na Graça',
+            subtitle='Um guia para a vida cristã',
+            author_name='Pr. Washington Araujo',
+            description='Livro de edificação para a igreja local.',
+            cover_url='https://example.com/capa.jpg',
+            preview_url='https://example.com/amostra',
+            purchase_url='https://example.com/compra',
+            price='39.90',
+            is_featured=True,
+        )
+
+        home_response = self.client.get(reverse('home'))
+        self.assertContains(home_response, 'Livros do Pastor')
+        self.assertContains(home_response, 'Crescendo na Graça')
+        self.assertContains(home_response, reverse('bookstore'))
+
+        bookstore_response = self.client.get(reverse('bookstore'))
+        self.assertEqual(bookstore_response.status_code, 200)
+        self.assertContains(bookstore_response, 'Uma livraria pensada para edificar a igreja.')
+        self.assertContains(bookstore_response, 'Crescendo na Graça')
+        self.assertContains(bookstore_response, 'R$ 39,90')
 
     def test_contact_form_saves(self):
         response = self.client.post(reverse('home'), {

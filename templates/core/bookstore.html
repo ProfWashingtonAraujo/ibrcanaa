@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Livraria | IBR Canaã{% endblock %}
+{% block body_class %}public-body bookstore-page landing-page{% endblock %}
+{% block content %}
+<header class="public-nav" id="public-nav">
+  <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
+  <nav><a href="{% url 'home' %}#sobre">Nossa igreja</a><a href="{% url 'home' %}#livraria">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <a class="button button-gold" href="{% url 'home' %}">Voltar à página inicial</a>
+</header>
+<main>
+  <section class="bookstore-hero">
+    <div class="reveal">
+      <span class="eyebrow gold">Livros do Pastor</span>
+      <h1>Uma livraria pensada para edificar a igreja.</h1>
+      <p>Apresente aqui os livros, estudos e materiais do Pastor com capas, resumos, preço e links de leitura ou compra.</p>
+      <div class="bookstore-hero-actions">
+        <a class="button button-primary" href="{% url 'home' %}#livraria">Ver destaque na home</a>
+        <a class="button button-outline-light" href="{% url 'home' %}#contato">Falar com a igreja</a>
+      </div>
+    </div>
+    <div class="bookstore-summary reveal">
+      <article><strong>{{ books|length }}</strong><span>livros cadastrados</span></article>
+      <article><strong>{{ featured_books|length }}</strong><span>em destaque</span></article>
+      <article><strong>100%</strong><span>pronto para catálogo público</span></article>
+    </div>
+  </section>
+
+  <section class="public-section bookstore-section">
+    <div class="section-heading reveal"><span class="eyebrow gold">Catálogo</span><h2>Conheça os títulos disponíveis.</h2></div>
+    <div class="book-grid full-grid">
+      {% for book in books %}
+      <article class="book-card reveal">
+        <div class="book-cover{% if not book.cover_url %} book-cover-placeholder{% endif %}" {% if book.cover_url %}style="background-image:url('{{ book.cover_url }}')"{% endif %}>
+          <small>{% if book.is_featured %}DESTAQUE{% else %}LIVRO{% endif %}</small>
+        </div>
+        <div class="book-copy">
+          <span class="eyebrow">{{ book.author_name }}</span>
+          <h3>{{ book.title }}</h3>
+          {% if book.subtitle %}<p class="book-subtitle">{{ book.subtitle }}</p>{% endif %}
+          <p>{{ book.description|default:'Um livro para fortalecer a fé, o ensino e a caminhada cristã.' }}</p>
+          <div class="book-meta">
+            <strong>{% if book.price %}R$ {{ book.price|floatformat:2 }}{% else %}Consulte{% endif %}</strong>
+            <span>{% if book.purchase_url %}Pronto para adquirir{% else %}Em preparação{% endif %}</span>
+          </div>
+          <div class="book-actions">
+            {% if book.preview_url %}<a class="button button-ghost" href="{{ book.preview_url }}" target="_blank" rel="noopener">Ler amostra</a>{% endif %}
+            {% if book.purchase_url %}<a class="button button-primary" href="{{ book.purchase_url }}" target="_blank" rel="noopener">Comprar</a>{% endif %}
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      <article class="book-empty reveal full-width">
+        <span class="eyebrow gold">Catálogo vazio</span>
+        <h3>Cadastre os livros no admin para começar a exibir a livraria.</h3>
+        <p>A estrutura pública já está pronta para mostrar capa, descrição, preço e links de compra.</p>
+        <a class="button button-primary" href="{% url 'home' %}">Voltar para a home</a>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

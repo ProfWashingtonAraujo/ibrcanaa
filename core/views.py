@@ -25,7 +25,7 @@ from dal import autocomplete
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
-from .models import AccessProfile, BibleFavorite, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -195,9 +195,19 @@ def home(request):
         'form': form,
         'next_occurrence': next_occurrence,
         'public_ministries': Ministry.objects.all(),
+        'pastor_books': Book.objects.filter(is_available=True).order_by('sort_order', 'title')[:3],
         'daily_verse': get_daily_verse(timezone.localdate()),
         'youtube_videos': public_youtube_videos(),
         'youtube_channel_url': YOUTUBE_CHANNEL_URL,
+    })
+
+
+def bookstore(request):
+    books = Book.objects.filter(is_available=True).order_by('sort_order', 'title')
+    featured_books = books.filter(is_featured=True)
+    return render(request, 'core/bookstore.html', {
+        'books': books,
+        'featured_books': featured_books,
     })
 
 

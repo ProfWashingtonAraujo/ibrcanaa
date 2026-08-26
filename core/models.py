@@ -86,6 +86,28 @@ class Ministry(models.Model):
         return self.name
 
 
+class Book(models.Model):
+    title = models.CharField('título', max_length=140)
+    subtitle = models.CharField('subtítulo', max_length=180, blank=True)
+    author_name = models.CharField('autor', max_length=120, default='Pr. Washington Araujo')
+    description = models.TextField('descrição', blank=True)
+    cover_url = models.URLField('capa', blank=True)
+    purchase_url = models.URLField('link de compra', blank=True)
+    preview_url = models.URLField('link de leitura', blank=True)
+    price = models.DecimalField('preço', max_digits=10, decimal_places=2, null=True, blank=True)
+    is_featured = models.BooleanField('em destaque', default=False)
+    is_available = models.BooleanField('disponível', default=True)
+    sort_order = models.PositiveSmallIntegerField('ordem', default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+        verbose_name = 'livro'
+        verbose_name_plural = 'livros'
+
+    def __str__(self):
+        return self.title
+
+
 class Member(models.Model):
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Ativo'
