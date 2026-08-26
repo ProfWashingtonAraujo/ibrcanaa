@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction
 
 
 class CrispyFormMixin:
@@ -431,6 +431,23 @@ class MinistryForm(CrispyFormMixin, forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Apresente o propósito e as atividades do ministério.',
             }),
+        }
+
+
+class BookForm(CrispyFormMixin, forms.ModelForm):
+    full_width_fields = {'description', 'cover_url', 'purchase_url', 'preview_url'}
+
+    class Meta:
+        model = Book
+        fields = ['title', 'subtitle', 'author_name', 'description', 'cover_url', 'purchase_url', 'preview_url', 'price', 'is_featured', 'is_available', 'sort_order']
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Resumo curto do livro para a vitrine pública.',
+            }),
+            'cover_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'purchase_url': forms.URLInput(attrs={'placeholder': 'Link de compra ou WhatsApp'}),
+            'preview_url': forms.URLInput(attrs={'placeholder': 'Link para amostra ou leitura'}),
         }
 
 

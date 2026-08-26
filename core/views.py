@@ -24,7 +24,7 @@ from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .forms import BibleNoteForm, BookForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
@@ -403,6 +403,46 @@ def ministries(request):
         'selected_status': selected_status,
         'status_choices': Ministry.Status.choices,
     })
+
+
+@staff_required
+def books(request):
+    books_query = Book.objects.all()
+    search = request.GET.get('q', '').strip()
+    if search:
+        books_query = books_query.filter(Q(title__icontains=search) | Q(subtitle__icontains=search) | Q(author_name__icontains=search))
+    return render(request, 'core/books.html', {
+        'books': books_query,
+        'filtered_count': books_query.count(),
+        'featured_count': Book.objects.filter(is_featured=True).count(),
+        'available_count': Book.objects.filter(is_available=True).count(),
+        'search': search,
+    })
+
+
+@staff_required
+def book_form(request, pk=None):
+    instance = get_object_or_404(Book, pk=pk) if pk else None
+    form = BookForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        book = form.save()
+        messages.success(request, 'Livro salvo com sucesso.')
+        return redirect('books')
+    return render(request, 'core/entity_form.html', {
+        'form': form,
+        'title': 'Editar livro' if instance else 'Novo livro',
+        'back_url': 'books',
+    })
+
+
+@staff_required
+def book_delete(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Use POST para excluir.')
+    book.delete()
+    messages.success(request, 'Livro excluído com sucesso.')
+    return redirect('books')
 
 
 @staff_required

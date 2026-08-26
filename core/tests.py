@@ -219,9 +219,17 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-symbol"><svg', count=8)
+        self.assertContains(response, 'class="nav-symbol"><svg', count=9)
+        self.assertContains(response, 'Livraria')
         self.assertContains(response, 'class="mobile-logout"')
         self.assertContains(response, 'aria-label="Sair do sistema"')
+
+    def test_staff_can_access_book_admin(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.get(reverse('books'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Livros do pastor')
+        self.assertContains(response, 'Novo livro')
 
     def test_pastor_cannot_access_or_see_financial_data(self):
         pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)
