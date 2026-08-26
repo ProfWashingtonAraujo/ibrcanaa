@@ -31,7 +31,7 @@
   </section>
   <section class="public-section ministry-section" id="ministerios"><div class="section-heading reveal"><span class="eyebrow gold">Vida da igreja</span><h2>Espaços para toda a família crescer.</h2></div><div class="ministry-grid">{% for ministry in public_ministries %}<article class="reveal"><span class="ministry-number">{{ forloop.counter|stringformat:'02d' }}</span><small>{{ ministry.get_status_display|upper }}</small><h3>{{ ministry.name }}</h3><p>{{ ministry.description|default:'Um espaço para servir, crescer e viver em comunhão.' }}</p><i>{% if ministry.status == 'recruiting' %}Quero servir{% else %}Conhecer{% endif %}</i></article>{% empty %}<article class="reveal ministry-empty"><span class="ministry-number">01</span><small>EM ORGANIZAÇÃO</small><h3>Novos ministérios</h3><p>Em breve, novas oportunidades para servir.</p><i>Acompanhe</i></article>{% endfor %}</div></section>
   <section class="public-section bookstore-section" id="livraria">
-    <div class="section-heading reveal"><span class="eyebrow gold">Leitura e edificação</span><h2>Livros do Pastor</h2><p class="section-lead">Uma vitrine para apresentar os livros, estudos e materiais do Pastor para a igreja e a comunidade.</p></div>
+    <div class="section-heading reveal"><span class="eyebrow gold">Leitura e edificação</span><h2>Livraria</h2><p class="section-lead">Uma vitrine para apresentar os livros, estudos e materiais da igreja para a comunidade.</p></div>
     <div class="book-grid">
       {% for book in pastor_books %}
       <article class="book-card reveal">
@@ -56,7 +56,7 @@
       {% empty %}
       <article class="book-empty reveal">
         <span class="eyebrow gold">Em breve</span>
-        <h3>Cadastre os livros do Pastor no painel administrativo.</h3>
+        <h3>Cadastre os livros no painel administrativo.</h3>
         <p>Esta área já está pronta para exibir capas, descrição, preço e links de compra.</p>
         <a class="button button-primary" href="{% url 'bookstore' %}">Abrir a livraria</a>
       </article>

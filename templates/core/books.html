@@ -1,7 +1,7 @@
 {% extends 'core/admin_base.html' %}
-{% block title %}Livraria | IBR Canaã{% endblock %}{% block section_name %}Livraria{% endblock %}{% block page_title %}Livros do pastor{% endblock %}
+{% block title %}Livraria | IBR Canaã{% endblock %}{% block section_name %}Livraria{% endblock %}{% block page_title %}Livraria{% endblock %}
 {% block admin_content %}
-<section class="ministry-admin-hero bookstore-admin-hero"><div><span class="eyebrow gold">Leitura e edificação</span><h2>Livros e materiais do Pastor.</h2><p>Cadastre títulos, capas, preços e links para leitura ou compra. A vitrine pública usa estes registros automaticamente.</p></div><a class="button button-gold" href="{% url 'book_create' %}">+ Novo livro</a></section>
+<section class="ministry-admin-hero bookstore-admin-hero"><div><span class="eyebrow gold">Leitura e edificação</span><h2>Livraria da igreja.</h2><p>Cadastre títulos, capas, preços e links para leitura ou compra. A vitrine pública usa estes registros automaticamente.</p></div><a class="button button-gold" href="{% url 'book_create' %}">+ Novo livro</a></section>
 <section class="ministry-admin-metrics"><article><span>Livros</span><strong>{{ filtered_count }}</strong><small>Resultado atual</small></article><article><span>Em destaque</span><strong>{{ featured_count }}</strong><small>Marcação pública</small></article><article><span>Disponíveis</span><strong>{{ available_count }}</strong><small>Visíveis na home</small></article><article><span>Sem filtro</span><strong>{{ books|length }}</strong><small>Registros carregados</small></article></section>
 <article class="panel ministry-admin-panel">
   <div class="members-panel-heading"><div><span class="eyebrow">Catálogo pastoral</span><h2>Livros cadastrados</h2><p>{{ filtered_count }} registro{{ filtered_count|pluralize }} encontrado{{ filtered_count|pluralize }}</p></div></div>

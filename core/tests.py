@@ -45,7 +45,7 @@ class PublicViewsTests(TestCase):
         )
 
         home_response = self.client.get(reverse('home'))
-        self.assertContains(home_response, 'Livros do Pastor')
+        self.assertContains(home_response, 'Livraria')
         self.assertContains(home_response, 'Crescendo na Graça')
         self.assertContains(home_response, reverse('bookstore'))
 
@@ -228,7 +228,7 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Livros do pastor')
+        self.assertContains(response, 'Livraria')
         self.assertContains(response, 'Novo livro')
 
     def test_pastor_cannot_access_or_see_financial_data(self):
