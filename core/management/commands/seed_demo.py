@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from core.models import AccessProfile, Event, Member, Ministry, Transaction
+from core.models import AccessProfile, Book, Event, Member, Ministry, Transaction
 
 
 class Command(BaseCommand):
@@ -34,6 +34,40 @@ class Command(BaseCommand):
             ('Intercessão', 'Carla Dias', Ministry.Status.ACTIVE),
         ]:
             ministries[name], _ = Ministry.objects.update_or_create(name=name, defaults={'leader_name': leader, 'status': status})
+
+        for sort_order, book_data in enumerate([
+            {
+                'title': 'Crescendo na Graça',
+                'subtitle': 'Um guia prático para a vida cristã',
+                'description': 'Reflexões sobre discipulado, fé e maturidade espiritual para a igreja local.',
+                'cover_url': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80',
+                'purchase_url': 'https://wa.me/5585999999999',
+                'preview_url': '',
+                'price': Decimal('39.90'),
+                'is_featured': True,
+            },
+            {
+                'title': 'Família e Aliança',
+                'subtitle': 'Cristo no centro do lar',
+                'description': 'Um estudo devocional para fortalecer casamento, pais e filhos no cotidiano cristão.',
+                'cover_url': 'https://images.unsplash.com/photo-1455885666463-83c5b4d7816b?auto=format&fit=crop&w=900&q=80',
+                'purchase_url': 'https://wa.me/5585999999999',
+                'preview_url': '',
+                'price': Decimal('29.90'),
+                'is_featured': False,
+            },
+            {
+                'title': 'Fundamentos da Fé',
+                'subtitle': 'Doutrina bíblica em linguagem simples',
+                'description': 'Material introdutório para novos convertidos e para classes de ensino bíblico.',
+                'cover_url': 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=900&q=80',
+                'purchase_url': 'https://wa.me/5585999999999',
+                'preview_url': '',
+                'price': Decimal('24.90'),
+                'is_featured': False,
+            },
+        ], start=1):
+            Book.objects.update_or_create(title=book_data['title'], defaults={**book_data, 'sort_order': sort_order})
 
         member_rows = [
             ('João Silva', 'joao.silva@email.com', 'Louvor e Adoração', Member.Status.ACTIVE, date(2005, 4, 10), date(2005, 9, 18), date(2014, 2, 2)),
