@@ -454,18 +454,21 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
 
 
 class ChurchHistoryPageForm(CrispyFormMixin, forms.ModelForm):
-    full_width_fields = {'intro', 'milestone_1_text', 'milestone_2_text', 'milestone_3_text'}
+    full_width_fields = {'intro', 'photo_1_url', 'photo_2_url', 'photo_3_url', 'milestone_1_text', 'milestone_2_text', 'milestone_3_text'}
 
     class Meta:
         model = ChurchHistoryPage
         fields = [
-            'eyebrow', 'heading', 'intro',
+            'eyebrow', 'heading', 'intro', 'photo_1_url', 'photo_2_url', 'photo_3_url',
             'milestone_1_title', 'milestone_1_text',
             'milestone_2_title', 'milestone_2_text',
             'milestone_3_title', 'milestone_3_text',
         ]
         widgets = {
             'intro': forms.Textarea(attrs={'rows': 4}),
+            'photo_1_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'photo_2_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'photo_3_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
             'milestone_1_text': forms.Textarea(attrs={'rows': 3}),
             'milestone_2_text': forms.Textarea(attrs={'rows': 3}),
             'milestone_3_text': forms.Textarea(attrs={'rows': 3}),

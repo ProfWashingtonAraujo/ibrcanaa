@@ -23,6 +23,20 @@
   </section>
 
   <section class="public-section bookstore-section">
+    <div class="section-heading reveal"><span class="eyebrow gold">Galeria</span><h2>Fotos da nossa caminhada.</h2></div>
+    <div class="book-grid full-grid history-gallery">
+      {% if page.photo_1_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_1_url }}')"><small>Foto 01</small></div></article>{% endif %}
+      {% if page.photo_2_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_2_url }}')"><small>Foto 02</small></div></article>{% endif %}
+      {% if page.photo_3_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_3_url }}')"><small>Foto 03</small></div></article>{% endif %}
+      {% if not page.photo_1_url and not page.photo_2_url and not page.photo_3_url %}
+      <article class="book-empty reveal full-width">
+        <span class="eyebrow gold">Sem fotos</span>
+        <h3>Cadastre as imagens no painel para montar a galeria.</h3>
+        <p>Você pode colar URLs de imagens para ilustrar a história da igreja.</p>
+      </article>
+      {% endif %}
+    </div>
+
     <div class="section-heading reveal"><span class="eyebrow gold">Linha do tempo</span><h2>Marcos importantes.</h2></div>
     <div class="book-grid full-grid">
       <article class="book-card reveal"><div class="book-copy"><span class="eyebrow">01</span><h3>{{ page.milestone_1_title }}</h3><p>{{ page.milestone_1_text }}</p></div></article>

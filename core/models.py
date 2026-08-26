@@ -117,6 +117,9 @@ class ChurchHistoryPage(models.Model):
         'introdução',
         default='Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
     )
+    photo_1_url = models.URLField('foto 1', blank=True)
+    photo_2_url = models.URLField('foto 2', blank=True)
+    photo_3_url = models.URLField('foto 3', blank=True)
     milestone_1_title = models.CharField('marco 1', max_length=120, default='Fundação')
     milestone_1_text = models.TextField('texto 1', default='A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.')
     milestone_2_title = models.CharField('marco 2', max_length=120, default='Crescimento')
