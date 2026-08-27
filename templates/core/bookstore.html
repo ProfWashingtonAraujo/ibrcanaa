@@ -1,19 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Livraria | IBR Canaã{% endblock %}
+{% block title %}Publicações | IBR Canaã{% endblock %}
 {% block body_class %}public-body bookstore-page landing-page{% endblock %}
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-  <nav><a href="{% url 'home' %}#nossa-igreja">Nossa igreja</a><a href="{% url 'home' %}#livraria">Livraria</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <nav><a href="{% url 'home' %}#nossa-igreja">Nossa igreja</a><a href="{% url 'home' %}#livraria">Publicações</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
   <a class="button button-gold" href="{% url 'home' %}">Voltar à página inicial</a>
 </header>
 <main>
   <section class="bookstore-hero">
     <div class="reveal">
-      <span class="eyebrow gold">Livros do Pastor</span>
-      <h1>Uma livraria pensada para edificar a igreja.</h1>
-      <p>Apresente aqui os livros, estudos e materiais do Pastor com capas, resumos, preço e links de leitura ou compra.</p>
+      <span class="eyebrow gold">Leitura e edificação</span>
+      <h1>Publicações pensadas para edificar a igreja.</h1>
+      <p>Apresente aqui os livros, estudos e materiais da igreja com capas, resumos, preço e links de leitura ou compra.</p>
       <div class="bookstore-hero-actions">
         <a class="button button-primary" href="{% url 'home' %}#livraria">Ver destaque na home</a>
         <a class="button button-outline-light" href="{% url 'home' %}#contato">Falar com a igreja</a>
@@ -47,7 +47,7 @@
       {% empty %}
       <article class="book-empty reveal full-width">
         <span class="eyebrow gold">Catálogo vazio</span>
-        <h3>Cadastre os livros no admin para começar a exibir a livraria.</h3>
+        <h3>Cadastre os livros no admin para começar a exibir as publicações.</h3>
         <p>A estrutura pública já está pronta para mostrar capa, descrição, preço e links de compra.</p>
         <a class="button button-primary" href="{% url 'home' %}">Voltar para a home</a>
       </article>

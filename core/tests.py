@@ -46,13 +46,13 @@ class PublicViewsTests(TestCase):
         )
 
         home_response = self.client.get(reverse('home'))
-        self.assertContains(home_response, 'Livraria')
+        self.assertContains(home_response, 'Publicações')
         self.assertContains(home_response, 'Crescendo na Graça')
         self.assertContains(home_response, reverse('bookstore'))
 
         bookstore_response = self.client.get(reverse('bookstore'))
         self.assertEqual(bookstore_response.status_code, 200)
-        self.assertContains(bookstore_response, 'Uma livraria pensada para edificar a igreja.')
+        self.assertContains(bookstore_response, 'Publicações pensadas para edificar a igreja.')
         self.assertContains(bookstore_response, 'Crescendo na Graça')
         self.assertContains(bookstore_response, 'R$ 39,90')
 
@@ -236,7 +236,7 @@ class AccessTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="nav-symbol"><svg', count=10)
-        self.assertContains(response, 'Livraria')
+        self.assertContains(response, 'Publicações')
         self.assertContains(response, 'Conteúdo')
         self.assertContains(response, 'class="mobile-logout"')
         self.assertContains(response, 'aria-label="Sair do sistema"')
@@ -245,7 +245,7 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('books'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Livraria')
+        self.assertContains(response, 'Publicações')
         self.assertContains(response, 'Novo livro')
 
     def test_staff_can_access_institutional_content_admin(self):
