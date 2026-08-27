@@ -61,15 +61,15 @@ class PublicViewsTests(TestCase):
         self.assertEqual(history_response.status_code, 200)
         self.assertContains(history_response, 'A caminhada da Canaã ao longo do tempo.')
 
-    def test_church_history_gallery_renders_uploaded_photos(self):
+    def test_church_history_gallery_renders_photo_urls(self):
         ChurchHistoryPage.objects.create(
-            photo_1_url=SimpleUploadedFile('historia.jpg', b'fake image data', content_type='image/jpeg'),
+            photo_1_url='https://example.com/historia.jpg',
         )
 
         response = self.client.get(reverse('church_history'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Foto 01')
-        self.assertContains(response, '/media/church/history/')
+        self.assertContains(response, 'https://example.com/historia.jpg')
 
     def test_contact_form_saves(self):
         response = self.client.post(reverse('home'), {

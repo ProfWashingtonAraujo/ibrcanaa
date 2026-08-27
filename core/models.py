@@ -117,9 +117,9 @@ class ChurchHistoryPage(models.Model):
         'introdução',
         default='Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
     )
-    photo_1_url = models.ImageField('foto 1', upload_to='church/history/%Y/%m/', blank=True)
-    photo_2_url = models.ImageField('foto 2', upload_to='church/history/%Y/%m/', blank=True)
-    photo_3_url = models.ImageField('foto 3', upload_to='church/history/%Y/%m/', blank=True)
+    photo_1_url = models.URLField('foto 1', blank=True)
+    photo_2_url = models.URLField('foto 2', blank=True)
+    photo_3_url = models.URLField('foto 3', blank=True)
     milestone_1_title = models.CharField('marco 1', max_length=120, default='Fundação')
     milestone_1_text = models.TextField('texto 1', default='A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.')
     milestone_2_title = models.CharField('marco 2', max_length=120, default='Crescimento')
@@ -134,24 +134,17 @@ class ChurchHistoryPage(models.Model):
     def __str__(self):
         return 'Histórico'
 
-    def _photo_src(self, field_name):
-        field = getattr(self, field_name)
-        if not field:
-            return ''
-        value = str(field)
-        return value if value.startswith('http') else field.url
-
     @property
     def photo_1_src(self):
-        return self._photo_src('photo_1_url')
+        return self.photo_1_url
 
     @property
     def photo_2_src(self):
-        return self._photo_src('photo_2_url')
+        return self.photo_2_url
 
     @property
     def photo_3_src(self):
-        return self._photo_src('photo_3_url')
+        return self.photo_3_url
 
 
 class Book(models.Model):

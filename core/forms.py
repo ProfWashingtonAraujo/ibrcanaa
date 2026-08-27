@@ -466,9 +466,9 @@ class ChurchHistoryPageForm(CrispyFormMixin, forms.ModelForm):
         ]
         widgets = {
             'intro': forms.Textarea(attrs={'rows': 4}),
-            'photo_1_url': forms.ClearableFileInput(),
-            'photo_2_url': forms.ClearableFileInput(),
-            'photo_3_url': forms.ClearableFileInput(),
+            'photo_1_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'photo_2_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
+            'photo_3_url': forms.URLInput(attrs={'placeholder': 'https://...'}),
             'milestone_1_text': forms.Textarea(attrs={'rows': 3}),
             'milestone_2_text': forms.Textarea(attrs={'rows': 3}),
             'milestone_3_text': forms.Textarea(attrs={'rows': 3}),
