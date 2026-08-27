@@ -112,10 +112,10 @@ class ChurchAboutPage(models.Model):
 class ChurchHistoryPage(models.Model):
     site_key = models.CharField(max_length=20, unique=True, default='history', editable=False)
     eyebrow = models.CharField('faixa', max_length=80, default='Histórico da igreja')
-    heading = models.CharField('título', max_length=140, default='A caminhada da Canaã ao longo do tempo.')
+    heading = models.CharField('título', max_length=140, default='Uma história guiada pela fidelidade de Deus.')
     intro = models.TextField(
         'introdução',
-        default='Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
+        default='Conheça a origem, o crescimento e a missão que Deus tem sustentado na Canaã ao longo dos anos.',
     )
     photo_1_url = models.URLField('foto 1', blank=True)
     photo_2_url = models.URLField('foto 2', blank=True)

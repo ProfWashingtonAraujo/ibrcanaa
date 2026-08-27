@@ -59,7 +59,7 @@ class PublicViewsTests(TestCase):
     def test_new_church_pages_load(self):
         history_response = self.client.get(reverse('church_history'))
         self.assertEqual(history_response.status_code, 200)
-        self.assertContains(history_response, 'A caminhada da Canaã ao longo do tempo.')
+        self.assertContains(history_response, 'Uma história guiada pela fidelidade de Deus.')
 
     def test_church_history_gallery_renders_photo_urls(self):
         ChurchHistoryPage.objects.create(
@@ -261,8 +261,8 @@ class AccessTests(TestCase):
 
         response = self.client.post(reverse('church_history_edit'), {
             'eyebrow': 'Histórico da igreja',
-            'heading': 'A caminhada da Canaã ao longo do tempo.',
-            'intro': 'Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
+            'heading': 'Uma história guiada pela fidelidade de Deus.',
+            'intro': 'Conheça a origem, o crescimento e a missão que Deus tem sustentado na Canaã ao longo dos anos.',
             'photo_1_url': 'https://example.com/historia-1.jpg',
             'photo_2_url': 'https://example.com/historia-2.jpg',
             'photo_3_url': 'https://example.com/historia-3.jpg',
