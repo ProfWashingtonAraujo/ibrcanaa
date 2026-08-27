@@ -25,10 +25,10 @@
   <section class="public-section bookstore-section">
     <div class="section-heading reveal"><span class="eyebrow gold">Galeria</span><h2>Fotos da nossa caminhada.</h2></div>
     <div class="book-grid full-grid history-gallery">
-      {% if page.photo_1_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_1_url }}')"><small>Foto 01</small></div></article>{% endif %}
-      {% if page.photo_2_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_2_url }}')"><small>Foto 02</small></div></article>{% endif %}
-      {% if page.photo_3_url %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_3_url }}')"><small>Foto 03</small></div></article>{% endif %}
-      {% if not page.photo_1_url and not page.photo_2_url and not page.photo_3_url %}
+      {% if page.photo_1_src %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_1_src }}')"><small>Foto 01</small></div></article>{% endif %}
+      {% if page.photo_2_src %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_2_src }}')"><small>Foto 02</small></div></article>{% endif %}
+      {% if page.photo_3_src %}<article class="book-card reveal"><div class="book-cover" style="background-image:url('{{ page.photo_3_src }}')"><small>Foto 03</small></div></article>{% endif %}
+      {% if not page.photo_1_src and not page.photo_2_src and not page.photo_3_src %}
       <article class="book-empty reveal full-width">
         <span class="eyebrow gold">Sem fotos</span>
         <h3>Cadastre as imagens no painel para montar a galeria.</h3>

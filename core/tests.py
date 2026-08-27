@@ -10,7 +10,7 @@ from io import BytesIO
 from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, Book, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -60,6 +60,16 @@ class PublicViewsTests(TestCase):
         history_response = self.client.get(reverse('church_history'))
         self.assertEqual(history_response.status_code, 200)
         self.assertContains(history_response, 'A caminhada da Canaã ao longo do tempo.')
+
+    def test_church_history_gallery_renders_uploaded_photos(self):
+        ChurchHistoryPage.objects.create(
+            photo_1_url=SimpleUploadedFile('historia.jpg', b'fake image data', content_type='image/jpeg'),
+        )
+
+        response = self.client.get(reverse('church_history'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Foto 01')
+        self.assertContains(response, '/media/church/history/')
 
     def test_contact_form_saves(self):
         response = self.client.post(reverse('home'), {
