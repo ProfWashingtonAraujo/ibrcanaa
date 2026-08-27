@@ -256,6 +256,30 @@ class AccessTests(TestCase):
         self.assertContains(response, 'Nossa igreja')
         self.assertContains(response, 'Histórico')
 
+    def test_staff_can_save_church_history_urls(self):
+        self.client.login(username='staff', password='test-pass')
+
+        response = self.client.post(reverse('church_history_edit'), {
+            'eyebrow': 'Histórico da igreja',
+            'heading': 'A caminhada da Canaã ao longo do tempo.',
+            'intro': 'Uma linha do tempo para registrar a origem, o crescimento e a missão que continuam moldando a igreja até hoje.',
+            'photo_1_url': 'https://example.com/historia-1.jpg',
+            'photo_2_url': 'https://example.com/historia-2.jpg',
+            'photo_3_url': 'https://example.com/historia-3.jpg',
+            'milestone_1_title': 'Fundação',
+            'milestone_1_text': 'Texto 1',
+            'milestone_2_title': 'Crescimento',
+            'milestone_2_text': 'Texto 2',
+            'milestone_3_title': 'Hoje',
+            'milestone_3_text': 'Texto 3',
+        })
+
+        self.assertRedirects(response, reverse('institutional_content'))
+        page = ChurchHistoryPage.objects.get(site_key='history')
+        self.assertEqual(page.photo_1_url, 'https://example.com/historia-1.jpg')
+        self.assertEqual(page.photo_2_url, 'https://example.com/historia-2.jpg')
+        self.assertEqual(page.photo_3_url, 'https://example.com/historia-3.jpg')
+
     def test_pastor_cannot_access_or_see_financial_data(self):
         pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)
         AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
