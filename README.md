@@ -63,6 +63,11 @@ Troque essas senhas antes de utilizar dados reais.
 O ambiente local usa SQLite. Em produção no Render, o projeto usa PostgreSQL,
 Gunicorn e WhiteNoise através do Blueprint `render.yaml`.
 
+Se você quiser que Render e Vercel usem os mesmos dados, ambos precisam apontar
+para o mesmo PostgreSQL externo. No Render, use o banco provisionado pelo
+Blueprint; na Vercel, copie a *connection string* externa desse mesmo banco para
+`DATABASE_URL`.
+
 ## Mídia de imagens
 
 Os arquivos enviados no perfil do usuário usam `ImageField`.
@@ -95,7 +100,8 @@ python manage.py createsuperuser
 
 O projeto também pode ser publicado na Vercel como app Django.
 
-1. Crie um banco PostgreSQL externo e defina `DATABASE_URL`.
+1. Defina `DATABASE_URL` com a connection string do mesmo PostgreSQL usado no
+   Render, ou de outro PostgreSQL externo compartilhado entre os dois ambientes.
 2. Defina `DJANGO_DEBUG=False`.
 3. Configure `DJANGO_SECRET_KEY`.
 4. Se quiser armazenar imagens, defina `CLOUDINARY_URL`.
