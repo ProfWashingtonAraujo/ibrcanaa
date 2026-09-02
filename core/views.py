@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.utils import OperationalError, ProgrammingError
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
@@ -60,6 +61,34 @@ YOUTUBE_FALLBACK_VIDEOS = [
         'published': '',
     },
 ]
+
+PUBLIC_HOME_FALLBACKS = {
+    'church_about_page': {
+        'eyebrow': 'Nossa igreja',
+        'heading': 'Conteúdo temporariamente indisponível.',
+        'intro': 'Estamos restaurando as informações desta seção. Enquanto isso, seguimos com a programação normal da igreja.',
+        'highlight_1_title': 'Ensino que transforma',
+        'highlight_1_text': 'Conteúdo bíblico aplicado à vida, à família e ao serviço cristão.',
+        'highlight_2_title': 'Relacionamentos que acolhem',
+        'highlight_2_text': 'Uma comunidade preparada para caminhar ao seu lado em cada estação.',
+        'highlight_3_title': 'Serviço com propósito',
+        'highlight_3_text': 'Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.',
+    },
+    'church_history_page': {
+        'eyebrow': 'Histórico da igreja',
+        'heading': 'Histórico temporariamente indisponível.',
+        'intro': 'Estamos restaurando os registros desta seção. O restante do site segue disponível.',
+        'photo_1_url': '',
+        'photo_2_url': '',
+        'photo_3_url': '',
+        'milestone_1_title': 'Fundação',
+        'milestone_1_text': 'A igreja nasceu do desejo de cultivar uma comunidade centrada em Cristo e comprometida com a Palavra.',
+        'milestone_2_title': 'Crescimento',
+        'milestone_2_text': 'A família da fé se expandiu com novos ministérios, discipulado e presença ativa na cidade.',
+        'milestone_3_title': 'Hoje',
+        'milestone_3_text': 'Seguimos servindo com ensino, adoração, ação social e cuidado pastoral contínuo.',
+    },
+}
 
 
 def staff_required(view):
@@ -187,17 +216,26 @@ def home(request):
     if request.method == 'POST' and form.is_valid():
         form.save()
         return redirect('contact_thanks')
-    next_occurrence = Occurrence.objects.select_related('event', 'event__church_event').filter(
-        start_time__gte=timezone.now(),
-        event__church_event__isnull=False,
-    ).first()
-    church_about_page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
-    church_history_page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
+    try:
+        next_occurrence = Occurrence.objects.select_related('event', 'event__church_event').filter(
+            start_time__gte=timezone.now(),
+            event__church_event__isnull=False,
+        ).first()
+        church_about_page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+        church_history_page, _ = ChurchHistoryPage.objects.get_or_create(site_key='history')
+        public_ministries = list(Ministry.objects.all())
+        pastor_books = list(Book.objects.filter(is_available=True).order_by('sort_order', 'title')[:3])
+    except (OperationalError, ProgrammingError):
+        next_occurrence = None
+        church_about_page = PUBLIC_HOME_FALLBACKS['church_about_page']
+        church_history_page = PUBLIC_HOME_FALLBACKS['church_history_page']
+        public_ministries = []
+        pastor_books = []
     return render(request, 'core/home.html', {
         'form': form,
         'next_occurrence': next_occurrence,
-        'public_ministries': Ministry.objects.all(),
-        'pastor_books': Book.objects.filter(is_available=True).order_by('sort_order', 'title')[:3],
+        'public_ministries': public_ministries,
+        'pastor_books': pastor_books,
         'church_about_page': church_about_page,
         'church_history_page': church_history_page,
         'daily_verse': get_daily_verse(timezone.localdate()),

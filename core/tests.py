@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
@@ -10,7 +11,7 @@ from io import BytesIO
 from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
-from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
 
 class PublicViewsTests(TestCase):
@@ -31,6 +32,14 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, '#nossa-igreja')
         self.assertContains(response, 'Desenvolvimento e criação por')
         self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
+
+    def test_home_uses_fallback_when_database_is_unavailable(self):
+        with patch.object(ChurchAboutPage.objects, 'get_or_create', side_effect=OperationalError('db offline')):
+            response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Conteúdo temporariamente indisponível.')
+        self.assertContains(response, 'Estamos restaurando as informações desta seção.')
+        self.assertContains(response, 'Em breve, novas oportunidades para servir.')
 
     def test_home_and_bookstore_show_registered_books(self):
         Book.objects.create(
