@@ -63,6 +63,14 @@ Troque essas senhas antes de utilizar dados reais.
 O ambiente local usa SQLite. Em produção no Render, o projeto usa PostgreSQL,
 Gunicorn e WhiteNoise através do Blueprint `render.yaml`.
 
+## Mídia de imagens
+
+Os arquivos enviados no perfil do usuário usam `ImageField`.
+Para evitar perda de mídia em ambientes sem disco persistente, defina
+`CLOUDINARY_URL` e o Django passa a armazenar essas imagens no Cloudinary.
+Sem essa variável, o projeto continua usando o armazenamento local no
+desenvolvimento.
+
 ## Deploy no Render
 
 1. Faça push da branch `main` para o GitHub.
@@ -82,6 +90,28 @@ Depois do deploy, crie o primeiro administrador no Shell do Render:
 ```bash
 python manage.py createsuperuser
 ```
+
+## Deploy na Vercel
+
+O projeto também pode ser publicado na Vercel como app Django.
+
+1. Crie um banco PostgreSQL externo e defina `DATABASE_URL`.
+2. Defina `DJANGO_DEBUG=False`.
+3. Configure `DJANGO_SECRET_KEY`.
+4. Se quiser armazenar imagens, defina `CLOUDINARY_URL`.
+5. Adicione no painel da Vercel os domínios de produção e preview.
+6. Faça o deploy do repositório; a Vercel detecta `manage.py` e `config/wsgi.py`.
+
+Variáveis importantes na Vercel:
+
+- `DATABASE_URL`
+- `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG=False`
+- `DJANGO_ALLOWED_HOSTS`
+- `DJANGO_CSRF_TRUSTED_ORIGINS`
+- `CLOUDINARY_URL`
+
+O arquivo `vercel.json` aumenta o tempo máximo da função principal para 60s.
 
 ## GitHub Pages
 

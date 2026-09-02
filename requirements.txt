@@ -11,3 +11,5 @@ psycopg[binary]==3.2.13
 whitenoise==6.9.0
 reportlab==4.4.3
 pypdf==6.16.0
+cloudinary>=1.41,<2
+django-cloudinary-storage>=0.3,<1

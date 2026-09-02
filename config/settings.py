@@ -27,15 +27,20 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-developm
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+VERCEL_URL = os.environ.get('VERCEL_URL')
+VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
     if host.strip()
 ]
+ALLOWED_HOSTS += ['.vercel.app', '.vercel.sh']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+for host in (RENDER_EXTERNAL_HOSTNAME, VERCEL_PROJECT_PRODUCTION_URL, VERCEL_URL):
+    if host:
+        ALLOWED_HOSTS.append(host)
 
 
 # Application definition
@@ -54,6 +59,12 @@ INSTALLED_APPS = [
     'swingtime',
     'core',
 ]
+
+if CLOUDINARY_URL:
+    INSTALLED_APPS += [
+        'cloudinary_storage',
+        'cloudinary',
+    ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -136,7 +147,13 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static', BASE_DIR / 'src' / 'assets']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STORAGES = {
-    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'default': {
+        'BACKEND': (
+            'cloudinary_storage.storage.MediaCloudinaryStorage'
+            if CLOUDINARY_URL
+            else 'django.core.files.storage.FileSystemStorage'
+        )
+    },
     'staticfiles': {
         'BACKEND': (
             'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -155,8 +172,13 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+CSRF_TRUSTED_ORIGINS += ['https://*.vercel.app', 'https://*.vercel.sh']
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+
+for host in (VERCEL_PROJECT_PRODUCTION_URL, VERCEL_URL):
+    if host:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
