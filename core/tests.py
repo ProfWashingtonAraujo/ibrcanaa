@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
@@ -1250,4 +1251,21 @@ class AccessTests(TestCase):
         self.member_user.access_profile.refresh_from_db()
         self.assertEqual(self.member_user.access_profile.photo.name, photo_name)
 
-# Create your tests here.
+class BootstrapUserTests(TestCase):
+    @patch.dict('os.environ', {
+        'DJANGO_BOOTSTRAP_USERNAME': 'diretoria',
+        'DJANGO_BOOTSTRAP_PASSWORD': 'Canaa@2026',
+        'DJANGO_BOOTSTRAP_EMAIL': 'diretoria@ibrcanaa.local',
+        'DJANGO_BOOTSTRAP_FIRST_NAME': 'Washington',
+        'DJANGO_BOOTSTRAP_LAST_NAME': 'Araújo',
+        'DJANGO_BOOTSTRAP_ROLE': AccessProfile.Role.BOARD,
+        'DJANGO_BOOTSTRAP_IS_STAFF': 'true',
+        'DJANGO_BOOTSTRAP_IS_SUPERUSER': 'true',
+    }, clear=False)
+    def test_bootstrap_user_command_creates_initial_account(self):
+        call_command('bootstrap_user', verbosity=0)
+        user = User.objects.get(username='diretoria')
+        self.assertTrue(user.check_password('Canaa@2026'))
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(user.access_profile.role, AccessProfile.Role.BOARD)

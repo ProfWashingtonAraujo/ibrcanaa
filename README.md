@@ -102,6 +102,17 @@ O projeto também pode ser publicado na Vercel como app Django.
 5. Adicione no painel da Vercel os domínios de produção e preview.
 6. Faça o deploy do repositório; a Vercel detecta `manage.py` e `config/wsgi.py`.
 
+Para criar o primeiro usuário automaticamente no build, defina também:
+
+- `DJANGO_BOOTSTRAP_USERNAME`
+- `DJANGO_BOOTSTRAP_PASSWORD`
+- `DJANGO_BOOTSTRAP_EMAIL` (opcional)
+- `DJANGO_BOOTSTRAP_FIRST_NAME` (opcional)
+- `DJANGO_BOOTSTRAP_LAST_NAME` (opcional)
+- `DJANGO_BOOTSTRAP_ROLE` (opcional, padrão `board`)
+- `DJANGO_BOOTSTRAP_IS_STAFF` (opcional, padrão `true`)
+- `DJANGO_BOOTSTRAP_IS_SUPERUSER` (opcional, padrão `false`)
+
 Variáveis importantes na Vercel:
 
 - `DATABASE_URL`
