@@ -60,13 +60,24 @@ Troque essas senhas antes de utilizar dados reais.
 
 ## Banco de produção
 
-O ambiente local usa SQLite. Em produção no Render, o projeto usa PostgreSQL,
-Gunicorn e WhiteNoise através do Blueprint `render.yaml`.
+O ambiente local usa SQLite. Em produção, o projeto usa PostgreSQL no Neon e a
+aplicação usa Gunicorn e WhiteNoise no Render através do Blueprint
+`render.yaml`.
 
-Se você quiser que Render e Vercel usem os mesmos dados, ambos precisam apontar
-para o mesmo PostgreSQL externo. No Render, use o banco provisionado pelo
-Blueprint; na Vercel, copie a *connection string* externa desse mesmo banco para
-`DATABASE_URL`.
+Render e Vercel devem receber a mesma *pooled connection string* do Neon na
+variável `DATABASE_URL`. Mantenha `sslmode=require` na URL fornecida pelo Neon.
+
+### Criar o banco no Neon
+
+1. Crie um projeto no Neon e selecione uma região próxima da aplicação.
+2. No painel do projeto, abra **Connect** e selecione **Pooled connection**.
+3. Copie a URL PostgreSQL completa, incluindo `sslmode=require`.
+4. No Render, defina essa URL em `DATABASE_URL` e faça um novo deploy.
+5. Na Vercel, defina a mesma URL em `DATABASE_URL` para compartilhar os dados.
+
+O comando `bash build.sh` aplica todas as migrations e cria automaticamente a
+estrutura de tabelas no primeiro deploy. Para preservar dados do banco anterior,
+importe um backup no Neon antes de liberar o novo banco para uso.
 
 ## Mídia de imagens
 
@@ -81,14 +92,15 @@ desenvolvimento.
 1. Faça push da branch `main` para o GitHub.
 2. No Render, escolha **New > Blueprint**.
 3. Conecte o repositório `ProfWashingtonAraujo/ibrcanaa`.
-4. Confirme os recursos definidos em `render.yaml`.
-5. Aguarde o build, migrations e início do Gunicorn.
+4. Informe a *pooled connection string* do Neon quando o Blueprint solicitar
+   `DATABASE_URL`.
+5. Confirme os recursos definidos em `render.yaml`.
+6. Aguarde o build, migrations e início do Gunicorn.
 
-O serviço web e o banco PostgreSQL usam planos gratuitos. Como o serviço gratuito
-não possui disco persistente, fotos enviadas pelos usuários podem ser perdidas
-quando o Render reiniciar ou publicar uma nova versão. Para preservar uploads em
-produção, será necessário usar armazenamento externo ou migrar para um plano com
-disco persistente.
+O serviço web usa o plano gratuito do Render e o PostgreSQL fica no Neon. Como o
+serviço web não possui disco persistente, fotos enviadas pelos usuários podem ser
+perdidas quando o Render reiniciar ou publicar uma nova versão. Para preservar
+uploads em produção, configure `CLOUDINARY_URL`.
 
 Depois do deploy, crie o primeiro administrador no Shell do Render:
 
@@ -100,13 +112,23 @@ python manage.py createsuperuser
 
 O projeto também pode ser publicado na Vercel como app Django.
 
-1. Defina `DATABASE_URL` com a connection string do mesmo PostgreSQL usado no
-   Render, ou de outro PostgreSQL externo compartilhado entre os dois ambientes.
-2. Defina `DJANGO_DEBUG=False`.
-3. Configure `DJANGO_SECRET_KEY`.
-4. Se quiser armazenar imagens, defina `CLOUDINARY_URL`.
-5. Adicione no painel da Vercel os domínios de produção e preview.
-6. Faça o deploy do repositório; a Vercel detecta `manage.py` e `config/wsgi.py`.
+1. Importe o repositório `ProfWashingtonAraujo/ibrcanaa` e mantenha o diretório
+   raiz do projeto como `.`. A Vercel detectará `manage.py` e
+   `config/wsgi.py`; não selecione `pages/` como diretório raiz, pois essa pasta
+   contém somente a versão estática usada pelo GitHub Pages.
+2. No painel do Neon, copie a **Pooled connection string**.
+3. Defina `DATABASE_URL` na Vercel com essa URL para que os dois deploys
+   compartilhem usuários, conteúdo e demais dados.
+4. Defina `DJANGO_DEBUG=False`.
+5. Configure `DJANGO_SECRET_KEY`.
+6. Se quiser armazenar imagens, defina `CLOUDINARY_URL`.
+7. Faça o deploy. O build aplica as migrations no PostgreSQL e a aplicação
+   completa fica disponível, incluindo `/entrar/`, `/admin/` e
+   `/django-admin/`.
+
+Configure as variáveis para **Production, Preview e Development** caso queira
+que todos os ambientes usem o Django com o banco compartilhado. Para evitar que
+deploys de preview acessem os dados reais, configure-as somente em Production.
 
 Para criar o primeiro usuário automaticamente no build, defina também:
 

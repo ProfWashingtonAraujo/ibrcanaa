@@ -1,9 +1,3 @@
-databases:
-  - name: ibrcanaa-db
-    plan: free
-    databaseName: ibrcanaa
-    user: ibrcanaa
-
 services:
   - type: web
     name: ibrcanaa
@@ -21,6 +15,4 @@ services:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DATABASE_URL
-        fromDatabase:
-          name: ibrcanaa-db
-          property: connectionString
+        sync: false
