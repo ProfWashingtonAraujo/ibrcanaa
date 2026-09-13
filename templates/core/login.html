@@ -9,3 +9,33 @@
   <section class="login-panel"><form method="post" class="login-card">{% csrf_token %}<span class="eyebrow">Acesso seguro</span><h2>Entre na sua conta</h2><p>Use suas credenciais para acessar o ambiente correspondente ao seu perfil.</p>{% if form.non_field_errors %}<div class="form-alert">Usuário ou senha inválidos.</div>{% endif %}{% crispy form %}<button class="button button-primary full-button" type="submit">Entrar no sistema</button><a class="back-link" href="{% url 'home' %}">← Voltar ao site</a></form></section>
 </main>
 {% endblock %}
+{% block extra_scripts %}
+<script>
+  const passwordInput = document.getElementById('id_password');
+  if (passwordInput) {
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = 'password-input';
+    passwordInput.before(inputWrapper);
+    inputWrapper.append(passwordInput);
+
+    const toggle = document.createElement('button');
+    toggle.className = 'password-toggle';
+    toggle.type = 'button';
+    toggle.setAttribute('aria-label', 'Mostrar senha');
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.title = 'Mostrar senha';
+    toggle.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.75"/><path class="password-toggle-slash" d="m4 4 16 16"/></svg>';
+    inputWrapper.append(toggle);
+
+    toggle.addEventListener('click', () => {
+      const showPassword = passwordInput.type === 'password';
+      passwordInput.type = showPassword ? 'text' : 'password';
+      const label = showPassword ? 'Ocultar senha' : 'Mostrar senha';
+      toggle.setAttribute('aria-label', label);
+      toggle.setAttribute('aria-pressed', String(showPassword));
+      toggle.title = label;
+      passwordInput.focus();
+    });
+  }
+</script>
+{% endblock %}
