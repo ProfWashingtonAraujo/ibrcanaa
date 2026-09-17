@@ -9,6 +9,7 @@ from unittest.mock import patch
 from datetime import date, timedelta, datetime, timezone as dt_timezone
 from io import BytesIO
 
+from cloudinary.exceptions import AuthorizationRequired
 from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
@@ -461,6 +462,15 @@ class AccessTests(TestCase):
         self.assertEqual(field.label, 'Ministérios')
         self.assertContains(response, 'type="checkbox"')
 
+    def test_member_form_has_password_visibility_and_match_feedback(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.get(reverse('member_create'))
+        self.assertContains(response, "document.getElementById('id_password1')")
+        self.assertContains(response, "document.getElementById('id_password2')")
+        self.assertContains(response, 'password-toggle')
+        self.assertContains(response, 'As senhas não coincidem.')
+        self.assertContains(response, 'As senhas coincidem.')
+
     def test_staff_registers_member_personal_and_family_information(self):
         self.client.login(username='staff', password='test-pass')
         form_page = self.client.get(reverse('member_create'))
@@ -641,6 +651,33 @@ class AccessTests(TestCase):
         self.assertRedirects(response, reverse('members'))
         self.member_user.access_profile.refresh_from_db()
         self.assertEqual(self.member_user.access_profile.photo.name, photo_name)
+
+    def test_member_photo_storage_error_does_not_create_partial_account(self):
+        import base64
+
+        photo = SimpleUploadedFile(
+            'membro.png',
+            base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+            content_type='image/png',
+        )
+        photo_storage = AccessProfile._meta.get_field('photo').storage
+        self.client.login(username='staff', password='test-pass')
+
+        with patch.object(photo_storage, 'save', side_effect=AuthorizationRequired('Invalid api_key')):
+            response = self.client.post(reverse('member_create'), {
+                'name': 'Falha no Upload',
+                'email': 'falha.upload@example.com',
+                'status': Member.Status.ACTIVE,
+                'username': 'falha.upload',
+                'password1': 'SenhaForte@2026',
+                'password2': 'SenhaForte@2026',
+                'photo': photo,
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Não foi possível enviar a foto.')
+        self.assertFalse(User.objects.filter(username='falha.upload').exists())
+        self.assertFalse(Member.objects.filter(email='falha.upload@example.com').exists())
 
     def test_event_creation_syncs_swingtime_and_feeds_calendar(self):
         from swingtime.models import Occurrence

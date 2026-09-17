@@ -6,6 +6,7 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
+from cloudinary.exceptions import Error as CloudinaryError
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -457,9 +458,14 @@ def member_form(request, pk=None):
     instance = get_object_or_404(Member, pk=pk) if pk else None
     form = MemberForm(request.POST or None, request.FILES or None, instance=instance)
     if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Membro salvo com sucesso.')
-        return redirect('members')
+        try:
+            with transaction.atomic():
+                form.save()
+        except CloudinaryError:
+            form.add_error('photo', 'Não foi possível enviar a foto. Verifique a configuração do armazenamento e tente novamente.')
+        else:
+            messages.success(request, 'Membro salvo com sucesso.')
+            return redirect('members')
     return render(request, 'core/member_form.html', {
         'form': form,
         'title': 'Editar membro' if instance else 'Novo membro',
@@ -1045,9 +1051,14 @@ def user_account_form(request, pk=None):
         elif instance == request.user and form.cleaned_data['role'] not in AccessProfile.USER_MANAGER_ROLES:
             form.add_error('role', 'Você não pode remover sua própria permissão de gestão.')
         else:
-            form.save()
-            messages.success(request, 'Usuário salvo com sucesso.')
-            return redirect('user_accounts')
+            try:
+                with transaction.atomic():
+                    form.save()
+            except CloudinaryError:
+                form.add_error('photo', 'Não foi possível enviar a foto. Verifique a configuração do armazenamento e tente novamente.')
+            else:
+                messages.success(request, 'Usuário salvo com sucesso.')
+                return redirect('user_accounts')
     return render(request, 'core/entity_form.html', {
         'form': form,
         'title': 'Editar usuário' if instance else 'Novo usuário',

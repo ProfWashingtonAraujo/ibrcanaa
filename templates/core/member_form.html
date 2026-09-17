@@ -9,4 +9,69 @@
 </form>
 {% endblock %}
 {% block extra_head %}{{ form.media.css }}{% endblock %}
-{% block extra_scripts %}{{ form.media.js }}{% endblock %}
+{% block extra_scripts %}
+{{ form.media.js }}
+<script>
+  const passwordFields = [
+    document.getElementById('id_password1'),
+    document.getElementById('id_password2'),
+  ].filter(Boolean);
+
+  passwordFields.forEach((input) => {
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = 'password-input';
+    input.before(inputWrapper);
+    inputWrapper.append(input);
+
+    const toggle = document.createElement('button');
+    toggle.className = 'password-toggle';
+    toggle.type = 'button';
+    toggle.setAttribute('aria-label', 'Mostrar senha');
+    toggle.setAttribute('aria-pressed', 'false');
+    toggle.title = 'Mostrar senha';
+    toggle.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.75"/><path class="password-toggle-slash" d="m4 4 16 16"/></svg>';
+    inputWrapper.append(toggle);
+
+    toggle.addEventListener('click', () => {
+      const showPassword = input.type === 'password';
+      input.type = showPassword ? 'text' : 'password';
+      const label = showPassword ? 'Ocultar senha' : 'Mostrar senha';
+      toggle.setAttribute('aria-label', label);
+      toggle.setAttribute('aria-pressed', String(showPassword));
+      toggle.title = label;
+      input.focus();
+    });
+  });
+
+  const password = document.getElementById('id_password1');
+  const confirmation = document.getElementById('id_password2');
+  if (password && confirmation) {
+    const feedback = document.createElement('small');
+    feedback.className = 'password-match-feedback';
+    feedback.setAttribute('aria-live', 'polite');
+    confirmation.closest('.password-input').after(feedback);
+
+    const validatePasswordMatch = () => {
+      if (!password.value && !confirmation.value) {
+        confirmation.setCustomValidity('');
+        confirmation.removeAttribute('aria-invalid');
+        feedback.className = 'password-match-feedback';
+        feedback.textContent = '';
+      } else if (password.value !== confirmation.value) {
+        confirmation.setCustomValidity('As senhas não coincidem.');
+        confirmation.setAttribute('aria-invalid', 'true');
+        feedback.className = 'password-match-feedback is-error';
+        feedback.textContent = 'As senhas não coincidem.';
+      } else {
+        confirmation.setCustomValidity('');
+        confirmation.removeAttribute('aria-invalid');
+        feedback.className = 'password-match-feedback is-valid';
+        feedback.textContent = 'As senhas coincidem.';
+      }
+    };
+
+    password.addEventListener('input', validatePasswordMatch);
+    confirmation.addEventListener('input', validatePasswordMatch);
+  }
+</script>
+{% endblock %}
