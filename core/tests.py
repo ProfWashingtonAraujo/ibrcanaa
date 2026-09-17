@@ -548,6 +548,45 @@ class AccessTests(TestCase):
         self.assertContains(response, 'A data não pode estar no futuro.')
         self.assertFalse(Member.objects.filter(email='data.invalida@example.com').exists())
 
+    def test_member_edit_loads_personal_family_and_church_fields(self):
+        ministry = Ministry.objects.create(name='Ensino', leader_name='Líder')
+        member = self.member_user.member_profile
+        member.birth_date = date(1988, 4, 12)
+        member.address = 'Rua das Flores, 100'
+        member.home_phone = '8533334444'
+        member.work_phone = '8532221111'
+        member.profession = 'Professora'
+        member.education = 'Ensino superior'
+        member.married = True
+        member.wedding_date = date(2012, 6, 9)
+        member.child_1_name = 'Filho Um'
+        member.child_1_birth_date = date(2015, 2, 3)
+        member.status = Member.Status.LEADERSHIP
+        member.conversion_date = date(2006, 8, 14)
+        member.baptism_date = date(2007, 1, 20)
+        member.church_entry_date = date(2016, 2, 14)
+        member.save()
+        member.ministries.add(ministry)
+        self.client.login(username='staff', password='test-pass')
+
+        response = self.client.get(reverse('member_edit', args=[member.pk]))
+        form = response.context['form']
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="1988-04-12"')
+        self.assertContains(response, 'value="2012-06-09"')
+        self.assertContains(response, 'value="2015-02-03"')
+        self.assertContains(response, 'value="2006-08-14"')
+        self.assertContains(response, 'value="2007-01-20"')
+        self.assertContains(response, 'value="2016-02-14"')
+        self.assertEqual(form['profession'].value(), 'Professora')
+        self.assertEqual(form['education'].value(), 'Ensino superior')
+        self.assertEqual(form['home_phone'].value(), '8533334444')
+        self.assertEqual(form['work_phone'].value(), '8532221111')
+        self.assertEqual(form['married'].value(), True)
+        self.assertEqual(form['status'].value(), Member.Status.LEADERSHIP)
+        self.assertEqual(form['ministries'].value(), [ministry.pk])
+
     def test_member_form_limits_ministries_to_three(self):
         self.client.login(username='staff', password='test-pass')
         ministries = [
