@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from datetime import timedelta
 from functools import wraps
@@ -28,6 +29,9 @@ from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+
+
+logger = logging.getLogger(__name__)
 
 
 EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
@@ -462,10 +466,13 @@ def member_form(request, pk=None):
             with transaction.atomic():
                 form.save()
         except CloudinaryError:
+            logger.warning('Member photo upload failed.', exc_info=True)
             form.add_error('photo', 'Não foi possível enviar a foto. Verifique a configuração do armazenamento e tente novamente.')
         else:
             messages.success(request, 'Membro salvo com sucesso.')
             return redirect('members')
+    if request.method == 'POST' and form.errors:
+        logger.info('Member form rejected: %s', form.errors.as_json())
     return render(request, 'core/member_form.html', {
         'form': form,
         'title': 'Editar membro' if instance else 'Novo membro',

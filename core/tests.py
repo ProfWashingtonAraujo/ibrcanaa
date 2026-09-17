@@ -451,6 +451,7 @@ class AccessTests(TestCase):
             'password2': 'OutraSenha@2026',
         })
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Não foi possível salvar o membro.')
         self.assertContains(response, 'As senhas não coincidem')
         self.assertFalse(Member.objects.filter(email='divergente@example.com').exists())
 
@@ -675,6 +676,7 @@ class AccessTests(TestCase):
             })
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Não foi possível salvar o membro.')
         self.assertContains(response, 'Não foi possível enviar a foto.')
         self.assertFalse(User.objects.filter(username='falha.upload').exists())
         self.assertFalse(Member.objects.filter(email='falha.upload@example.com').exists())
