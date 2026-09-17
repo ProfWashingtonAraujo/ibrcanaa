@@ -6,7 +6,7 @@
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-    <nav><a href="#nossa-igreja">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#livraria">Publicações</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
+    <nav><a href="#nossa-igreja">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#livraria">Publicações</a><a href="#playlist">Playlist</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
   <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
 </header>
 <main>
@@ -64,6 +64,20 @@
     </div>
     <div class="bookstore-actions reveal"><a class="button button-primary" href="{% url 'bookstore' %}">Ver publicações completas</a></div>
   </section>
+  {% if church_about_page.spotify_embed_url %}
+  <section class="spotify-section" id="playlist">
+    <div class="spotify-copy reveal">
+      <span class="spotify-kicker"><i aria-hidden="true"></i> Ouça no Spotify</span>
+      <h2>{{ church_about_page.spotify_playlist_title }}</h2>
+      <p>{{ church_about_page.spotify_playlist_text }}</p>
+      <a href="{{ church_about_page.spotify_playlist_url }}" target="_blank" rel="noopener">Abrir playlist no Spotify <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="spotify-player reveal reveal-delay">
+      <span class="spotify-player-label">PLAYLIST SELECIONADA</span>
+      <iframe src="{{ church_about_page.spotify_embed_url }}" title="{{ church_about_page.spotify_playlist_title }} no Spotify" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+    </div>
+  </section>
+  {% endif %}
   <section class="video-section" id="mensagens">
     <div class="video-heading reveal"><div><span class="eyebrow gold">Palavra que edifica</span><h2>Mensagens e cultos</h2></div><a class="youtube-channel-link" href="{{ youtube_channel_url }}" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
     <div class="video-gallery">

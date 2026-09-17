@@ -78,6 +78,7 @@ PUBLIC_HOME_FALLBACKS = {
         'highlight_2_text': 'Uma comunidade preparada para caminhar ao seu lado em cada estação.',
         'highlight_3_title': 'Serviço com propósito',
         'highlight_3_text': 'Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.',
+        'spotify_embed_url': '',
     },
     'church_history_page': {
         'eyebrow': 'Histórico da igreja',

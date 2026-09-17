@@ -43,6 +43,27 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'Estamos restaurando as informações desta seção.')
         self.assertContains(response, 'Em breve, novas oportunidades para servir.')
 
+    def test_home_embeds_configured_spotify_playlist(self):
+        ChurchAboutPage.objects.create(
+            spotify_playlist_title='Louvores da Canaã',
+            spotify_playlist_text='Canções selecionadas pela nossa igreja.',
+            spotify_playlist_url='https://open.spotify.com/playlist/abc123XYZ?si=tracking',
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'id="playlist"')
+        self.assertContains(response, 'Louvores da Canaã')
+        self.assertContains(response, 'https://open.spotify.com/embed/playlist/abc123XYZ?utm_source=generator&amp;theme=0')
+        self.assertContains(response, 'Abrir playlist no Spotify')
+
+    def test_home_hides_invalid_spotify_playlist(self):
+        ChurchAboutPage.objects.create(spotify_playlist_url='https://example.com/playlist/abc123')
+
+        response = self.client.get(reverse('home'))
+
+        self.assertNotContains(response, 'class="spotify-section"')
+
     def test_home_and_bookstore_show_registered_books(self):
         Book.objects.create(
             title='Crescendo na Graça',
@@ -266,6 +287,26 @@ class AccessTests(TestCase):
         self.assertContains(response, 'Conteúdo institucional')
         self.assertContains(response, 'Nossa igreja')
         self.assertContains(response, 'Histórico')
+
+    def test_church_about_form_rejects_non_spotify_playlist(self):
+        self.client.login(username='staff', password='test-pass')
+        response = self.client.post(reverse('church_about_edit'), {
+            'eyebrow': 'Nossa igreja',
+            'heading': 'Conheça a identidade da Canaã.',
+            'intro': 'Introdução',
+            'highlight_1_title': 'Destaque 1',
+            'highlight_1_text': 'Texto 1',
+            'highlight_2_title': 'Destaque 2',
+            'highlight_2_text': 'Texto 2',
+            'highlight_3_title': 'Destaque 3',
+            'highlight_3_text': 'Texto 3',
+            'spotify_playlist_title': 'Playlist',
+            'spotify_playlist_text': 'Descrição',
+            'spotify_playlist_url': 'https://example.com/playlist/invalida',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Informe o link público de uma playlist do Spotify.')
 
     def test_staff_can_save_church_history_urls(self):
         self.client.login(username='staff', password='test-pass')
