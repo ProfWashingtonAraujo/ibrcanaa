@@ -55,7 +55,18 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'id="playlist"')
         self.assertContains(response, 'Louvores da Canaã')
         self.assertContains(response, 'https://open.spotify.com/embed/playlist/abc123XYZ?utm_source=generator&amp;theme=0')
-        self.assertContains(response, 'Abrir playlist no Spotify')
+        self.assertContains(response, 'Abrir no Spotify')
+
+    def test_home_embeds_configured_spotify_show(self):
+        ChurchAboutPage.objects.create(
+            spotify_playlist_title='Série em Atos dos Apóstolos - Episódio 23',
+            spotify_playlist_url='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=tracking',
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Série em Atos dos Apóstolos - Episódio 23')
+        self.assertContains(response, 'https://open.spotify.com/embed/show/7cIt85QzUPeO10vOLYDsAp?utm_source=generator&amp;theme=0')
 
     def test_home_hides_invalid_spotify_playlist(self):
         ChurchAboutPage.objects.create(spotify_playlist_url='https://example.com/playlist/abc123')
@@ -306,7 +317,7 @@ class AccessTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Informe o link público de uma playlist do Spotify.')
+        self.assertContains(response, 'Informe o link público de uma playlist ou programa do Spotify.')
 
     def test_staff_can_save_church_history_urls(self):
         self.client.login(username='staff', password='test-pass')

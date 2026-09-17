@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction, spotify_playlist_id
+from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction, spotify_embed_path
 
 
 class CrispyFormMixin:
@@ -442,8 +442,8 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
 
     def clean_spotify_playlist_url(self):
         url = self.cleaned_data['spotify_playlist_url'].strip()
-        if url and not spotify_playlist_id(url):
-            raise ValidationError('Informe o link público de uma playlist do Spotify.')
+        if url and not spotify_embed_path(url):
+            raise ValidationError('Informe o link público de uma playlist ou programa do Spotify.')
         return url
 
     class Meta:
@@ -462,7 +462,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
             'highlight_3_text': forms.Textarea(attrs={'rows': 3}),
             'spotify_playlist_text': forms.Textarea(attrs={'rows': 3}),
             'spotify_playlist_url': forms.URLInput(attrs={
-                'placeholder': 'https://open.spotify.com/playlist/...',
+                'placeholder': 'https://open.spotify.com/playlist/... ou /show/...',
             }),
         }
 

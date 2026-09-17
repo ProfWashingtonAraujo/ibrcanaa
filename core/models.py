@@ -36,7 +36,7 @@ def validate_youtube_url(value):
         raise ValidationError('Informe uma URL válida de vídeo do YouTube.')
 
 
-def spotify_playlist_id(url):
+def spotify_embed_path(url):
     try:
         parsed = urlparse(url)
     except (TypeError, ValueError):
@@ -44,12 +44,15 @@ def spotify_playlist_id(url):
     if (parsed.hostname or '').lower().removeprefix('www.') != 'open.spotify.com':
         return None
     path_parts = [part for part in parsed.path.split('/') if part]
-    try:
-        playlist_index = path_parts.index('playlist')
-        playlist_id = path_parts[playlist_index + 1]
-    except (ValueError, IndexError):
-        return None
-    return playlist_id if re.fullmatch(r'[A-Za-z0-9]+', playlist_id) else None
+    for content_type in ('playlist', 'show'):
+        try:
+            content_index = path_parts.index(content_type)
+            content_id = path_parts[content_index + 1]
+        except (ValueError, IndexError):
+            continue
+        if re.fullmatch(r'[A-Za-z0-9]+', content_id):
+            return f'{content_type}/{content_id}'
+    return None
 
 
 class AccessProfile(models.Model):
@@ -117,16 +120,16 @@ class ChurchAboutPage(models.Model):
     highlight_3_title = models.CharField('destaque 3', max_length=120, default='Serviço com propósito')
     highlight_3_text = models.TextField('texto 3', default='Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.')
     spotify_playlist_title = models.CharField(
-        'título da playlist', max_length=120, default='Música para momentos de reflexão',
+        'título no Spotify', max_length=120, default='Série em Atos dos Apóstolos - Episódio 23',
     )
     spotify_playlist_text = models.TextField(
-        'apresentação da playlist',
-        default='Uma seleção para acompanhar seus momentos de oração, leitura e descanso.',
+        'apresentação do conteúdo',
+        default='Acompanhe esta série de mensagens e aprofunde seu estudo da Palavra de Deus.',
     )
     spotify_playlist_url = models.URLField(
-        'URL da playlist no Spotify',
+        'URL da playlist ou programa no Spotify',
         blank=True,
-        default='https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO',
+        default='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=bd85139b74144700',
     )
 
     class Meta:
@@ -138,10 +141,10 @@ class ChurchAboutPage(models.Model):
 
     @property
     def spotify_embed_url(self):
-        playlist_id = spotify_playlist_id(self.spotify_playlist_url)
-        if not playlist_id:
+        embed_path = spotify_embed_path(self.spotify_playlist_url)
+        if not embed_path:
             return ''
-        return f'https://open.spotify.com/embed/playlist/{playlist_id}?utm_source=generator&theme=0'
+        return f'https://open.spotify.com/embed/{embed_path}?utm_source=generator&theme=0'
 
 
 class ChurchHistoryPage(models.Model):
