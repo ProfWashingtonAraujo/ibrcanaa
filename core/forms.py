@@ -411,6 +411,15 @@ class MemberForm(CrispyFormMixin, forms.ModelForm):
 class EventForm(CrispyFormMixin, forms.ModelForm):
     full_width_fields = {'description'}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        current_kind = self.instance.kind if self.instance.pk else ''
+        if current_kind and current_kind not in Event.Classification.values:
+            self.fields['kind'].choices = [
+                *Event.Classification.choices,
+                (current_kind, f'{current_kind} (classificação anterior)'),
+            ]
+
     class Meta:
         model = Event
         fields = ['title', 'starts_at', 'kind', 'location', 'expected_attendance', 'description']

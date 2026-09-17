@@ -34,7 +34,13 @@ from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPa
 logger = logging.getLogger(__name__)
 
 
-EVENT_COLORS = ('#173984', '#2752b3', '#d09b31', '#3b7a68', '#7957a8')
+EVENT_COLORS = {
+    Event.Classification.SERVICE: '#2752b3',
+    Event.Classification.SUNDAY_SCHOOL: '#e67e22',
+    Event.Classification.CONFERENCE: '#8b5e3c',
+    Event.Classification.SMALL_GROUP: '#9b72cf',
+}
+DEFAULT_EVENT_COLOR = '#68758d'
 YOUTUBE_CHANNEL_ID = 'UCnJeIwpnusCcbJa9nAInb8Q'
 YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
 YOUTUBE_FEED_URL = f'https://www.youtube.com/feeds/videos.xml?channel_id={YOUTUBE_CHANNEL_ID}'
@@ -345,16 +351,14 @@ def public_event_feed(request):
         end_time__gt=range_start,
         event__church_event__isnull=False,
     )
-    kinds = list(Event.objects.order_by('kind').values_list('kind', flat=True).distinct())
-    colors = {name: EVENT_COLORS[index % len(EVENT_COLORS)] for index, name in enumerate(kinds)}
     return JsonResponse([
         {
             'id': str(occurrence.pk),
             'title': occurrence.event.title,
             'start': occurrence.start_time.isoformat(),
             'end': occurrence.end_time.isoformat(),
-            'backgroundColor': colors.get(occurrence.event.church_event.kind, EVENT_COLORS[0]),
-            'borderColor': colors.get(occurrence.event.church_event.kind, EVENT_COLORS[0]),
+            'backgroundColor': EVENT_COLORS.get(occurrence.event.church_event.kind, DEFAULT_EVENT_COLOR),
+            'borderColor': EVENT_COLORS.get(occurrence.event.church_event.kind, DEFAULT_EVENT_COLOR),
             'extendedProps': {
                 'kind': occurrence.event.church_event.kind,
                 'location': occurrence.event.church_event.location,
@@ -882,8 +886,9 @@ def course_certificate(request, certificate_id):
 
 @staff_required
 def events(request):
+    stored_kinds = Event.objects.order_by('kind').values_list('kind', flat=True).distinct()
     return render(request, 'core/events.html', {
-        'event_kinds': Event.objects.order_by('kind').values_list('kind', flat=True).distinct(),
+        'event_kinds': list(dict.fromkeys([*Event.Classification.values, *stored_kinds])),
         **dashboard_context(request.user),
     })
 
@@ -907,8 +912,6 @@ def event_feed(request):
     if kind:
         occurrences = occurrences.filter(event__church_event__kind=kind)
 
-    kinds = list(Event.objects.order_by('kind').values_list('kind', flat=True).distinct())
-    colors = {name: EVENT_COLORS[index % len(EVENT_COLORS)] for index, name in enumerate(kinds)}
     payload = []
     for occurrence in occurrences:
         church_event = occurrence.event.church_event
@@ -917,8 +920,8 @@ def event_feed(request):
             'title': occurrence.event.title,
             'start': occurrence.start_time.isoformat(),
             'end': occurrence.end_time.isoformat(),
-            'backgroundColor': colors.get(church_event.kind, EVENT_COLORS[0]),
-            'borderColor': colors.get(church_event.kind, EVENT_COLORS[0]),
+            'backgroundColor': EVENT_COLORS.get(church_event.kind, DEFAULT_EVENT_COLOR),
+            'borderColor': EVENT_COLORS.get(church_event.kind, DEFAULT_EVENT_COLOR),
             'extendedProps': {
                 'churchEventId': church_event.pk,
                 'kind': church_event.kind,

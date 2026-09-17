@@ -282,6 +282,12 @@ class Member(models.Model):
 
 
 class Event(models.Model):
+    class Classification(models.TextChoices):
+        SERVICE = 'Culto', 'Culto'
+        SUNDAY_SCHOOL = 'EBD', 'EBD'
+        CONFERENCE = 'Conferência', 'Conferência'
+        SMALL_GROUP = 'PG', 'PG'
+
     calendar_event = models.OneToOneField(
         'swingtime.Event',
         on_delete=models.SET_NULL,
@@ -292,7 +298,7 @@ class Event(models.Model):
     )
     title = models.CharField('título', max_length=160)
     starts_at = models.DateTimeField('início')
-    kind = models.CharField('tipo', max_length=60)
+    kind = models.CharField('classificação', max_length=60, choices=Classification)
     location = models.CharField('local', max_length=160)
     expected_attendance = models.PositiveIntegerField('público esperado', default=0)
     description = models.TextField('descrição', blank=True)

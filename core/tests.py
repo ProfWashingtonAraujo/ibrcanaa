@@ -257,6 +257,8 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()[0]
         self.assertEqual(payload['title'], 'Culto Público')
+        self.assertEqual(payload['backgroundColor'], '#2752b3')
+        self.assertEqual(payload['borderColor'], '#2752b3')
         self.assertEqual(payload['extendedProps']['location'], 'Templo principal')
         self.assertNotIn('churchEventId', payload['extendedProps'])
         self.assertNotIn('expectedAttendance', payload['extendedProps'])
@@ -797,13 +799,70 @@ class AccessTests(TestCase):
         })
         self.assertEqual(feed.status_code, 200)
         self.assertEqual(feed.json()[0]['title'], 'Culto de Teste')
+        self.assertEqual(feed.json()[0]['backgroundColor'], '#2752b3')
         self.assertEqual(feed.json()[0]['extendedProps']['location'], 'Templo principal')
+
+    def test_event_form_offers_fixed_classifications(self):
+        self.client.login(username='staff', password='test-pass')
+
+        response = self.client.get(reverse('event_create'))
+
+        self.assertEqual(response.status_code, 200)
+        choices = list(response.context['form'].fields['kind'].choices)
+        self.assertEqual(choices[0], ('', '---------'))
+        self.assertEqual(
+            choices[1:],
+            list(Event.Classification.choices),
+        )
+
+    def test_event_form_preserves_legacy_classification_on_edit(self):
+        event = Event.objects.create(
+            title='Evento antigo',
+            starts_at='2026-08-15T19:00:00-03:00',
+            kind='Ensino',
+            location='Sala',
+        )
+        self.client.login(username='staff', password='test-pass')
+
+        response = self.client.get(reverse('event_edit', args=[event.pk]))
+
+        self.assertContains(response, 'Ensino (classificação anterior)')
+
+    def test_event_feeds_use_classification_colors(self):
+        from core.views import sync_calendar_event
+
+        expected_colors = {
+            Event.Classification.SERVICE: '#2752b3',
+            Event.Classification.SUNDAY_SCHOOL: '#e67e22',
+            Event.Classification.CONFERENCE: '#8b5e3c',
+            Event.Classification.SMALL_GROUP: '#9b72cf',
+        }
+        for index, classification in enumerate(Event.Classification.values, start=1):
+            event = Event.objects.create(
+                title=f'Evento {classification}',
+                starts_at=f'2026-08-{index + 10:02}T19:00:00-03:00',
+                kind=classification,
+                location='Templo',
+            )
+            sync_calendar_event(event)
+
+        response = self.client.get(reverse('public_event_feed'), {
+            'start': '2026-08-01T00:00:00-03:00',
+            'end': '2026-09-01T00:00:00-03:00',
+        })
+
+        colors_by_kind = {
+            event['extendedProps']['kind']: event['backgroundColor']
+            for event in response.json()
+        }
+        self.assertEqual(colors_by_kind, expected_colors)
 
     def test_events_page_loads_fullcalendar(self):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('events'))
         self.assertContains(response, 'fullcalendar@6.1.19')
         self.assertContains(response, reverse('event_feed'))
+        self.assertContains(response, 'class="event-color-key"')
 
     def test_staff_can_edit_and_delete_event_with_swingtime(self):
         from swingtime.models import Occurrence
@@ -823,7 +882,7 @@ class AccessTests(TestCase):
         response = self.client.post(reverse('event_edit', args=[event.pk]), {
             'title': 'Encontro Atualizado',
             'starts_at': '2026-08-16T20:00',
-            'kind': 'Ensino',
+            'kind': Event.Classification.SUNDAY_SCHOOL,
             'location': 'Sala de aula',
             'expected_attendance': 50,
             'description': 'Novo conteúdo.',
@@ -832,6 +891,7 @@ class AccessTests(TestCase):
         event.refresh_from_db()
         occurrence = Occurrence.objects.get(event_id=calendar_event_id)
         self.assertEqual(event.title, 'Encontro Atualizado')
+        self.assertEqual(event.kind, Event.Classification.SUNDAY_SCHOOL)
         self.assertEqual(occurrence.start_time, event.starts_at)
 
         response = self.client.post(reverse('event_delete', args=[event.pk]))

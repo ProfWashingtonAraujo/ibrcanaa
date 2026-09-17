@@ -100,8 +100,8 @@ class Command(BaseCommand):
         now = timezone.now()
         for days, hour, title, kind, location, expected in [
             (3, 18, 'Culto de Celebração', 'Culto', 'Templo principal', 350),
-            (6, 19, 'Encontro de Jovens', 'Ministério', 'Salão anexo', 80),
-            (10, 9, 'Escola Bíblica', 'Ensino', 'Salas de aula', 120),
+            (6, 19, 'Encontro de Jovens', Event.Classification.SMALL_GROUP, 'Salão anexo', 80),
+            (10, 9, 'Escola Bíblica', Event.Classification.SUNDAY_SCHOOL, 'Salas de aula', 120),
             (14, 19, 'Culto de Oração', 'Culto', 'Templo principal', 150),
         ]:
             starts_at = (now + timedelta(days=days)).replace(hour=hour, minute=0, second=0, microsecond=0)
