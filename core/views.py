@@ -1,11 +1,10 @@
+import json
 import logging
 from decimal import Decimal
 from datetime import timedelta
 from functools import wraps
 from io import BytesIO
-from urllib.error import URLError
 from urllib.request import Request, urlopen
-from xml.etree import ElementTree
 
 from cloudinary.exceptions import Error as CloudinaryError
 from django.contrib import messages
@@ -21,7 +20,6 @@ from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from dal import autocomplete
 
@@ -41,9 +39,8 @@ EVENT_COLORS = {
     Event.Classification.SMALL_GROUP: '#9b72cf',
 }
 DEFAULT_EVENT_COLOR = '#68758d'
-YOUTUBE_CHANNEL_ID = 'UCnJeIwpnusCcbJa9nAInb8Q'
 YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
-YOUTUBE_FEED_URL = f'https://www.youtube.com/feeds/videos.xml?channel_id={YOUTUBE_CHANNEL_ID}'
+YOUTUBE_VIDEOS_URL = f'{YOUTUBE_CHANNEL_URL}/videos'
 YOUTUBE_CACHE_KEY = 'public_youtube_videos'
 YOUTUBE_CACHE_TTL = 300
 YOUTUBE_FALLBACK_VIDEOS = [
@@ -122,28 +119,53 @@ def user_manager_required(view):
     return wrapped
 
 
-def _get_youtube_videos_from_feed(limit=4):
-    request = Request(YOUTUBE_FEED_URL, headers={'User-Agent': 'Mozilla/5.0'})
+def _get_youtube_videos_from_page(limit=4):
+    request = Request(YOUTUBE_VIDEOS_URL, headers={
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'User-Agent': 'Mozilla/5.0',
+    })
     with urlopen(request, timeout=5) as response:
-        root = ElementTree.fromstring(response.read())
+        page = response.read().decode('utf-8')
+
+    marker = 'var ytInitialData = '
+    start = page.index(marker) + len(marker)
+    initial_data = json.JSONDecoder().raw_decode(page[start:])[0]
 
     videos = []
-    for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
-        video_id = entry.findtext('{http://www.youtube.com/xml/schemas/2015}videoId')
-        if not video_id:
-            continue
-        published = parse_datetime((entry.findtext('{http://www.w3.org/2005/Atom}published') or '').strip())
-        videos.append({
-            'video_id': video_id,
-            'title': (entry.findtext('{http://www.w3.org/2005/Atom}title') or '').strip(),
-            'channel_title': (
-                entry.findtext('{http://www.w3.org/2005/Atom}author/{http://www.w3.org/2005/Atom}name')
-                or 'Igreja Batista Regular Canaã'
-            ).strip(),
-            'published': published,
-        })
+    seen_ids = set()
+
+    def collect(item):
         if len(videos) >= limit:
-            break
+            return
+        if isinstance(item, list):
+            for value in item:
+                collect(value)
+            return
+        if not isinstance(item, dict):
+            return
+
+        renderer = item.get('lockupViewModel')
+        if renderer and renderer.get('contentType') == 'LOCKUP_CONTENT_TYPE_VIDEO':
+            video_id = renderer.get('contentId', '')
+            title = (
+                renderer.get('metadata', {})
+                .get('lockupMetadataViewModel', {})
+                .get('title', {})
+                .get('content', '')
+            ).strip()
+            if video_id and title and video_id not in seen_ids:
+                seen_ids.add(video_id)
+                videos.append({
+                    'video_id': video_id,
+                    'title': title,
+                    'channel_title': 'Igreja Batista Regular Canaã',
+                    'published': '',
+                })
+
+        for value in item.values():
+            collect(value)
+
+    collect(initial_data)
     return videos
 
 
@@ -154,8 +176,9 @@ def public_youtube_videos(limit=4):
         return cached_videos
 
     try:
-        videos = _get_youtube_videos_from_feed(limit=limit)
-    except (ElementTree.ParseError, OSError, URLError, TimeoutError, ValueError):
+        videos = _get_youtube_videos_from_page(limit=limit)
+    except (OSError, TimeoutError, UnicodeError, ValueError) as error:
+        logger.warning('Could not refresh YouTube videos: %s', error)
         videos = []
 
     if not videos:

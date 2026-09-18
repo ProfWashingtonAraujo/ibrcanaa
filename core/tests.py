@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -163,6 +164,36 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.json()['videos'][0]['video_id'], 'AAAAAAAAAAA')
         self.assertIn('2026-08-24', response.json()['videos'][0]['published'])
         self.assertEqual(response.json()['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
+
+    @patch('core.views.urlopen')
+    def test_youtube_channel_page_exposes_latest_videos(self, mocked_urlopen):
+        from core.views import _get_youtube_videos_from_page
+
+        initial_data = {
+            'contents': [
+                {'lockupViewModel': {
+                    'contentId': 'AAAAAAAAAAA',
+                    'contentType': 'LOCKUP_CONTENT_TYPE_VIDEO',
+                    'metadata': {'lockupMetadataViewModel': {
+                        'title': {'content': 'Mensagem mais recente'},
+                    }},
+                }},
+                {'lockupViewModel': {
+                    'contentId': 'BBBBBBBBBBB',
+                    'contentType': 'LOCKUP_CONTENT_TYPE_VIDEO',
+                    'metadata': {'lockupMetadataViewModel': {
+                        'title': {'content': 'Mensagem anterior'},
+                    }},
+                }},
+            ],
+        }
+        response = BytesIO(f'<script>var ytInitialData = {json.dumps(initial_data)};</script>'.encode())
+        mocked_urlopen.return_value.__enter__.return_value = response
+
+        videos = _get_youtube_videos_from_page(limit=2)
+
+        self.assertEqual([video['video_id'] for video in videos], ['AAAAAAAAAAA', 'BBBBBBBBBBB'])
+        self.assertEqual(videos[0]['title'], 'Mensagem mais recente')
 
     def test_home_shows_church_location_and_service_times(self):
         response = self.client.get(reverse('home'))
