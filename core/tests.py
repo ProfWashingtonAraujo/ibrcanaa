@@ -146,7 +146,7 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'videoid="BBBBBBBBBBB"')
         self.assertContains(response, 'videoid="CCCCCCCCCCC"')
         self.assertContains(response, 'videoid="DDDDDDDDDDD"')
-        self.assertContains(response, 'MENSAGEM EM DESTAQUE · 24/08/2026')
+        self.assertContains(response, 'TRANSMISSÃO EM DESTAQUE · 24/08/2026')
 
     @patch('core.views.public_youtube_videos')
     def test_public_youtube_videos_feed_exposes_latest_videos(self, mocked_videos):
@@ -166,7 +166,7 @@ class PublicViewsTests(TestCase):
         self.assertEqual(response.json()['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
 
     @patch('core.views.urlopen')
-    def test_youtube_channel_page_exposes_latest_videos(self, mocked_urlopen):
+    def test_youtube_streams_page_exposes_latest_broadcasts(self, mocked_urlopen):
         from core.views import _get_youtube_videos_from_page
 
         initial_data = {
@@ -192,6 +192,8 @@ class PublicViewsTests(TestCase):
 
         videos = _get_youtube_videos_from_page(limit=2)
 
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://www.youtube.com/@ibrcanaa/streams')
         self.assertEqual([video['video_id'] for video in videos], ['AAAAAAAAAAA', 'BBBBBBBBBBB'])
         self.assertEqual(videos[0]['title'], 'Mensagem mais recente')
 

@@ -40,31 +40,31 @@ EVENT_COLORS = {
 }
 DEFAULT_EVENT_COLOR = '#68758d'
 YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
-YOUTUBE_VIDEOS_URL = f'{YOUTUBE_CHANNEL_URL}/videos'
+YOUTUBE_VIDEOS_URL = f'{YOUTUBE_CHANNEL_URL}/streams'
 YOUTUBE_CACHE_KEY = 'public_youtube_videos'
 YOUTUBE_CACHE_TTL = 300
 YOUTUBE_FALLBACK_VIDEOS = [
     {
-        'video_id': 'jiIRdV-4rUE',
-        'title': 'Uma vitória com sabor de mel',
+        'video_id': 'yDlicSLiB4s',
+        'title': 'Culto de Louvor e Adoração - 13/09/2026',
         'channel_title': 'Igreja Batista Regular Canaã',
         'published': '',
     },
     {
-        'video_id': 'jAHRzidBFbw',
-        'title': 'Mentiras do mundo e verdades bíblicas',
+        'video_id': '-akybA_1zl0',
+        'title': 'Escola Bíblica Dominical - 13/09/2026',
         'channel_title': 'Igreja Batista Regular Canaã',
         'published': '',
     },
     {
-        'video_id': 'MlocoEhWjAs',
-        'title': 'Ansiedade na vida do cristão',
+        'video_id': 'Gl8TkGAlMbU',
+        'title': 'Culto de Louvor e Adoração - 06/09/2026',
         'channel_title': 'Igreja Batista Regular Canaã',
         'published': '',
     },
     {
-        'video_id': 'pkkm0wvwgHY',
-        'title': 'Crises e perdas na família',
+        'video_id': 'ZsDjmPmQubo',
+        'title': 'Escola Bíblica Dominical - 06/09/2026',
         'channel_title': 'Igreja Batista Regular Canaã',
         'published': '',
     },

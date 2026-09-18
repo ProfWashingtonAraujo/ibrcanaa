@@ -79,11 +79,11 @@
   </section>
   {% endif %}
   <section class="video-section" id="mensagens">
-    <div class="video-heading reveal"><div><span class="eyebrow gold">Palavra que edifica</span><h2>Mensagens e cultos</h2></div><a class="youtube-channel-link" href="{{ youtube_channel_url }}" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
+    <div class="video-heading reveal"><div><span class="eyebrow gold">Cultos online</span><h2>Transmissões mais recentes</h2></div><a class="youtube-channel-link" href="{{ youtube_channel_url }}" target="_blank" rel="noopener">Ver canal no YouTube <span aria-hidden="true">↗</span></a></div>
     <div class="video-gallery">
       {% with youtube_videos|first as featured_video %}
       {% if featured_video %}
-      <article class="video-featured reveal"><lite-youtube videoid="{{ featured_video.video_id }}" title="{{ featured_video.title }}" playlabel="Reproduzir {{ featured_video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><div><small>MENSAGEM EM DESTAQUE{% if featured_video.published %} · {{ featured_video.published|date:'d/m/Y' }}{% endif %}</small><h3>{{ featured_video.title }}</h3><p>{{ featured_video.channel_title }}</p></div></article>
+      <article class="video-featured reveal"><lite-youtube videoid="{{ featured_video.video_id }}" title="{{ featured_video.title }}" playlabel="Reproduzir {{ featured_video.title }}" params="origin={{ request.scheme }}://{{ request.get_host }}"></lite-youtube><div><small>TRANSMISSÃO EM DESTAQUE{% if featured_video.published %} · {{ featured_video.published|date:'d/m/Y' }}{% endif %}</small><h3>{{ featured_video.title }}</h3><p>{{ featured_video.channel_title }}</p></div></article>
       {% endif %}
       {% endwith %}
       <div class="video-list">
