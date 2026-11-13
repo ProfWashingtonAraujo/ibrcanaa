@@ -1,0 +1,74 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}Ministérios{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+{% if ministry %}{% url 'ministry_detail' ministry.pk as cancel_url %}{% else %}{% url 'ministries' as cancel_url %}{% endif %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+{% if ministry %}
+<section class="panel profile-head profile-head-compact">
+  <div class="profile-top">
+    <div class="person-who">
+      <span class="people-avatar person-avatar" aria-hidden="true">{{ ministry.name|first }}</span>
+      <div>
+        <h2>{{ ministry.name }}</h2>
+        <p class="profile-sub"><span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span></p>
+        <p class="profile-sub">{{ participants }} participante{{ participants|pluralize }}. Líder atual: {{ ministry.leader_name }}.</p>
+      </div>
+    </div>
+    <a class="button button-ghost" href="{% url 'ministry_detail' ministry.pk %}">Ver ficha e equipe</a>
+  </div>
+</section>
+{% endif %}
+<div class="form-layout">
+  <article class="panel form-panel">{% include 'core/_form_body.html' %}</article>
+  <aside class="panel preview-panel" aria-labelledby="preview-title">
+    <h2 id="preview-title">Como aparece no site</h2>
+    <p class="panel-sub">A prévia muda enquanto você digita.</p>
+    <div class="site-card" aria-hidden="true">
+      <small data-preview-status>{{ form.status.value|default:'active' }}</small>
+      <h3 data-preview-name>Nome do ministério</h3>
+      <p data-preview-description>Um espaço para servir, crescer e viver em comunhão.</p>
+      <b data-preview-action>Conhecer</b>
+    </div>
+    <p class="preview-note">Ministérios que precisam de voluntários convidam visitantes a servir. Os demais apenas apresentam a equipe.</p>
+  </aside>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var name = document.getElementById('id_name');
+  var description = document.getElementById('id_description');
+  var radios = document.querySelectorAll('input[name="status"]');
+  var pName = document.querySelector('[data-preview-name]');
+  var pDescription = document.querySelector('[data-preview-description]');
+  var pStatus = document.querySelector('[data-preview-status]');
+  var pAction = document.querySelector('[data-preview-action]');
+  var DEFAULT_TEXT = 'Um espaço para servir, crescer e viver em comunhão.';
+  var counter = null;
+  if (description) {
+    counter = document.createElement('div');
+    counter.className = 'char-counter';
+    description.parentNode.appendChild(counter);
+  }
+  function selectedStatus() {
+    for (var i = 0; i < radios.length; i++) if (radios[i].checked) return radios[i];
+    return null;
+  }
+  function labelOf(radio) {
+    var label = radio && radio.closest('.form-check') && radio.closest('.form-check').querySelector('label');
+    return label ? label.textContent.trim() : '';
+  }
+  function update() {
+    pName.textContent = (name && name.value.trim()) || 'Nome do ministério';
+    pDescription.textContent = (description && description.value.trim()) || DEFAULT_TEXT;
+    var radio = selectedStatus();
+    pStatus.textContent = labelOf(radio) || 'Ativo';
+    pAction.textContent = radio && radio.value === 'recruiting' ? 'Quero servir' : 'Conhecer';
+    if (counter) counter.textContent = description.value.length + ' de ' + (description.maxLength > 0 ? description.maxLength : 500) + ' caracteres';
+  }
+  [name, description].forEach(function (el) { if (el) el.addEventListener('input', update); });
+  radios.forEach(function (radio) { radio.addEventListener('change', update); });
+  update();
+})();
+</script>
+{% endblock %}

@@ -443,7 +443,7 @@ class EventForm(CrispyFormMixin, forms.ModelForm):
 
 
 class MinistryForm(CrispyFormMixin, forms.ModelForm):
-    full_width_fields = {'description'}
+    full_width_fields = {'description', 'status'}
 
     class Meta:
         model = Ministry
@@ -453,7 +453,12 @@ class MinistryForm(CrispyFormMixin, forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'Apresente o propósito e as atividades do ministério.',
             }),
+            'status': forms.RadioSelect,
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].choices = Ministry.Status.choices  # sem a opção vazia do RadioSelect
 
 
 class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):

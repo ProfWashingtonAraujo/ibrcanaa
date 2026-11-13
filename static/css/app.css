@@ -465,3 +465,29 @@ body.admin-body.nav-open .sidebar{transform:none;visibility:visible;transition:t
 .profile-head .tag{padding:4px 10px;font-size:13px;letter-spacing:0;text-transform:none}
 .profile-actions .button{white-space:nowrap}
 @media(max-width:700px){.profile-actions form{flex:0 0 auto}.profile-actions form .button{width:auto}.profile-actions .button-primary{flex:1}}
+
+/* Edição de ministério: formulário com prévia */
+.form-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:18px;align-items:start}
+.form-layout .form-panel{max-width:none}
+.profile-head-compact{padding:18px 24px}
+.profile-head-compact .person-avatar{flex-basis:64px;width:64px;height:64px;font-size:26px}
+.profile-head-compact h2{font-size:24px}
+.profile-head-compact .profile-sub{margin-top:6px}
+.profile-head-compact .tag{padding:4px 10px;font-size:13px;letter-spacing:0;text-transform:none}
+.preview-panel{position:sticky;top:20px}
+.preview-panel h2{margin:0;font-size:19px}
+.site-card{display:flex;flex-direction:column;gap:6px;margin-top:14px;padding:22px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:linear-gradient(145deg,#12274f,#0c1c3e);color:#fff}
+.site-card small{color:#e3a72f;font-size:13px;font-weight:700}
+.site-card h3{margin:2px 0;font-size:24px;line-height:1.2;overflow-wrap:anywhere}
+.site-card p{margin:0;color:#c4cede;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
+.site-card b{margin-top:12px;color:#e3a72f;font-size:14px}
+.preview-note{margin:12px 0 0;font-size:14px;line-height:1.5;color:var(--muted)}
+.char-counter{margin-top:4px;font-size:13px;color:var(--muted);text-align:right}
+.form-panel fieldset{min-width:0;margin:0;padding:0;border:0}
+.form-panel legend{float:none;width:auto;margin:0 0 8px;padding:0;font-size:14px;font-weight:700;color:#3d4b63}
+.form-panel #div_id_status fieldset>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.form-panel #div_id_status .form-check{margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer}
+.form-panel #div_id_status .form-check:has(input:checked){border-color:var(--blue-2);background:#eaf0fc;box-shadow:0 0 0 3px rgba(39,82,179,.12)}
+.form-panel #div_id_status .form-check label{cursor:pointer;font-weight:600;font-size:15px}
+@media(max-width:1000px){.form-layout{grid-template-columns:1fr}.preview-panel{position:static}}
+@media(max-width:560px){.form-panel #div_id_status fieldset>div{grid-template-columns:1fr}}

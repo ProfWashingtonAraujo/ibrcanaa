@@ -1844,3 +1844,44 @@ class EntityFormTests(TestCase):
     def test_valid_form_has_no_error_summary(self):
         response = self.client.get(reverse('ministry_create'))
         self.assertNotContains(response, 'Não foi possível salvar')
+
+
+@WITHOUT_AXES
+class MinistryFormScreenTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('staff5', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.staff, role=AccessProfile.Role.BOARD)
+        self.ministry = Ministry.objects.create(name='Louvor', leader_name='Marta', description='Adoração.')
+        self.ministry.members.add(Member.objects.create(name='Ana', email='ana@x.com'))
+        self.client.login(username='staff5', password='test-pass')
+
+    def test_edit_shows_header_context_preview_and_returns_to_profile(self):
+        response = self.client.get(reverse('ministry_edit', args=[self.ministry.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '1 participante.')
+        self.assertContains(response, 'Líder atual: Marta')
+        self.assertContains(response, 'Ver ficha e equipe')
+        self.assertContains(response, 'Como aparece no site')
+        self.assertContains(response, 'data-preview-name')
+        self.assertContains(response, f'href="{reverse("ministry_detail", args=[self.ministry.pk])}">Cancelar')
+
+    def test_create_has_preview_but_no_profile_header_and_returns_to_list(self):
+        response = self.client.get(reverse('ministry_create'))
+        self.assertContains(response, 'Como aparece no site')
+        self.assertNotContains(response, 'Ver ficha e equipe')
+        self.assertContains(response, f'href="{reverse("ministries")}">Cancelar')
+
+    def test_status_is_a_radio_choice_without_empty_option(self):
+        response = self.client.get(reverse('ministry_create'))
+        self.assertContains(response, 'type="radio"', count=2)
+        self.assertContains(response, 'Precisa de voluntários')
+        self.assertNotContains(response, '---------')
+
+    def test_saving_still_works_and_redirects_to_list(self):
+        response = self.client.post(reverse('ministry_edit', args=[self.ministry.pk]), {
+            'name': 'Louvor e Adoração', 'leader_name': 'Marta', 'description': 'Novo texto.',
+            'status': Ministry.Status.RECRUITING,
+        })
+        self.assertRedirects(response, reverse('ministries'))
+        self.ministry.refresh_from_db()
+        self.assertEqual((self.ministry.name, self.ministry.status), ('Louvor e Adoração', Ministry.Status.RECRUITING))

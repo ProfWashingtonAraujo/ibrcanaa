@@ -660,10 +660,11 @@ def ministry_form(request, pk=None):
         form.save()
         messages.success(request, 'Ministério salvo com sucesso.')
         return redirect('ministries')
-    return render(request, 'core/entity_form.html', {
+    return render(request, 'core/ministry_form.html', {
         'form': form,
+        'ministry': instance,
+        'participants': instance.members.count() if instance else 0,
         'title': 'Editar ministério' if instance else 'Novo ministério',
-        'back_url': 'ministries',
     })
 
 
