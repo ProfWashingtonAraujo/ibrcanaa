@@ -52,7 +52,7 @@
 
   function createFeatured(video, live) {
     var article = document.createElement('article');
-    article.className = 'video-featured reveal visible';
+    article.className = 'video-featured reveal is-visible';
     article.dataset.live = live ? 'true' : 'false';
     article.dataset.videoId = video.video_id;
     var copy = document.createElement('div');
@@ -71,7 +71,7 @@
 
   function createStackItem(video) {
     var article = document.createElement('article');
-    article.className = 'reveal visible';
+    article.className = 'reveal is-visible';
     var title = document.createElement('h3');
     title.textContent = video.title;
     var channel = document.createElement('p');
@@ -86,26 +86,29 @@
     return article;
   }
 
+  /*
+   * Lê o estado atual da seção de vídeos. `activated` vale para qualquer player
+   * em reprodução (destaque ou pilha): trocar o DOM interromperia quem assiste.
+   */
+  function readCurrent(section) {
+    var featured = section.querySelector('.video-featured');
+    if (!featured) return null;
+    return {
+      live: featured.dataset.live === 'true',
+      videoId: featured.dataset.videoId,
+      activated: Boolean(section.querySelector('lite-youtube.lyt-activated')),
+      stackIds: Array.prototype.map.call(section.querySelectorAll('.video-list lite-youtube'), function (item) {
+        return item.getAttribute('videoid');
+      })
+    };
+  }
+
   function start() {
     var section = document.querySelector('#mensagens[data-feed-url]');
     if (!section || !root.fetch) return;
 
-    function readCurrent() {
-      var featured = section.querySelector('.video-featured');
-      if (!featured) return null;
-      var player = featured.querySelector('lite-youtube');
-      return {
-        live: featured.dataset.live === 'true',
-        videoId: featured.dataset.videoId,
-        activated: Boolean(player && player.classList.contains('lyt-activated')),
-        stackIds: Array.prototype.map.call(section.querySelectorAll('.video-list lite-youtube'), function (item) {
-          return item.getAttribute('videoid');
-        })
-      };
-    }
-
     function apply(payload) {
-      var current = readCurrent();
+      var current = readCurrent(section);
       if (!current) return;
       var next = nextFeaturedState(current, payload);
       if (next.replaceFeatured) {
@@ -130,7 +133,7 @@
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextFeaturedState: nextFeaturedState };
+    module.exports = { nextFeaturedState: nextFeaturedState, readCurrent: readCurrent };
   } else if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();

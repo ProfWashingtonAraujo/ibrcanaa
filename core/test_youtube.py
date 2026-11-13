@@ -1,3 +1,4 @@
+import http.client
 import json
 import shutil
 import subprocess
@@ -105,6 +106,13 @@ class FeedParsingTests(SimpleTestCase):
         respond_with(mocked_urlopen, b'<feed>' + b'x' * (1024 * 1024 + 10) + b'</feed>')
         with self.assertRaises(YoutubeError):
             fetch_feed_entries(CHANNEL_ID)
+
+    def test_feed_truncated_or_malformed_http_becomes_youtube_error(self, mocked_urlopen):
+        for error in (http.client.IncompleteRead(b'abc'), http.client.BadStatusLine('lixo')):
+            with self.subTest(error=type(error).__name__):
+                mocked_urlopen.side_effect = error
+                with self.assertRaises(YoutubeError):
+                    fetch_feed_entries(CHANNEL_ID)
 
     def test_feed_network_error_becomes_youtube_error(self, mocked_urlopen):
         mocked_urlopen.side_effect = URLError('sem rede')
@@ -309,6 +317,23 @@ class LoadVideosTests(TestCase):
         self.assertFalse(any(item['live'] for item in videos))
         self.assertTrue(all(item['transmission'] is None for item in videos))
 
+    def test_api_failure_keeps_the_previous_snapshot_while_it_is_recent(self):
+        load_videos(NOW)
+        self.details.side_effect = YoutubeError('cota esgotada')
+        self.feed.return_value = [*ENTRIES, {'video_id': 'CCCCCCCCCCC', 'title': 'Novo', 'published': '2026-11-13T11:00:00+00:00'}]
+        videos = load_videos(self.at(61))
+        self.assertEqual([item['video_id'] for item in videos], ['AAAAAAAAAAA', 'BBBBBBBBBBB'])
+        self.assertTrue(videos[0]['live'])
+        self.assertTrue(videos[0]['transmission'])
+
+    def test_long_api_outage_falls_back_to_the_feed_only(self):
+        load_videos(NOW)
+        self.details.side_effect = YoutubeError('cota esgotada')
+        videos = load_videos(self.at(700))
+        self.assertEqual(len(videos), 2)
+        self.assertFalse(any(item['live'] for item in videos))
+        self.assertTrue(all(item['transmission'] is None for item in videos))
+
     def test_live_flag_expires_after_ten_minutes_without_success(self):
         load_videos(NOW)
         self.feed.side_effect = YoutubeError('fora do ar')
@@ -484,6 +509,13 @@ class LivePollingPageTests(TestCase):
     def test_home_includes_the_live_polling_script(self, _mocked):
         self.assertContains(self.client.get(reverse('home')), 'js/home-live')
 
+    def test_script_uses_the_visibility_class_the_site_css_defines(self):
+        css = (Path(settings.BASE_DIR) / 'static' / 'css' / 'app.css').read_text(encoding='utf-8')
+        script = SCRIPT.read_text(encoding='utf-8')
+        self.assertIn('.reveal.is-visible', css)
+        self.assertNotIn('reveal visible', script)
+        self.assertEqual(script.count('reveal is-visible'), 2)
+
     def test_live_style_exists(self):
         css = (Path(settings.BASE_DIR) / 'static' / 'css' / 'app.css').read_text(encoding='utf-8')
         self.assertIn('.is-live', css)
@@ -534,3 +566,42 @@ class NextFeaturedStateTests(SimpleTestCase):
         self.assertEqual(decide(self.idle, {'live': False, 'videos': []}), nothing)
         self.assertEqual(decide(self.idle, {}), nothing)
         self.assertEqual(decide(self.idle, {'videos': [{'title': 'sem id'}]}), nothing)
+
+
+def read_current(featured_present=True, active_in=None):
+    """Roda `readCurrent` do script com uma seção falsa (sem navegador)."""
+    code = (
+        "const {readCurrent} = require(process.argv[1]);"
+        "const {present, activeIn} = JSON.parse(process.argv[2]);"
+        "const stack = ['A','B','C'].map((id) => ({getAttribute: () => id}));"
+        "const featured = present ? {dataset: {live: 'false', videoId: 'PIN'}} : null;"
+        "const section = {"
+        "  querySelector(sel) {"
+        "    if (sel === '.video-featured') return featured;"
+        "    if (sel === 'lite-youtube.lyt-activated') return activeIn ? {} : null;"
+        "    return null;"
+        "  },"
+        "  querySelectorAll(sel) { return sel === '.video-list lite-youtube' ? stack : []; },"
+        "};"
+        "console.log(JSON.stringify(readCurrent(section)));"
+    )
+    done = subprocess.run(
+        ['node', '-e', code, str(SCRIPT), json.dumps({'present': featured_present, 'activeIn': active_in})],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(done.stdout)
+
+
+@skipUnless(shutil.which('node'), 'Node não está instalado')
+class ReadCurrentStateTests(SimpleTestCase):
+    def test_reads_the_page_state(self):
+        self.assertEqual(
+            read_current(),
+            {'live': False, 'videoId': 'PIN', 'activated': False, 'stackIds': ['A', 'B', 'C']},
+        )
+
+    def test_a_playing_video_anywhere_in_the_section_counts_as_activated(self):
+        self.assertTrue(read_current(active_in='stack')['activated'])
+
+    def test_no_featured_element_means_no_state(self):
+        self.assertIsNone(read_current(featured_present=False))

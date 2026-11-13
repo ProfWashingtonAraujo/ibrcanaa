@@ -9,6 +9,7 @@ A chave da API vai na URL da consulta. Por isso nenhuma exceção desta camada
 carrega a URL: os erros são trocados por mensagens fixas e nada é registrado em log.
 """
 
+import http.client
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone as dt_timezone
@@ -49,7 +50,7 @@ def _read(url):
     try:
         with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
             body = response.read(MAX_BODY_BYTES + 1)
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, http.client.HTTPException) as error:
         raise YoutubeError(f'Falha ao consultar o YouTube ({type(error).__name__}).') from None
     if len(body) > MAX_BODY_BYTES:
         raise YoutubeError('Resposta do YouTube grande demais.')
@@ -131,6 +132,13 @@ def _claim_refresh(snapshot, now):
     return bool(claimed)
 
 
+def _has_recent_details(snapshot, now):
+    """O instantâneo atual tem dados da API e é recente o bastante para ainda valer?"""
+    if snapshot.updated_at is None or now - snapshot.updated_at > timedelta(seconds=LIVE_MAX_AGE_SECONDS):
+        return False
+    return any(item.get('transmission') is not None for item in (snapshot.payload or {}).get('videos', []))
+
+
 def _refresh(snapshot, now):
     """Consulta o YouTube e grava o resultado. Em falha, mantém o instantâneo anterior."""
     try:
@@ -144,6 +152,10 @@ def _refresh(snapshot, now):
         try:
             details = fetch_video_details([entry['video_id'] for entry in entries], settings.YOUTUBE_API_KEY)
         except YoutubeError:
+            # Falha passageira da API: não troca dados completos (com o estado ao
+            # vivo) por dados só do RSS. Após 10 min sem sucesso, cai para o RSS.
+            if _has_recent_details(snapshot, now):
+                return
             details = None
     videos = []
     for entry in entries:
