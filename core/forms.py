@@ -17,6 +17,7 @@ from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHisto
 
 class CrispyFormMixin:
     full_width_fields = set()
+    honeypot_fields = set()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,16 +27,28 @@ class CrispyFormMixin:
         self.helper.layout = Layout(
             Div(
                 *(
-                    Field(name, wrapper_class='full' if name in self.full_width_fields else '')
+                    Field(name, wrapper_class=self._wrapper_class(name))
                     for name in self.fields
                 ),
                 css_class='form-grid',
             )
         )
 
+    def _wrapper_class(self, name):
+        if name in self.honeypot_fields:
+            return 'hp-field'
+        return 'full' if name in self.full_width_fields else ''
+
 
 class ContactLeadForm(CrispyFormMixin, forms.ModelForm):
     full_width_fields = {'message'}
+    honeypot_fields = {'website'}
+    # Isca antispam: escondida por CSS; pessoas não a preenchem, robôs costumam preencher.
+    website = forms.CharField(
+        required=False,
+        label='Não preencha este campo',
+        widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off'}),
+    )
 
     class Meta:
         model = ContactLead

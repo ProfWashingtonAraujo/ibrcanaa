@@ -19,6 +19,8 @@ Por segurança, `DJANGO_DEBUG` assume `False`. Só o valor `true` (sem distingui
 
 **Vercel e Render:** `DJANGO_SECRET_KEY` e `DATABASE_URL` precisam existir em todos os ambientes que executam o build (Production **e Preview** na Vercel). Sem elas o `build.sh` falha na importação do settings. No Render o `render.yaml` já gera a chave.
 
+**Proteção do login e do contato:** o login usa `django-axes`: após 5 falhas seguidas para o mesmo usuário e IP, o acesso fica bloqueado por 15 minutos (resposta 429), e o contador zera após um login bem-sucedido. As tentativas ficam no banco, então valem entre instâncias; `migrate` cria as tabelas. O IP do cliente vem de `x-vercel-forwarded-for` só quando o app roda na Vercel (a plataforma sobrescreve esse cabeçalho); nos demais ambientes usa-se `REMOTE_ADDR`, e `X-Forwarded-For` nunca é lido. O formulário de contato tem um campo isca (honeypot): envios com ele preenchido são descartados sem aviso. Para liberar um usuário bloqueado antes do prazo, use `python manage.py axes_reset_username <usuario>`.
+
 **Hosts e CSRF:** não há curingas como `*.vercel.app`. O app confia apenas nos hosts que a própria plataforma informa (`VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL` e `RENDER_EXTERNAL_HOSTNAME`). Para domínio próprio ou outro alias, defina `DJANGO_ALLOWED_HOSTS` (hosts separados por vírgula) e `DJANGO_CSRF_TRUSTED_ORIGINS` (origens com `https://`).
 
 No PowerShell:

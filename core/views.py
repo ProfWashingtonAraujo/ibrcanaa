@@ -206,7 +206,9 @@ def home(request):
 
     form = ContactLeadForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        # Honeypot preenchido: provável robô. Finge sucesso e não grava nada.
+        if not form.cleaned_data.get('website'):
+            form.save()
         return redirect('contact_thanks')
     try:
         next_occurrence = Occurrence.objects.select_related('event', 'event__church_event').filter(

@@ -13,3 +13,4 @@ reportlab==4.4.3
 pypdf==6.16.0
 cloudinary>=1.41,<2
 django-cloudinary-storage>=0.3,<1
+django-axes==9.0.0

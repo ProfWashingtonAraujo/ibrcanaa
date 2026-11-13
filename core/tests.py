@@ -17,6 +17,12 @@ from pypdf import PdfReader
 from .bible import DAILY_VERSES, get_daily_verse
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 
+# Estas classes testam autorização, não o limite de login. O backend do django-axes exige
+# `request` em authenticate(), que client.login() não envia. O limite de login é coberto
+# em core/test_throttling.py, com o backend do axes ativo.
+WITHOUT_AXES = override_settings(AUTHENTICATION_BACKENDS=['django.contrib.auth.backends.ModelBackend'])
+
+
 
 class PublicViewsTests(TestCase):
     def test_daily_verse_changes_with_the_date(self):
@@ -298,6 +304,7 @@ class PublicViewsTests(TestCase):
         self.assertNotIn('expectedAttendance', payload['extendedProps'])
 
 
+@WITHOUT_AXES
 class AccessTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user('staff', password='test-pass', is_staff=True)

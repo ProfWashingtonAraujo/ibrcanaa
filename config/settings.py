@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -84,6 +85,7 @@ INSTALLED_APPS = [
     'dal',
     'dal_select2',
     'swingtime',
+    'axes',
     'core',
 ]
 
@@ -102,6 +104,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Deve ser o último: responde com a página de bloqueio (429) após falhas de login.
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -225,6 +229,19 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# Proteção contra força bruta no login (django-axes, tentativas guardadas no banco,
+# portanto compartilhadas entre instâncias). Bloqueia a combinação usuário + IP.
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
+AXES_RESET_ON_SUCCESS = True
+AXES_CLIENT_IP_CALLABLE = 'core.security.get_client_ip'
+AXES_LOCKOUT_TEMPLATE = 'core/lockout.html'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'member_portal'
