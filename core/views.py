@@ -15,6 +15,7 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from django.utils import timezone
 from dal import autocomplete
@@ -342,12 +343,89 @@ def dashboard_context(user=None):
     return context
 
 
+def _whatsapp_url(raw):
+    """Link wa.me a partir de um telefone livre. Sem dígitos suficientes, devolve ''."""
+    digits = ''.join(ch for ch in raw or '' if ch.isdigit())
+    if len(digits) in (10, 11):
+        digits = '55' + digits
+    return f'https://wa.me/{digits}' if len(digits) >= 12 else ''
+
+
+def upcoming_birthdays(today=None, days=7):
+    """Membros que fazem aniversário nos próximos `days` dias (hoje incluso)."""
+    today = today or timezone.localdate()
+    found = []
+    for member in Member.objects.exclude(birth_date=None).only('id', 'name', 'birth_date'):
+        try:
+            next_birthday = member.birth_date.replace(year=today.year)
+        except ValueError:  # 29/02 em ano não bissexto
+            next_birthday = member.birth_date.replace(year=today.year, day=28)
+        if next_birthday < today:
+            try:
+                next_birthday = member.birth_date.replace(year=today.year + 1)
+            except ValueError:
+                next_birthday = member.birth_date.replace(year=today.year + 1, day=28)
+        delta = (next_birthday - today).days
+        if delta <= days:
+            found.append({'member': member, 'date': next_birthday, 'days': delta, 'age': next_birthday.year - member.birth_date.year})
+    return sorted(found, key=lambda item: (item['days'], item['member'].name))
+
+
 @staff_required
 def dashboard(request):
     context = dashboard_context(request.user)
     context['recent_members'] = Member.objects.prefetch_related('ministries')[:5]
     context['membership_chart'] = membership_tenure_chart(Member.objects.all())
+    pending = ContactLead.objects.filter(contacted=False)
+    context['pending_contacts_count'] = pending.count()
+    context['pending_contacts'] = [
+        {'lead': lead, 'whatsapp_url': _whatsapp_url(lead.whatsapp)} for lead in pending.order_by('created_at')[:5]
+    ]
+    context['birthdays'] = upcoming_birthdays()
+    if is_pastor(request.user):
+        reviews = MembershipApplication.objects.filter(status=MembershipApplication.Status.REVIEW)
+        context['applications_review_count'] = reviews.count()
+        context['applications_review'] = reviews.order_by('updated_at')[:5]
     return render(request, 'core/dashboard.html', context)
+
+
+@staff_required
+@require_POST
+def contact_mark_done(request, pk):
+    lead = get_object_or_404(ContactLead, pk=pk)
+    lead.contacted = True
+    lead.save(update_fields=['contacted'])
+    messages.success(request, f'Contato de {lead.name} marcado como atendido.')
+    return redirect('dashboard')
+
+
+@staff_required
+def admin_search(request):
+    query = request.GET.get('q', '').strip()[:80]
+    results = []
+    if len(query) >= 2:
+        groups = [
+            ('Pessoas', Member.objects.filter(Q(name__icontains=query) | Q(email__icontains=query) | Q(phone__icontains=query))[:8],
+             lambda m: (m.name, m.get_status_display(), reverse('member_edit', args=[m.pk]))),
+            ('Ministérios', Ministry.objects.filter(Q(name__icontains=query) | Q(leader_name__icontains=query))[:8],
+             lambda m: (m.name, m.leader_name, reverse('ministry_edit', args=[m.pk]))),
+            ('Eventos', Event.objects.filter(Q(title__icontains=query) | Q(location__icontains=query))[:8],
+             lambda e: (e.title, timezone.localtime(e.starts_at).strftime('%d/%m/%Y %H:%M'), reverse('event_edit', args=[e.pk]))),
+            ('Cursos', Course.objects.filter(Q(title__icontains=query) | Q(instructor__icontains=query))[:8],
+             lambda c: (c.title, c.instructor, reverse('course_manage', args=[c.pk]))),
+            ('Publicações', Book.objects.filter(Q(title__icontains=query) | Q(author_name__icontains=query))[:8],
+             lambda b: (b.title, b.author_name, reverse('book_edit', args=[b.pk]))),
+        ]
+        for title, queryset, describe in groups:
+            items = [dict(zip(('title', 'detail', 'url'), describe(obj))) for obj in queryset]
+            if items:
+                results.append({'title': title, 'items': items})
+    return render(request, 'core/admin_search.html', {
+        'query': query,
+        'search_query': query,
+        'results': results,
+        'too_short': bool(query) and len(query) < 2,
+    })
 
 
 @staff_required

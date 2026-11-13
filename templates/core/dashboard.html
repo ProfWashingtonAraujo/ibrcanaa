@@ -1,13 +1,54 @@
 {% extends 'core/admin_base.html' %}
-{% block title %}Visão geral | IBR Canaã{% endblock %}
-{% block section_name %}Visão geral{% endblock %}
-{% block page_title %}Pulso da comunidade{% endblock %}
+{% block title %}Esta semana | IBR Canaã{% endblock %}
+{% block section_name %}Início{% endblock %}
+{% block page_title %}Esta semana{% endblock %}
 {% block admin_content %}
-<section class="executive-hero"><div><span class="eyebrow gold">Painel executivo</span><h2>Decisões melhores começam com uma visão clara.</h2><p>Acompanhe pessoas, participação{% if show_finances %} e recursos{% endif %} em um único panorama.</p></div><div class="executive-highlight">{% if show_finances %}<small>Saldo do período</small><strong>R$ {{ balance|floatformat:2 }}</strong>{% else %}<small>Cuidado pastoral</small><strong>{{ active_count }}</strong>{% endif %}<span>{{ active_count }} membros ativos</span></div></section>
-<section class="metric-grid"><article><span>Membros</span><strong>{{ member_count }}</strong><small>{{ active_count }} ativos</small></article><article><span>Visitantes e novos</span><strong>{{ visitor_count }}</strong><small>Em acompanhamento</small></article><article><span>Tempo médio de igreja</span><strong>{{ average_church_years|floatformat:1 }} anos</strong><small>{{ journey_count }} jornadas registradas</small></article><article><span>Próximos eventos</span><strong>{{ event_count }}</strong><small>Agenda cadastrada</small></article></section>
-<section class="dashboard-grid">
-  <article class="panel chart-panel"><div class="panel-heading"><div><span class="eyebrow">Jornada</span><h2>Tempo de igreja</h2></div><span class="status-chip">Média {{ average_church_years|floatformat:1 }} anos</span></div><div class="plotly-chart">{{ membership_chart|safe }}</div></article>
-  <article class="panel"><div class="panel-heading"><div><span class="eyebrow">Agenda</span><h2>Próximos encontros</h2></div><a href="{% url 'events' %}">Ver todos</a></div><div class="event-list">{% for event in upcoming_events %}<div><time>{{ event.starts_at|date:'d M' }}</time><span><strong>{{ event.title }}</strong><small>{{ event.location }} · {{ event.starts_at|date:'H:i' }}</small></span></div>{% empty %}<p class="empty">Nenhum evento futuro cadastrado.</p>{% endfor %}</div></article>
+<section class="week-grid" aria-label="O que precisa de atenção">
+  <article class="panel week-panel week-panel-wide">
+    <div class="panel-heading"><div><h2>Mensagens do site</h2><p class="panel-sub">{% if pending_contacts_count %}{{ pending_contacts_count }} aguardando resposta{% else %}Nada pendente{% endif %}</p></div></div>
+    <div class="week-list">
+      {% for item in pending_contacts %}
+      <div class="week-row">
+        <div class="week-main"><strong>{{ item.lead.name }}</strong><small>{{ item.lead.get_interest_display }}, recebida há {{ item.lead.created_at|timesince }}</small><p>{{ item.lead.message|truncatechars:140 }}</p></div>
+        <div class="week-actions">
+          {% if item.whatsapp_url %}<a class="button button-ghost" href="{{ item.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+          <a class="button button-ghost" href="mailto:{{ item.lead.email }}">E-mail</a>
+          <form method="post" action="{% url 'contact_mark_done' item.lead.pk %}">{% csrf_token %}<button class="button button-primary" type="submit">Marcar como atendido</button></form>
+        </div>
+      </div>
+      {% empty %}<p class="empty">Nenhuma mensagem aguardando resposta. Quando alguém preencher o formulário do site, ela aparece aqui.</p>{% endfor %}
+      {% if pending_contacts_count > 5 %}<p class="week-more">Mostrando as 5 mais antigas de {{ pending_contacts_count }}.</p>{% endif %}
+    </div>
+  </article>
+  {% if applications_review_count is not None %}
+  <article class="panel week-panel">
+    <div class="panel-heading"><div><h2>Candidaturas em avaliação</h2><p class="panel-sub">{% if applications_review_count %}{{ applications_review_count }} aguardando o pastor{% else %}Nada pendente{% endif %}</p></div><a href="{% url 'membership_applications' %}">Ver todas</a></div>
+    <div class="week-list">
+      {% for application in applications_review %}<a class="week-row week-link" href="{% url 'membership_application_edit' application.pk %}"><div class="week-main"><strong>{{ application.candidate_name }}</strong><small>Enviada há {{ application.updated_at|timesince }}</small></div></a>
+      {% empty %}<p class="empty">Nenhuma candidatura aguardando avaliação.</p>{% endfor %}
+    </div>
+  </article>
+  {% endif %}
+  <article class="panel week-panel">
+    <div class="panel-heading"><div><h2>Aniversários</h2><p class="panel-sub">Nos próximos 7 dias</p></div><a href="{% url 'members' %}">Membros</a></div>
+    <div class="week-list">
+      {% for item in birthdays %}<div class="week-row"><div class="week-main"><strong>{{ item.member.name }}</strong><small>Completa {{ item.age }} ano{{ item.age|pluralize }}, {% if item.days == 0 %}hoje{% elif item.days == 1 %}amanhã{% else %}em {{ item.days }} dias ({{ item.date|date:'d/m' }}){% endif %}</small></div></div>
+      {% empty %}<p class="empty">Nenhum aniversário nos próximos 7 dias.</p>{% endfor %}
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <div class="panel-heading"><div><h2>Próximos encontros</h2><p class="panel-sub">Agenda da igreja</p></div><a href="{% url 'events' %}">Agenda</a></div>
+    <div class="event-list">{% for event in upcoming_events %}<div><time>{{ event.starts_at|date:'d M' }}</time><span><strong>{{ event.title }}</strong><small>{{ event.location }}, {{ event.starts_at|date:'H:i' }}</small></span></div>{% empty %}<p class="empty">Nenhum evento futuro. <a href="{% url 'event_create' %}">Criar evento</a></p>{% endfor %}</div>
+  </article>
 </section>
-<section class="dashboard-grid lower"><article class="panel"><div class="panel-heading"><div><span class="eyebrow">Pessoas</span><h2>Cadastros recentes</h2></div><a href="{% url 'members' %}">Gerenciar</a></div><div class="people-list">{% for member in recent_members %}<div><span class="avatar-initials">{{ member.name|first }}</span><span><strong>{{ member.name }}</strong><small>{{ member.get_status_display }} · {% for ministry in member.ministries.all %}{{ ministry.name }}{% if not forloop.last %}, {% endif %}{% empty %}Sem ministério{% endfor %}</small></span><b>{{ member.church_duration }}</b></div>{% endfor %}</div></article>{% if show_finances %}<article class="panel finance-mini"><span class="eyebrow">Recursos</span><h2>Movimentação atual</h2><div><span>Entradas<strong>R$ {{ income|floatformat:2 }}</strong></span><span>Saídas<strong>R$ {{ expense|floatformat:2 }}</strong></span></div><a class="button button-primary" href="{% url 'finance' %}">Abrir financeiro</a></article>{% endif %}</section>
+<section class="stat-row" aria-label="Números da comunidade">
+  <div><span>Membros</span><strong>{{ member_count }}</strong><small>{{ active_count }} ativos</small></div>
+  <div><span>Visitantes e novos</span><strong>{{ visitor_count }}</strong><small>Em integração</small></div>
+  <div><span>Tempo médio de igreja</span><strong>{{ average_church_years|floatformat:1 }} anos</strong><small>{{ journey_count }} com data de entrada</small></div>
+  {% if show_finances %}<div><span>Saldo do período</span><strong>R$ {{ balance|floatformat:2 }}</strong><small><a href="{% url 'finance' %}">Abrir financeiro</a></small></div>{% endif %}
+</section>
+<section class="dashboard-grid lower">
+  <article class="panel chart-panel"><div class="panel-heading"><div><h2>Tempo de igreja</h2><p class="panel-sub">Distribuição dos membros por tempo de casa</p></div></div><div class="plotly-chart">{{ membership_chart|safe }}</div></article>
+  <article class="panel"><div class="panel-heading"><div><h2>Cadastros recentes</h2></div><a href="{% url 'members' %}">Gerenciar</a></div><div class="people-list">{% for member in recent_members %}<div><span class="avatar-initials">{{ member.name|first }}</span><span><strong>{{ member.name }}</strong><small>{{ member.get_status_display }}, {% for ministry in member.ministries.all %}{{ ministry.name }}{% if not forloop.last %}, {% endif %}{% empty %}sem ministério{% endfor %}</small></span><b>{{ member.church_duration }}</b></div>{% empty %}<p class="empty">Nenhum cadastro ainda. <a href="{% url 'member_create' %}">Adicionar membro</a></p>{% endfor %}</div></article>
+</section>
 {% endblock %}

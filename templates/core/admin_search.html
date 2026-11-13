@@ -1,0 +1,22 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Busca | IBR Canaã{% endblock %}
+{% block section_name %}Busca{% endblock %}
+{% block page_title %}{% if query and not too_short %}Resultados para “{{ query }}”{% else %}Busca{% endif %}{% endblock %}
+{% block admin_content %}
+{% if not query %}
+<article class="panel"><p class="empty">Digite um nome, e-mail, evento, curso ou livro na busca acima. Atalho: pressione <kbd class="kbd">/</kbd> em qualquer tela do painel.</p></article>
+{% elif too_short %}
+<article class="panel"><p class="empty">Digite pelo menos 2 letras para buscar.</p></article>
+{% elif not results %}
+<article class="panel"><p class="empty">Nada encontrado para “{{ query }}”. Tente outra grafia ou menos letras.</p></article>
+{% else %}
+<div class="search-results">
+  {% for group in results %}
+  <article class="panel">
+    <div class="panel-heading"><h2>{{ group.title }}</h2></div>
+    <div class="week-list">{% for item in group.items %}<a class="week-row week-link" href="{{ item.url }}"><div class="week-main"><strong>{{ item.title }}</strong>{% if item.detail %}<small>{{ item.detail }}</small>{% endif %}</div></a>{% endfor %}</div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

@@ -283,8 +283,9 @@ class AccessTests(TestCase):
         self.assertContains(response, 'class="nav-symbol"><svg', count=10)
         self.assertContains(response, 'Publicações')
         self.assertContains(response, 'Conteúdo')
-        self.assertContains(response, 'class="mobile-logout"')
-        self.assertContains(response, 'aria-label="Sair do sistema"')
+        self.assertContains(response, 'class="side-logout"')
+        self.assertContains(response, 'class="menu-button"')
+        self.assertContains(response, 'href="#conteudo"')
 
     def test_staff_can_access_book_admin(self):
         self.client.login(username='staff', password='test-pass')
@@ -1560,3 +1561,109 @@ class ProductionSettingsTests(SimpleTestCase):
     def test_real_secret_is_accepted(self):
         result = self._run_settings({'DJANGO_SECRET_KEY': 'x' * 50, 'DATABASE_URL': 'sqlite:///x.db'})
         self.assertEqual(result.returncode, 0, result.stderr)
+
+
+@WITHOUT_AXES
+class AdminWeekAndNavigationTests(TestCase):
+    def setUp(self):
+        self.board = User.objects.create_user('board', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.board, role=AccessProfile.Role.BOARD)
+        self.pastor = User.objects.create_user('pastor', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.pastor, role=AccessProfile.Role.PASTOR)
+
+    def _lead(self, **kwargs):
+        data = dict(name='Maria Visitante', email='maria@example.com', whatsapp='(88) 99999-1234',
+                    interest=ContactLead.Interest.VISIT, message='Quero conhecer a igreja no domingo.')
+        data.update(kwargs)
+        return ContactLead.objects.create(**data)
+
+    def test_sidebar_is_grouped_and_hides_pastoral_items_from_board(self):
+        self.client.login(username='board', password='test-pass')
+        response = self.client.get(reverse('dashboard'))
+        for title in ('Pessoas', 'Ensino', 'Agenda e site', 'Gestão'):
+            self.assertContains(response, f'>{title}</h2>')
+        self.assertNotContains(response, 'Candidaturas')
+        self.assertContains(response, 'Financeiro')
+        self.assertContains(response, 'aria-current="page"')
+
+    def test_pastor_sees_applications_but_not_finance(self):
+        self.client.login(username='pastor', password='test-pass')
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'Candidaturas')
+        self.assertNotContains(response, '>Financeiro<')
+
+    def test_sidebar_counts_pending_contacts_and_reviews(self):
+        self._lead()
+        self._lead(name='João')
+        MembershipApplication.objects.create(
+            candidate_name='Pedro', candidate_email='p@example.com',
+            status=MembershipApplication.Status.REVIEW, created_by=self.pastor,
+        )
+        self.client.login(username='pastor', password='test-pass')
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, '2 pendentes')
+        self.assertContains(response, '1 pendente')
+        self.assertContains(response, 'Candidaturas em avaliação')
+        self.assertContains(response, 'Pedro')
+
+    def test_dashboard_lists_pending_contact_with_whatsapp_link(self):
+        lead = self._lead()
+        self.client.login(username='board', password='test-pass')
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'Maria Visitante')
+        self.assertContains(response, 'https://wa.me/5588999991234')
+        self.assertContains(response, reverse('contact_mark_done', args=[lead.pk]))
+
+    def test_dashboard_empty_states_invite_action(self):
+        self.client.login(username='board', password='test-pass')
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'Nenhuma mensagem aguardando resposta')
+        self.assertContains(response, 'Nenhum aniversário nos próximos 7 dias')
+
+    def test_mark_contact_done_requires_post_and_login(self):
+        lead = self._lead()
+        url = reverse('contact_mark_done', args=[lead.pk])
+        self.assertEqual(self.client.post(url).status_code, 302)
+        lead.refresh_from_db()
+        self.assertFalse(lead.contacted)
+        self.client.login(username='board', password='test-pass')
+        self.assertEqual(self.client.get(url).status_code, 405)
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse('dashboard'))
+        lead.refresh_from_db()
+        self.assertTrue(lead.contacted)
+        self.assertNotContains(self.client.get(reverse('dashboard')), 'Maria Visitante')
+
+    def test_search_requires_login_and_finds_members(self):
+        Member.objects.create(name='Ana Beatriz', email='ana@example.com')
+        self.assertEqual(self.client.get(reverse('admin_search'), {'q': 'ana'}).status_code, 302)
+        self.client.login(username='board', password='test-pass')
+        response = self.client.get(reverse('admin_search'), {'q': 'beatriz'})
+        self.assertContains(response, 'Ana Beatriz')
+        self.assertContains(response, 'Pessoas')
+        self.assertContains(self.client.get(reverse('admin_search'), {'q': 'zzzzzz'}), 'Nada encontrado')
+        self.assertContains(self.client.get(reverse('admin_search'), {'q': 'a'}), 'pelo menos 2 letras')
+
+
+class AdminHelpersTests(SimpleTestCase):
+    def test_whatsapp_url_adds_country_code_and_rejects_short_numbers(self):
+        from .views import _whatsapp_url
+        self.assertEqual(_whatsapp_url('(88) 99999-1234'), 'https://wa.me/5588999991234')
+        self.assertEqual(_whatsapp_url('+55 88 3571-0000'), 'https://wa.me/558835710000')
+        self.assertEqual(_whatsapp_url('1234'), '')
+        self.assertEqual(_whatsapp_url(''), '')
+
+
+class UpcomingBirthdaysTests(TestCase):
+    def test_window_and_ordering_including_leap_day_and_year_end(self):
+        from .views import upcoming_birthdays
+        Member.objects.create(name='Hoje', email='a@x.com', birth_date=date(1990, 12, 29))
+        Member.objects.create(name='Virada', email='b@x.com', birth_date=date(2000, 1, 2))
+        Member.objects.create(name='Longe', email='c@x.com', birth_date=date(1985, 6, 1))
+        Member.objects.create(name='Bissexto', email='d@x.com', birth_date=date(2004, 2, 29))
+        found = upcoming_birthdays(today=date(2026, 12, 29), days=7)
+        self.assertEqual([item['member'].name for item in found], ['Hoje', 'Virada'])
+        self.assertEqual([item['days'] for item in found], [0, 4])
+        self.assertEqual(found[1]['age'], 27)
+        feb = upcoming_birthdays(today=date(2027, 2, 27), days=3)
+        self.assertEqual([item['member'].name for item in feb], ['Bissexto'])
