@@ -2,14 +2,13 @@ import json
 import logging
 from decimal import Decimal
 from datetime import timedelta
-from functools import wraps
 from io import BytesIO
 from urllib.request import Request, urlopen
 
 from cloudinary.exceptions import Error as CloudinaryError
 from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.paginator import Paginator
@@ -27,6 +26,15 @@ from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .permissions import (
+    can_manage_users,
+    financial_access_required,
+    is_panel_user,
+    is_pastor,
+    pastor_required,
+    staff_required,
+    user_manager_required,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -98,25 +106,6 @@ PUBLIC_HOME_FALLBACKS = {
         'milestone_3_text': 'Seguimos servindo com ensino, adoração, ação social e cuidado pastoral contínuo.',
     },
 }
-
-
-def staff_required(view):
-    return user_passes_test(lambda user: user.is_authenticated and user.is_staff, login_url='login')(view)
-
-
-def user_manager_required(view):
-    @wraps(view)
-    @login_required
-    def wrapped(request, *args, **kwargs):
-        can_manage = request.user.is_superuser or AccessProfile.objects.filter(
-            user=request.user,
-            role__in=AccessProfile.USER_MANAGER_ROLES,
-        ).exists()
-        if not can_manage:
-            return HttpResponseForbidden('Apenas Pastor e Diretoria podem gerenciar usuários.')
-        return view(request, *args, **kwargs)
-
-    return wrapped
 
 
 def _get_youtube_videos_from_page(limit=4):
@@ -202,41 +191,9 @@ def _build_youtube_response(request):
     return response
 
 
-def pastor_required(view):
-    @wraps(view)
-    @login_required
-    def wrapped(request, *args, **kwargs):
-        is_pastor = AccessProfile.objects.filter(
-            user=request.user,
-            role=AccessProfile.Role.PASTOR,
-        ).exists()
-        if not is_pastor:
-            return HttpResponseForbidden('Conteúdo confidencial restrito ao perfil Pastor.')
-        return view(request, *args, **kwargs)
-    return wrapped
-
-
-def financial_access_required(view):
-    @wraps(view)
-    @login_required
-    def wrapped(request, *args, **kwargs):
-        role = AccessProfile.objects.filter(user=request.user).values_list('role', flat=True).first()
-        if not request.user.is_staff or role == AccessProfile.Role.PASTOR:
-            return HttpResponseForbidden('O perfil Pastor não possui acesso à área financeira.')
-        return view(request, *args, **kwargs)
-    return wrapped
-
-
 class MemberAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        can_manage = self.request.user.is_authenticated and (
-            self.request.user.is_superuser
-            or AccessProfile.objects.filter(
-                user=self.request.user,
-                role__in=AccessProfile.USER_MANAGER_ROLES,
-            ).exists()
-        )
-        if not can_manage:
+        if not can_manage_users(self.request.user):
             return Member.objects.none()
         queryset = Member.objects.select_related('user').filter(user__isnull=True)
         if self.q:
@@ -398,12 +355,12 @@ def contact_thanks(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard' if request.user.is_staff else 'member_portal')
+        return redirect('dashboard' if is_panel_user(request.user) else 'member_portal')
     form = LoginForm(request, data=request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
-        return redirect('dashboard' if user.is_staff else 'member_portal')
+        return redirect('dashboard' if is_panel_user(user) else 'member_portal')
     return render(request, 'core/login.html', {'form': form})
 
 
@@ -418,9 +375,7 @@ def logout_view(request):
 def dashboard_context(user=None):
     active_statuses = [Member.Status.ACTIVE, Member.Status.LEADERSHIP]
     members = Member.objects.prefetch_related('ministries')
-    show_finances = not user or not AccessProfile.objects.filter(
-        user=user, role=AccessProfile.Role.PASTOR,
-    ).exists()
+    show_finances = not user or not is_pastor(user)
     church_entry_dates = list(
         members.exclude(church_entry_date=None).values_list('church_entry_date', flat=True)
     )
@@ -1122,7 +1077,7 @@ def member_portal(request):
     try:
         member = request.user.member_profile
     except Member.DoesNotExist:
-        if request.user.is_staff:
+        if is_panel_user(request.user):
             return redirect('dashboard')
         return HttpResponseForbidden('Este usuário não possui perfil de membro.')
     contribution_form = MemberContributionForm(request.POST or None)
