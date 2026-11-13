@@ -19,6 +19,8 @@ Por segurança, `DJANGO_DEBUG` assume `False`. Só o valor `true` (sem distingui
 
 **Vercel e Render:** `DJANGO_SECRET_KEY` e `DATABASE_URL` precisam existir em todos os ambientes que executam o build (Production **e Preview** na Vercel). Sem elas o `build.sh` falha na importação do settings. No Render o `render.yaml` já gera a chave.
 
+**Hosts e CSRF:** não há curingas como `*.vercel.app`. O app confia apenas nos hosts que a própria plataforma informa (`VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL` e `RENDER_EXTERNAL_HOSTNAME`). Para domínio próprio ou outro alias, defina `DJANGO_ALLOWED_HOSTS` (hosts separados por vírgula) e `DJANGO_CSRF_TRUSTED_ORIGINS` (origens com `https://`).
+
 No PowerShell:
 
 ```powershell

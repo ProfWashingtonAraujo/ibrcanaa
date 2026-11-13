@@ -44,17 +44,30 @@ elif SECRET_KEY in _INSECURE_SECRET_KEYS or SECRET_KEY.startswith('django-insecu
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 VERCEL_URL = os.environ.get('VERCEL_URL')
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
+VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL')
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+
+# Hosts do próprio deploy, informados pela plataforma. Não usamos curingas como
+# `*.vercel.app`: isso confiaria em qualquer projeto de terceiros na Vercel.
+# Domínios próprios ou aliases extras entram por DJANGO_ALLOWED_HOSTS e
+# DJANGO_CSRF_TRUSTED_ORIGINS.
+PLATFORM_HOSTS = [
+    host.strip()
+    for host in (
+        RENDER_EXTERNAL_HOSTNAME,
+        VERCEL_PROJECT_PRODUCTION_URL,
+        VERCEL_URL,
+        VERCEL_BRANCH_URL,
+    )
+    if host and host.strip()
+]
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
     if host.strip()
 ]
-ALLOWED_HOSTS += ['.vercel.app', '.vercel.sh']
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-for host in (RENDER_EXTERNAL_HOSTNAME, VERCEL_PROJECT_PRODUCTION_URL, VERCEL_URL):
-    if host:
-        ALLOWED_HOSTS.append(host)
+ALLOWED_HOSTS += PLATFORM_HOSTS
 
 
 # Application definition
@@ -202,13 +215,7 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-CSRF_TRUSTED_ORIGINS += ['https://*.vercel.app', 'https://*.vercel.sh']
-if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
-
-for host in (VERCEL_PROJECT_PRODUCTION_URL, VERCEL_URL):
-    if host:
-        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
+CSRF_TRUSTED_ORIGINS += [f'https://{host}' for host in PLATFORM_HOSTS]
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

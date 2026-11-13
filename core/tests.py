@@ -1509,19 +1509,63 @@ class SeedDemoSafetyTests(TestCase):
 
 
 class ProductionSettingsTests(SimpleTestCase):
-    def _run_settings(self, env):
+    def _run_settings(self, env, code='import config.settings'):
         import os
         import subprocess
         import sys
         from pathlib import Path
 
         base = Path(__file__).resolve().parent.parent
-        clean = {k: v for k, v in os.environ.items() if not k.startswith('DJANGO_')}
+        clean = {
+            k: v for k, v in os.environ.items()
+            if not k.startswith(('DJANGO_', 'VERCEL_', 'RENDER_'))
+        }
         clean.update(env)
         return subprocess.run(
-            [sys.executable, '-c', 'import config.settings'],
+            [sys.executable, '-c', code],
             cwd=base, env=clean, capture_output=True, text=True,
         )
+
+    def _setting(self, env, name):
+        result = self._run_settings(
+            {'DJANGO_DEBUG': 'True', **env},
+            f'import json, config.settings as s; print(json.dumps(s.{name}))',
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout.strip().splitlines()[-1])
+
+    def test_no_vercel_wildcards_in_hosts_or_csrf(self):
+        hosts = self._setting({}, 'ALLOWED_HOSTS')
+        origins = self._setting({}, 'CSRF_TRUSTED_ORIGINS')
+        self.assertEqual(hosts, ['127.0.0.1', 'localhost'])
+        self.assertEqual(origins, [])
+
+    def test_platform_hosts_are_trusted_for_hosts_and_csrf(self):
+        env = {
+            'VERCEL_URL': 'ibrcanaa-abc123.vercel.app',
+            'VERCEL_BRANCH_URL': 'ibrcanaa-git-feature.vercel.app',
+            'VERCEL_PROJECT_PRODUCTION_URL': 'ibrcanaa.vercel.app',
+            'RENDER_EXTERNAL_HOSTNAME': 'ibrcanaa.onrender.com',
+        }
+        expected = list(env.values())
+        hosts = self._setting(env, 'ALLOWED_HOSTS')
+        origins = self._setting(env, 'CSRF_TRUSTED_ORIGINS')
+        for host in expected:
+            self.assertIn(host, hosts)
+            self.assertIn(f'https://{host}', origins)
+        self.assertFalse([h for h in hosts if '*' in h or h.startswith('.')])
+        self.assertFalse([o for o in origins if '*' in o])
+
+    def test_custom_domains_come_from_environment(self):
+        env = {
+            'DJANGO_ALLOWED_HOSTS': 'igreja.example.org, www.igreja.example.org',
+            'DJANGO_CSRF_TRUSTED_ORIGINS': 'https://igreja.example.org',
+        }
+        self.assertEqual(
+            self._setting(env, 'ALLOWED_HOSTS'),
+            ['igreja.example.org', 'www.igreja.example.org'],
+        )
+        self.assertEqual(self._setting(env, 'CSRF_TRUSTED_ORIGINS'), ['https://igreja.example.org'])
 
     def test_missing_debug_defaults_to_off_and_requires_secret(self):
         result = self._run_settings({'DATABASE_URL': 'sqlite:///x.db'})
