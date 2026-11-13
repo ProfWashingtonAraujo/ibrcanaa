@@ -410,3 +410,21 @@ body.admin-body.nav-open .sidebar{transform:none;visibility:visible;transition:t
 .people-tabs{overflow-y:hidden;scrollbar-width:none}
 .people-tabs::-webkit-scrollbar{display:none}
 .people-card .tag,.person-head .tag{padding:4px 10px;font-size:13px;letter-spacing:0;text-transform:none}
+
+/* Ministérios: ficha com equipe (2026-11-13) */
+.ministry-about{max-width:62ch;margin:10px 0 0;font-size:15px;line-height:1.55;color:#3d4b63}
+.ministry-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+.ministry-layout h2{margin:0;font-size:19px}
+.ministry-side{display:grid;gap:18px}
+.team-link{text-decoration:underline;text-underline-offset:3px;text-decoration-color:#c5d3ee}
+.team-link:hover{text-decoration-color:currentColor}
+.ministry-add{display:grid;gap:10px;margin-top:12px}
+.ministry-add label{font-size:14px;color:var(--muted);font-weight:600}
+.ministry-add select{min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+.bars{display:grid;gap:12px;margin-top:14px}
+.bar-row{display:grid;grid-template-columns:96px minmax(0,1fr) 28px;align-items:center;gap:10px;font-size:14px}
+.bar{height:10px;border-radius:999px;background:#eaeef5;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:#173984}
+.bar-row b{text-align:right}
+.person-actions form{margin:0}
+@media(max-width:900px){.ministry-layout{grid-template-columns:1fr}}

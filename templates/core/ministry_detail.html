@@ -1,0 +1,58 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ ministry.name }} | IBR Canaã{% endblock %}{% block section_name %}Ministérios{% endblock %}{% block page_title %}{{ ministry.name }}{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{% url 'ministries' %}">Voltar para Ministérios</a></p>
+<section class="panel person-head">
+  <div class="person-who">
+    <span class="people-avatar person-avatar" aria-hidden="true">{{ ministry.name|first }}</span>
+    <div>
+      <h2>{{ ministry.name }}</h2>
+      <p><span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span></p>
+      <p class="ministry-about">{{ ministry.description|default:'Sem descrição. O texto que você escrever na edição aparece no site.' }}</p>
+    </div>
+  </div>
+  <div class="person-actions">
+    <a class="button button-primary" href="{% url 'ministry_edit' ministry.pk %}">Editar ministério</a>
+    <form method="post" action="{% url 'ministry_delete' ministry.pk %}" onsubmit="return confirm('Excluir o ministério {{ ministry.name|escapejs }}? Os membros vinculados ficarão sem ministério.');">{% csrf_token %}<button class="button button-danger" type="submit">Excluir</button></form>
+  </div>
+</section>
+<section class="stat-row" aria-label="Resumo do ministério">
+  <div><span>Participantes</span><strong>{{ total }}</strong><small>{% if total %}Pessoas vinculadas{% else %}Ninguém vinculado ainda{% endif %}</small></div>
+  <div><span>Líder</span><strong>{{ ministry.leader_name }}</strong><small>Responsável pela equipe</small></div>
+  <div><span>No site</span><strong>{% if ministry.status == 'recruiting' %}Quero servir{% else %}Conhecer{% endif %}</strong><small>{% if ministry.status == 'recruiting' %}Convida visitantes a servir{% else %}Apresenta o ministério{% endif %}</small></div>
+</section>
+<section class="ministry-layout">
+  <article class="panel">
+    <div class="panel-heading"><div><h2>Equipe</h2><p class="panel-sub">{{ total }} pessoa{{ total|pluralize }}</p></div></div>
+    <div class="week-list">
+      {% for person in people %}
+      <div class="week-row">
+        <div class="week-main"><strong><a class="team-link" href="{% url 'member_detail' person.pk %}">{{ person.name }}</a></strong><small>{{ person.get_status_display }}{% if person.church_entry_date %}, na igreja há {{ person.church_duration }}{% endif %}</small></div>
+        <div class="week-actions">
+          {% if person.whatsapp_url %}<a class="button button-ghost" href="{{ person.whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+          <form method="post" action="{% url 'ministry_member_remove' ministry.pk person.pk %}" onsubmit="return confirm('Remover {{ person.name|escapejs }} de {{ ministry.name|escapejs }}?');">{% csrf_token %}<button class="button button-ghost" type="submit">Remover</button></form>
+        </div>
+      </div>
+      {% empty %}<p class="empty">Nenhuma pessoa neste ministério. Use o campo ao lado para adicionar a primeira.</p>{% endfor %}
+    </div>
+  </article>
+  <div class="ministry-side">
+    <article class="panel">
+      <div class="panel-heading"><h2>Adicionar pessoa</h2></div>
+      {% if available_members %}
+      <form class="ministry-add" method="post" action="{% url 'ministry_member_add' ministry.pk %}">{% csrf_token %}
+        <label for="member_id">Escolha quem entra na equipe</label>
+        <select id="member_id" name="member_id" required><option value="">Selecione uma pessoa</option>{% for member in available_members %}<option value="{{ member.pk }}">{{ member.name }}</option>{% endfor %}</select>
+        <button class="button button-primary" type="submit">Adicionar à equipe</button>
+      </form>
+      {% else %}<p class="empty">Todos os membros cadastrados já participam. <a href="{% url 'member_create' %}">Cadastrar novo membro</a></p>{% endif %}
+    </article>
+    <article class="panel">
+      <div class="panel-heading"><h2>Quem participa</h2></div>
+      {% if breakdown %}
+      <div class="bars">{% for row in breakdown %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar" role="img" aria-label="{{ row.percent }}% da equipe"><i style="width:{{ row.percent }}%"></i></div><b>{{ row.count }}</b></div>{% endfor %}</div>
+      {% else %}<p class="empty">A distribuição por situação aparece quando houver pessoas na equipe.</p>{% endif %}
+    </article>
+  </div>
+</section>
+{% endblock %}

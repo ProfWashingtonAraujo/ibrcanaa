@@ -1,11 +1,35 @@
 {% extends 'core/admin_base.html' %}
-{% block title %}Ministérios | IBR Canaã{% endblock %}{% block section_name %}Ministérios{% endblock %}{% block page_title %}Equipes e liderança{% endblock %}
+{% block title %}Ministérios | IBR Canaã{% endblock %}{% block section_name %}Ministérios{% endblock %}{% block page_title %}Ministérios{% endblock %}
 {% block admin_content %}
-<section class="ministry-admin-hero"><div><span class="eyebrow gold">Serviço e comunhão</span><h2>Ministérios que cuidam e mobilizam.</h2><p>Organize equipes, lideranças e o envolvimento dos membros na vida da igreja.</p></div><a class="button button-gold" href="{% url 'ministry_create' %}">+ Novo ministério</a></section>
-<section class="ministry-admin-metrics"><article><span>Ministérios</span><strong>{{ filtered_count }}</strong><small>Resultado atual</small></article><article><span>Ativos</span><strong>{{ active_count }}</strong><small>Em funcionamento</small></article><article><span>Recrutando</span><strong>{{ recruiting_count }}</strong><small>Precisam de voluntários</small></article><article><span>Participantes</span><strong>{{ member_total }}</strong><small>Membros vinculados</small></article></section>
-<article class="panel ministry-admin-panel">
-  <div class="members-panel-heading"><div><span class="eyebrow">Diretório ministerial</span><h2>Equipes cadastradas</h2><p>{{ filtered_count }} registro{{ filtered_count|pluralize }} encontrado{{ filtered_count|pluralize }}</p></div></div>
-  <form method="get" class="member-filters"><label class="member-search"><span aria-hidden="true">⌕</span><input type="search" name="q" value="{{ search }}" placeholder="Buscar por ministério ou líder"></label><select name="status" aria-label="Filtrar por status"><option value="">Todos os status</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select><button class="button button-primary" type="submit">Filtrar</button>{% if search or selected_status %}<a class="clear-filters" href="{% url 'ministries' %}">Limpar</a>{% endif %}</form>
-  <div class="ministry-admin-grid">{% for ministry in ministries %}<article><div class="ministry-admin-card-head"><span class="ministry-admin-initial">{{ ministry.name|first }}</span><span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span></div><h3>{{ ministry.name }}</h3><p><small>LIDERANÇA</small>{{ ministry.leader_name }}</p><div class="ministry-admin-card-foot"><span><strong>{{ ministry.member_count }}</strong> participante{{ ministry.member_count|pluralize }}</span><div><a href="{% url 'ministry_edit' ministry.pk %}">Editar</a><form method="post" action="{% url 'ministry_delete' ministry.pk %}" onsubmit="return confirm('Excluir o ministério {{ ministry.name|escapejs }}? Os membros vinculados ficarão sem ministério.');">{% csrf_token %}<button type="submit">Excluir</button></form></div></div></article>{% empty %}<div class="members-empty"><span>⌕</span><h3>Nenhum ministério encontrado</h3><p>Ajuste os filtros ou cadastre uma nova equipe.</p></div>{% endfor %}</div>
-</article>
+<section class="people-head">
+  <p class="people-count"><strong>{{ filtered_count }}</strong> {% if filtered_count == 1 %}ministério encontrado{% else %}ministérios encontrados{% endif %}{% if search or selected_status %} com os filtros atuais{% endif %}</p>
+  <a class="button button-primary" href="{% url 'ministry_create' %}">Novo ministério</a>
+</section>
+<nav class="people-tabs" aria-label="Filtrar por situação">
+  {% for tab in tabs %}<a href="?{{ tab.query }}"{% if tab.value == selected_status %} class="active" aria-current="page"{% endif %}>{{ tab.label }} <span>{{ tab.count }}</span></a>{% endfor %}
+</nav>
+<form method="get" class="people-filters" role="search">
+  {% if selected_status %}<input type="hidden" name="status" value="{{ selected_status }}">{% endif %}
+  <label class="people-search"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg><span class="visually-hidden">Buscar ministério</span><input type="search" name="q" value="{{ search }}" placeholder="Nome do ministério ou do líder"></label>
+  <button class="button button-primary" type="submit">Buscar</button>{% if search %}<a class="people-clear" href="?{% if selected_status %}status={{ selected_status }}{% endif %}">Limpar busca</a>{% endif %}
+</form>
+{% if ministries %}
+<div class="people-grid">
+  {% for ministry in ministries %}
+  <article class="people-card">
+    <div class="people-top">
+      <span class="people-avatar" aria-hidden="true">{{ ministry.name|first }}</span>
+      <div class="people-id">
+        <h2><a class="people-link" href="{% url 'ministry_detail' ministry.pk %}">{{ ministry.name }}</a></h2>
+        <span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span>
+      </div>
+    </div>
+    <p class="people-ministries">Líder: {{ ministry.leader_name }}</p>
+    <p class="people-since"><span><strong>{{ ministry.member_count }}</strong> participante{{ ministry.member_count|pluralize }}</span></p>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel"><p class="empty">Nenhum ministério encontrado. Ajuste a busca ou <a href="{% url 'ministry_create' %}">cadastre um ministério</a>.</p></div>
+{% endif %}
 {% endblock %}

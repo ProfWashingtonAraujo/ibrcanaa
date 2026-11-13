@@ -1747,3 +1747,72 @@ class MembersDirectoryTests(TestCase):
     def test_sidebar_marks_members_active_on_profile(self):
         response = self.client.get(reverse('member_detail', args=[self.ana.pk]))
         self.assertContains(response, 'class="side-link active"')
+
+
+@WITHOUT_AXES
+class MinistryDetailTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('staff3', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.staff, role=AccessProfile.Role.BOARD)
+        self.louvor = Ministry.objects.create(name='Louvor', leader_name='Marta', description='Adoração em comunhão.')
+        self.kids = Ministry.objects.create(name='Kids', leader_name='Paulo', status=Ministry.Status.RECRUITING)
+        self.ana = Member.objects.create(name='Ana', email='ana@x.com', phone='(88) 99999-1234', status=Member.Status.ACTIVE)
+        self.bia = Member.objects.create(name='Bia', email='bia@x.com', status=Member.Status.NEW)
+        self.cris = Member.objects.create(name='Cris', email='cris@x.com')
+        self.louvor.members.add(self.ana, self.bia)
+        self.client.login(username='staff3', password='test-pass')
+
+    def test_tabs_count_and_filter_ministries(self):
+        response = self.client.get(reverse('ministries'))
+        tabs = {tab['label']: tab['count'] for tab in response.context['tabs']}
+        self.assertEqual(tabs, {'Todos': 2, 'Ativos': 1, 'Precisam de voluntários': 1})
+        filtered = self.client.get(reverse('ministries'), {'status': Ministry.Status.RECRUITING})
+        self.assertContains(filtered, 'Kids')
+        self.assertNotContains(filtered, 'Louvor')
+
+    def test_cards_link_to_detail_and_singular_count(self):
+        response = self.client.get(reverse('ministries'), {'q': 'Kids'})
+        self.assertContains(response, reverse('ministry_detail', args=[self.kids.pk]))
+        self.assertContains(response, '<strong>1</strong> ministério encontrado')
+
+    def test_detail_shows_team_breakdown_and_public_label(self):
+        response = self.client.get(reverse('ministry_detail', args=[self.louvor.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Adoração em comunhão.')
+        self.assertContains(response, reverse('member_detail', args=[self.ana.pk]))
+        self.assertContains(response, 'https://wa.me/5588999991234')
+        self.assertContains(response, 'width:50%')
+        self.assertContains(response, 'Conhecer')
+        self.assertEqual([m.name for m in response.context['available_members']], ['Cris'])
+        kids = self.client.get(reverse('ministry_detail', args=[self.kids.pk]))
+        self.assertContains(kids, 'Quero servir')
+        self.assertContains(kids, 'Ninguém vinculado ainda')
+
+    def test_add_and_remove_member(self):
+        add_url = reverse('ministry_member_add', args=[self.louvor.pk])
+        response = self.client.post(add_url, {'member_id': self.cris.pk})
+        self.assertRedirects(response, reverse('ministry_detail', args=[self.louvor.pk]))
+        self.assertIn(self.cris, self.louvor.members.all())
+        remove_url = reverse('ministry_member_remove', args=[self.louvor.pk, self.cris.pk])
+        self.assertRedirects(self.client.post(remove_url), reverse('ministry_detail', args=[self.louvor.pk]))
+        self.assertNotIn(self.cris, self.louvor.members.all())
+
+    def test_add_member_rejects_invalid_choice_and_get(self):
+        add_url = reverse('ministry_member_add', args=[self.louvor.pk])
+        self.client.post(add_url, {'member_id': ''})
+        self.client.post(add_url, {'member_id': '99999'})
+        self.assertEqual(self.louvor.members.count(), 2)
+        self.assertEqual(self.client.get(add_url).status_code, 405)
+        self.assertEqual(self.client.get(reverse('ministry_member_remove', args=[self.louvor.pk, self.ana.pk])).status_code, 405)
+
+    def test_detail_actions_require_panel_access(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('ministry_detail', args=[self.louvor.pk])).status_code, 302)
+        self.assertEqual(self.client.post(reverse('ministry_member_add', args=[self.louvor.pk]), {'member_id': self.cris.pk}).status_code, 302)
+        self.assertNotIn(self.cris, self.louvor.members.all())
+        self.client.login(username='staff3', password='test-pass')
+        self.assertEqual(self.client.get(reverse('ministry_detail', args=[99999])).status_code, 404)
+
+    def test_global_search_opens_ministry_detail(self):
+        response = self.client.get(reverse('admin_search'), {'q': 'Louv'})
+        self.assertContains(response, reverse('ministry_detail', args=[self.louvor.pk]))

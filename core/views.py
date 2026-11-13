@@ -409,7 +409,7 @@ def admin_search(request):
             ('Pessoas', Member.objects.filter(Q(name__icontains=query) | Q(email__icontains=query) | Q(phone__icontains=query))[:8],
              lambda m: (m.name, m.get_status_display(), reverse('member_detail', args=[m.pk]))),
             ('Ministérios', Ministry.objects.filter(Q(name__icontains=query) | Q(leader_name__icontains=query))[:8],
-             lambda m: (m.name, m.leader_name, reverse('ministry_edit', args=[m.pk]))),
+             lambda m: (m.name, m.leader_name, reverse('ministry_detail', args=[m.pk]))),
             ('Eventos', Event.objects.filter(Q(title__icontains=query) | Q(location__icontains=query))[:8],
              lambda e: (e.title, timezone.localtime(e.starts_at).strftime('%d/%m/%Y %H:%M'), reverse('event_edit', args=[e.pk]))),
             ('Cursos', Course.objects.filter(Q(title__icontains=query) | Q(instructor__icontains=query))[:8],
@@ -527,6 +527,12 @@ def member_form(request, pk=None):
     })
 
 
+MINISTRY_TAB_LABELS = {
+    Ministry.Status.ACTIVE: 'Ativos',
+    Ministry.Status.RECRUITING: 'Precisam de voluntários',
+}
+
+
 @staff_required
 def ministries(request):
     search = request.GET.get('q', '').strip()
@@ -538,16 +544,70 @@ def ministries(request):
         )
     if selected_status:
         ministries_query = ministries_query.filter(status=selected_status)
+
+    def query_for(**overrides):
+        params = {'q': search, 'status': selected_status}
+        params.update(overrides)
+        return urlencode({key: value for key, value in params.items() if value})
+
+    status_counts = dict(Ministry.objects.values_list('status').annotate(total=Count('id')))
+    tabs = [{'value': '', 'label': 'Todos', 'count': sum(status_counts.values()), 'query': query_for(status='')}]
+    for value, _label in Ministry.Status.choices:
+        tabs.append({'value': value, 'label': MINISTRY_TAB_LABELS[value], 'count': status_counts.get(value, 0), 'query': query_for(status=value)})
     return render(request, 'core/ministries.html', {
         'ministries': ministries_query,
         'filtered_count': ministries_query.count(),
-        'active_count': Ministry.objects.filter(status=Ministry.Status.ACTIVE).count(),
-        'recruiting_count': Ministry.objects.filter(status=Ministry.Status.RECRUITING).count(),
-        'member_total': Member.objects.filter(ministries__isnull=False).distinct().count(),
+        'tabs': tabs,
         'search': search,
         'selected_status': selected_status,
-        'status_choices': Ministry.Status.choices,
     })
+
+
+@staff_required
+def ministry_detail(request, pk):
+    ministry = get_object_or_404(Ministry, pk=pk)
+    people = list(ministry.members.select_related('user').order_by('name'))
+    for person in people:
+        person.whatsapp_url = _member_whatsapp(person)
+    total = len(people)
+    counts = {}
+    for person in people:
+        counts[person.status] = counts.get(person.status, 0) + 1
+    breakdown = [
+        {'label': MEMBER_TAB_LABELS[value], 'count': counts[value], 'percent': round(100 * counts[value] / total)}
+        for value, _label in Member.Status.choices if counts.get(value)
+    ]
+    return render(request, 'core/ministry_detail.html', {
+        'ministry': ministry,
+        'people': people,
+        'total': total,
+        'breakdown': breakdown,
+        'available_members': Member.objects.exclude(ministries=ministry).order_by('name'),
+    })
+
+
+@staff_required
+@require_POST
+def ministry_member_add(request, pk):
+    ministry = get_object_or_404(Ministry, pk=pk)
+    member_id = request.POST.get('member_id', '')
+    member = Member.objects.filter(pk=member_id).first() if member_id.isdigit() else None
+    if member is None:
+        messages.error(request, 'Escolha uma pessoa da lista para adicionar.')
+    else:
+        ministry.members.add(member)
+        messages.success(request, f'{member.name} agora faz parte de {ministry.name}.')
+    return redirect('ministry_detail', pk=ministry.pk)
+
+
+@staff_required
+@require_POST
+def ministry_member_remove(request, pk, member_pk):
+    ministry = get_object_or_404(Ministry, pk=pk)
+    member = get_object_or_404(Member, pk=member_pk)
+    ministry.members.remove(member)
+    messages.success(request, f'{member.name} saiu de {ministry.name}.')
+    return redirect('ministry_detail', pk=ministry.pk)
 
 
 @staff_required

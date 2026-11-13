@@ -50,7 +50,7 @@ def build_admin_nav(request):
     if pastor:
         people.append(_item('Candidaturas', 'applications', 'membership_applications',
                             {'membership_applications', 'membership_application_create', 'membership_application_edit'}, reviews))
-    people.append(_item('Ministérios', 'ministries', 'ministries', {'ministries', 'ministry_create', 'ministry_edit'}))
+    people.append(_item('Ministérios', 'ministries', 'ministries', {'ministries', 'ministry_create', 'ministry_edit', 'ministry_detail'}))
 
     teaching = [
         _item('Cursos', 'courses', 'courses', {'courses', 'course_create', 'course_edit', 'course_manage', 'lesson_create', 'lesson_edit'}),
