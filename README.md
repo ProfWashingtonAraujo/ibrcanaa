@@ -87,6 +87,32 @@ O comando `bash build.sh` aplica todas as migrations e cria automaticamente a
 estrutura de tabelas no primeiro deploy. Para preservar dados do banco anterior,
 importe um backup no Neon antes de liberar o novo banco para uso.
 
+## YouTube ao vivo na home
+
+A seção "Transmissões mais recentes" funciona assim:
+
+| Situação | Destaque grande | Pilha lateral |
+|---|---|---|
+| Nada ao vivo | Vídeo fixo da igreja | 3 transmissões mais recentes |
+| Ao vivo | A live, com o selo "Ao vivo agora" | 3 transmissões mais recentes |
+| Live termina | Volta ao vídeo fixo | A live encerrada vira o 1º da pilha |
+
+- **Fontes:** o feed RSS público do canal (lista e datas) e, com chave, a YouTube Data API (`videos.list`), que informa o que está ao vivo e separa transmissões de uploads comuns. Não há mais raspagem de HTML do YouTube.
+- **Atualização:** o resultado fica guardado no banco (tabela `YoutubeSnapshot`) e é renovado no máximo a cada 60 segundos, por quem visitar a página. Se o YouTube falhar, vale o último resultado bom; o estado "ao vivo" é descartado se esse resultado tiver mais de 10 minutos. Com a página aberta, um script consulta `/videos/youtube/` a cada 60 s e troca o destaque quando a live começa ou termina, sem interromper quem já apertou play.
+- **Vídeo fixo:** edite em **Conteúdo > Nossa igreja** (URL e título). Em branco, o destaque passa a ser a transmissão mais recente.
+
+**Variáveis de ambiente** (Vercel e Render):
+
+- `YOUTUBE_API_KEY` (opcional): sem ela o site funciona, mas sem o destaque ao vivo, e a pilha pode incluir vídeos que não são transmissões.
+- `YOUTUBE_CHANNEL_ID` (opcional): padrão `UCnJeIwpnusCcbJa9nAInb8Q`, o canal da igreja.
+
+**Como criar a chave** (gratuita; a cota é de 10.000 unidades por dia e este uso gasta no máximo 1.440):
+
+1. No [Google Cloud Console](https://console.cloud.google.com/), crie um projeto.
+2. Em "APIs e serviços > Biblioteca", ative **YouTube Data API v3**.
+3. Em "Credenciais", crie uma **chave de API** e restrinja-a à YouTube Data API v3.
+4. Defina o valor em `YOUTUBE_API_KEY` na Vercel (Production e Preview) e no Render. Nunca coloque a chave no repositório nem em arquivos públicos.
+
 ## Mídia de imagens
 
 Os arquivos enviados no perfil do usuário usam `ImageField`.
