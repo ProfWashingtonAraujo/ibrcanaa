@@ -6,21 +6,29 @@
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-    <nav><a href="#nossa-igreja">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#livraria">Publicações</a><a href="#playlist">Playlist</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a></nav>
+    <nav id="public-menu" aria-label="Principal"><a href="#nossa-igreja">Nossa igreja</a><a href="#ministerios">Ministérios</a><a href="#livraria">Publicações</a><a href="#playlist">Playlist</a><a href="#mensagens">Mensagens</a><a href="#agenda">Agenda</a><a href="#contato">Contato</a><a class="button button-gold nav-cta" href="{% url 'login' %}">Área de membros</a></nav>
   <a class="button button-gold" href="{% url 'login' %}">Área de membros</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="public-menu" aria-label="Abrir menu"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
 </header>
 <main>
-  <section class="hero" id="inicio">
-    <div class="hero-glow" aria-hidden="true"></div>
-    <div class="hero-copy hero-doctrine reveal">
-      <span class="eyebrow gold">Doutrina, comunhão e serviço</span>
-      <h1>Uma igreja fundamentada nas Escrituras <em>e centrada em Cristo.</em></h1>
+  <section class="hero hero-board" id="inicio">
+    <img class="hero-photo" src="{% static 'frente_igreja.png' %}" alt="Fachada da Igreja Batista Regular Canaã" fetchpriority="high" width="1280" height="720">
+    <div class="hero-copy">
+      <h1>Uma igreja fundamentada nas Escrituras e centrada em Cristo.</h1>
       <p>Ensino fiel da Palavra de Deus, cuidado pastoral e oportunidades para crescer, servir e proclamar o Evangelho.</p>
-      <div class="hero-actions"><a class="button button-gold" href="#contato">Planejar minha visita</a><a class="button button-outline-light" href="#agenda">Ver próximos eventos</a></div>
-      <div class="hero-proof"><strong>Há um lugar para você aqui.</strong><span>Cultos, ministérios e acompanhamento para toda a família.</span></div>
+      <div class="hero-actions"><a class="button button-gold" href="#visita">Planejar minha visita</a><a class="button button-outline-light" href="#agenda">Ver próximos eventos</a></div>
+      <p class="hero-address">R. Delmiro Gouvêia, 1074, Salesianos, Juazeiro do Norte. <a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Como chegar</a></p>
     </div>
-    <div class="hero-visual church-front reveal reveal-delay"><img src="{% static 'frente_igreja.png' %}" alt="Fachada da Igreja Batista Regular Canaã"><div class="hero-orbit" aria-hidden="true"></div><div class="hero-card"><small>Próximo encontro</small>{% if next_occurrence %}<strong>{{ next_occurrence.event.title }}</strong><span>{{ next_occurrence.start_time|date:'l, d \d\e F · H:i' }} · {{ next_occurrence.event.church_event.location }}</span>{% else %}<strong>Em breve</strong><span>Acompanhe nossa agenda.</span>{% endif %}</div></div>
-    <a class="scroll-cue" href="#nossa-igreja"><span>Descubra</span><i></i></a>
+    <aside class="horarios" aria-labelledby="horarios-title">
+      <div class="horarios-head">
+        <h2 id="horarios-title">Horários</h2>
+        <a class="horarios-live" href="#mensagens" data-live-badge{% if not youtube_live %} hidden{% endif %}>Ao vivo agora</a>
+      </div>
+      <ol class="horarios-list">
+        {% for item in service_schedule %}<li{% if item.is_today %} class="is-today"{% endif %} style="--i:{{ forloop.counter0 }}"><span class="horarios-day">{{ item.short }}</span><span class="horarios-name">{{ item.name }}{% if item.is_today %} <span class="horarios-today">Hoje</span>{% endif %}</span><span class="horarios-time">{{ item.time }}</span></li>{% endfor %}
+      </ol>
+      <p class="horarios-next">{% if next_occurrence %}Próximo na agenda: {{ next_occurrence.event.title }}, {{ next_occurrence.start_time|date:'j \d\e F' }}.{% else %}Acompanhe a agenda para os próximos encontros.{% endif %}</p>
+    </aside>
   </section>
   <section class="public-section split-section" id="nossa-igreja">
     <div class="reveal"><span class="eyebrow">{{ church_about_page.eyebrow }}</span><h2>{{ church_about_page.heading }}</h2><p class="section-lead">{{ church_about_page.intro }}</p><div class="hero-actions"><a class="button button-ghost" href="{% url 'church_history' %}">Ver histórico</a></div></div>
@@ -100,7 +108,7 @@
   <dialog id="public-event-details" class="event-dialog public-event-dialog"><button type="button" class="dialog-close" aria-label="Fechar">×</button><span class="tag" data-event-kind></span><h2 data-event-title></h2><div class="public-dialog-meta"><span data-event-date></span><span data-event-location></span></div><p data-event-description></p><a class="button button-primary" href="#contato" data-dialog-contact>Quero participar</a></dialog>
   <section class="visit-section" id="visita">
     <div class="church-map reveal" id="church-map" role="region" aria-label="Mapa da Igreja Batista Regular Canaã"><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Abrir localização no Google Maps</a></div>
-    <div class="visit-details reveal"><span class="eyebrow gold">Planeje sua visita</span><h2>Esperamos você na Canaã.</h2><div class="visit-address"><small>ENDEREÇO</small><address>R. Delmiro Gouvêia, 1074<br>Salesianos, Juazeiro do Norte - CE<br>63050-216, Brasil</address><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Como chegar <span aria-hidden="true">↗</span></a></div><div class="service-times"><h3>Horários dos encontros</h3><dl><div><dt>Quarta-feira</dt><dd>Culto de oração · 19h</dd></div><div><dt>Sexta-feira</dt><dd>EBEC · 19h</dd></div><div><dt>Sábado</dt><dd>Mocidade · 19h</dd></div><div><dt>Domingo</dt><dd>EBD · 9h<br>Culto · 18h</dd></div></dl></div></div>
+    <div class="visit-details reveal"><span class="eyebrow gold">Planeje sua visita</span><h2>Esperamos você na Canaã.</h2><div class="visit-address"><small>ENDEREÇO</small><address>R. Delmiro Gouvêia, 1074<br>Salesianos, Juazeiro do Norte - CE<br>63050-216, Brasil</address><a href="https://www.google.com/maps/dir/?api=1&destination=-7.2132769,-39.32141" target="_blank" rel="noopener">Como chegar <span aria-hidden="true">↗</span></a></div><div class="service-times"><h3>Horários dos encontros</h3><dl>{% regroup service_schedule by day as days %}{% for day in days %}<div><dt>{{ day.grouper }}</dt><dd>{% for item in day.list %}{{ item.name }}, {{ item.time }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</dd></div>{% endfor %}</dl></div></div>
   </section>
   <section class="contact-section" id="contato">
     <div class="contact-copy reveal"><span class="eyebrow gold">Vamos conversar</span><h2>Sua primeira visita começa aqui.</h2><p>Conte um pouco sobre você. Nossa equipe responderá com atenção e ajudará em tudo que precisar.</p><div class="contact-meta"><span><small>ENDEREÇO</small>R. Delmiro Gouvêia, 1074 · Salesianos</span><span><small>CULTOS</small>Quarta, 19h · Domingo, 9h e 18h</span></div></div>
@@ -110,6 +118,7 @@
 <footer class="public-footer"><a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt=""><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><span class="footer-credits"><span>© {% now 'Y' %} IBR Canaã. Uma comunidade para pertencer.</span><small>Desenvolvimento e criação por <a href="https://profwashingtonaraujo.github.io/carcara/" target="_blank" rel="noopener">Carcará Tech</a></small></span><a href="{% url 'login' %}">Área restrita</a></footer>
 {% endblock %}
 {% block extra_scripts %}
+<script defer src="{% static 'js/public-nav.js' %}"></script>
 <script defer src="{% static 'js/home-live.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {

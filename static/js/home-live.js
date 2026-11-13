@@ -108,6 +108,8 @@
     if (!section || !root.fetch) return;
 
     function apply(payload) {
+      var badge = document.querySelector('[data-live-badge]');
+      if (badge) badge.hidden = !(payload && payload.live);
       var current = readCurrent(section);
       if (!current) return;
       var next = nextFeaturedState(current, payload);

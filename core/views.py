@@ -49,6 +49,17 @@ DEFAULT_EVENT_COLOR = '#68758d'
 YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
 
 
+# Programação semanal exibida na tábua de horários e na seção de visita.
+# `weekday` segue date.weekday(): segunda = 0 ... domingo = 6.
+SERVICE_SCHEDULE = [
+    {'weekday': 6, 'day': 'Domingo', 'short': 'Dom', 'name': 'EBD', 'time': '9h'},
+    {'weekday': 6, 'day': 'Domingo', 'short': 'Dom', 'name': 'Culto', 'time': '18h'},
+    {'weekday': 2, 'day': 'Quarta-feira', 'short': 'Qua', 'name': 'Culto de oração', 'time': '19h'},
+    {'weekday': 4, 'day': 'Sexta-feira', 'short': 'Sex', 'name': 'EBEC', 'time': '19h'},
+    {'weekday': 5, 'day': 'Sábado', 'short': 'Sáb', 'name': 'Mocidade', 'time': '19h'},
+]
+
+
 PUBLIC_HOME_FALLBACKS = {
     'church_about_page': {
         'eyebrow': 'Nossa igreja',
@@ -148,6 +159,7 @@ def home(request):
         public_ministries = []
         pastor_books = []
     youtube = home_videos(_pinned_video())
+    today = timezone.localdate()
     return render(request, 'core/home.html', {
         'form': form,
         'next_occurrence': next_occurrence,
@@ -159,6 +171,9 @@ def home(request):
         'youtube_videos': youtube['videos'],
         'youtube_live': youtube['live'],
         'youtube_channel_url': YOUTUBE_CHANNEL_URL,
+        'service_schedule': [
+            {**item, 'is_today': item['weekday'] == today.weekday()} for item in SERVICE_SCHEDULE
+        ],
     })
 
 

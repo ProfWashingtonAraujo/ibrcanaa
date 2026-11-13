@@ -214,3 +214,53 @@
 .video-featured small.is-live{color:#d92d20;font-weight:800;letter-spacing:.14em;animation:live-pulse 1.6s ease-in-out infinite}
 @keyframes live-pulse{50%{opacity:.55}}
 @media(prefers-reduced-motion:reduce){.video-featured small.is-live{animation:none}}
+
+/* Hero com tábua de horários (2026-11-13). Escopo: .hero-board. */
+.landing-page .hero.hero-board{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);align-items:end;gap:48px;max-width:none;min-height:min(100svh,820px);margin:0;padding:132px max(24px,calc((100vw - 1240px)/2)) 56px;background:var(--ink)}
+.hero-board::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,20,47,.94) 0%,rgba(7,20,47,.8) 45%,rgba(7,20,47,.4) 100%)}
+.hero-board .hero-photo{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:center 46%}
+.hero-board .hero-copy h1{max-width:17em;margin:0 0 20px;font-family:'Literata',Georgia,serif;font-weight:600;font-size:clamp(36px,5vw,66px);line-height:1.1;letter-spacing:-.015em}
+.hero-board .hero-copy>p{max-width:52ch;margin:0;font-size:18px;line-height:1.65;color:#d5dce8}
+.hero-board .hero-actions{margin-top:30px;flex-wrap:wrap}
+.hero-board .hero-copy>.hero-address{margin-top:28px;font-size:15px;color:#c4cede}
+.hero-board .hero-address a{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
+.hero-board a:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:4px}
+.horarios{padding:20px 22px 18px;border:1px solid rgba(227,167,47,.4);border-radius:6px;background:#12274f;box-shadow:0 24px 60px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
+.horarios-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:30px;margin-bottom:6px}
+.horarios-head h2{margin:0;font-family:'Literata',Georgia,serif;font-size:22px;font-weight:600;color:#e3a72f}
+.horarios-live{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:#e3a72f;color:#12274f;font-size:13px;font-weight:700}
+.horarios-live::before{content:"";width:8px;height:8px;border-radius:50%;background:#a8402f}
+.horarios-live[hidden]{display:none}
+.horarios-list{margin:0;padding:0;list-style:none}
+.horarios-list li{display:grid;grid-template-columns:3rem minmax(0,1fr) auto;align-items:baseline;gap:10px;padding:11px 8px;border-top:1px dashed rgba(227,167,47,.28);color:#f1f2ec;font-size:17px;animation:horarios-acender .5s both;animation-delay:calc(var(--i)*110ms + 250ms)}
+.horarios-day{color:#e3a72f;font-weight:700}
+.horarios-time{color:#e3a72f;font-weight:700}
+.horarios-list li.is-today{background:rgba(227,167,47,.14);box-shadow:inset 3px 0 0 #e3a72f}
+.horarios-today{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#e3a72f;color:#12274f;font-size:12px;font-weight:700;vertical-align:1px}
+.horarios-next{margin:12px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);font-size:14px;line-height:1.5;color:#c4cede}
+@keyframes horarios-acender{from{opacity:.2}to{opacity:1}}
+@media(max-width:900px){.landing-page .hero.hero-board{grid-template-columns:1fr;align-items:start;gap:32px;min-height:0;padding:112px 20px 40px}.hero-board::before{background:linear-gradient(180deg,rgba(7,20,47,.9),rgba(7,20,47,.82))}.hero-board .hero-copy>p{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.horarios-list li{animation:none}}
+.hero-board .hero-copy h1{text-wrap:balance}
+.hero-board .hero-address a{white-space:nowrap}
+
+/* Menu das páginas públicas em telas estreitas */
+.nav-toggle{display:none;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.28);border-radius:12px;background:transparent;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.nav-toggle span{display:block;width:20px;height:2px;border-radius:2px;background:#fff;transition:transform .2s,opacity .2s}
+.nav-toggle:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.public-nav nav .nav-cta{display:none}
+@media(max-width:1100px){
+.nav-toggle{display:inline-flex}
+.public-nav>.button{margin-left:auto;margin-right:12px}
+.public-nav.menu-open{background:#07142f}
+.public-nav.menu-open>.button{display:none}
+.public-nav.menu-open nav{display:flex;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;max-height:calc(100svh - 76px);overflow-y:auto;padding:6px 20px 24px;background:#07142f;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 24px 40px rgba(0,0,0,.3)}
+.public-nav.menu-open nav a:not(.button){display:flex;align-items:center;min-height:52px;padding:0 4px;border-bottom:1px solid rgba(255,255,255,.08);font-size:17px;color:#f1f2ec}
+.public-nav.menu-open nav a:not(.button):after{display:none}
+.public-nav.menu-open nav .nav-cta{display:inline-flex;margin-top:18px;min-height:48px}
+.public-nav.menu-open .nav-toggle span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.public-nav.menu-open .nav-toggle span:nth-child(2){opacity:0}
+.public-nav.menu-open .nav-toggle span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+}
+@media(max-width:700px){.nav-toggle{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.nav-toggle span{transition:none}}

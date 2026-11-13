@@ -35,7 +35,7 @@ class PublicViewsTests(TestCase):
     def test_home_loads(self):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Doutrina, comunhão e serviço')
+        self.assertContains(response, 'Horários')
         self.assertContains(response, 'Uma igreja fundamentada nas Escrituras')
         self.assertContains(response, 'Ensino fiel da Palavra de Deus')
         self.assertContains(response, 'Conheça a identidade da Canaã.')
@@ -138,13 +138,38 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'id="public-calendar"')
         self.assertContains(response, reverse('public_event_feed'))
 
+    def test_home_service_board_lists_schedule_and_marks_today(self):
+        from datetime import datetime
+        from unittest import mock
+        from django.utils import timezone
+
+        sunday = timezone.make_aware(datetime(2026, 11, 15, 10, 0))
+        with mock.patch('core.views.timezone.localdate', return_value=sunday.date()):
+            response = self.client.get(reverse('home'))
+        self.assertContains(response, 'class="horarios"')
+        self.assertContains(response, '<span class="horarios-name">EBD <span class="horarios-today">Hoje</span>')
+        self.assertContains(response, '<span class="horarios-name">Culto <span class="horarios-today">Hoje</span>')
+        self.assertContains(response, '<span class="horarios-name">EBEC</span>')
+
+    def test_public_pages_have_mobile_menu(self):
+        for name in ('home', 'bookstore', 'church_history'):
+            response = self.client.get(reverse(name))
+            self.assertContains(response, 'class="nav-toggle"', msg_prefix=name)
+            self.assertContains(response, 'aria-controls="public-menu"', msg_prefix=name)
+            self.assertContains(response, 'id="public-menu"', msg_prefix=name)
+            self.assertContains(response, 'js/public-nav.js', msg_prefix=name)
+
+    def test_home_service_board_hides_live_badge_when_offline(self):
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'data-live-badge hidden')
+
     def test_home_shows_church_location_and_service_times(self):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'R. Delmiro Gouvêia, 1074')
-        self.assertContains(response, 'Culto de oração · 19h')
-        self.assertContains(response, 'EBEC · 19h')
-        self.assertContains(response, 'Mocidade · 19h')
-        self.assertContains(response, 'EBD · 9h')
+        self.assertContains(response, 'Culto de oração, 19h')
+        self.assertContains(response, 'EBEC, 19h')
+        self.assertContains(response, 'Mocidade, 19h')
+        self.assertContains(response, 'EBD, 9h')
         self.assertContains(response, 'churchLocation = [-7.2132769, -39.32141]')
 
     def test_home_reflects_registered_ministries(self):

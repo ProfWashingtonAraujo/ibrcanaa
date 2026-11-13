@@ -5,8 +5,9 @@
 {% block content %}
 <header class="public-nav" id="public-nav">
   <a class="brand" href="{% url 'home' %}"><img src="{% static 'logo.png' %}" alt="IBR Canaã"><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a>
-  <nav><a href="{% url 'home' %}#nossa-igreja">Nossa igreja</a><a href="{% url 'home' %}#livraria">Publicações</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a></nav>
+  <nav id="public-menu" aria-label="Principal"><a href="{% url 'home' %}#nossa-igreja">Nossa igreja</a><a href="{% url 'home' %}#livraria">Publicações</a><a href="{% url 'home' %}#mensagens">Mensagens</a><a href="{% url 'home' %}#contato">Contato</a><a class="button button-gold nav-cta" href="{% url 'home' %}">Voltar à página inicial</a></nav>
   <a class="button button-gold" href="{% url 'home' %}">Voltar à página inicial</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="public-menu" aria-label="Abrir menu"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button>
 </header>
 <main>
   <section class="bookstore-hero">
@@ -57,6 +58,7 @@
 </main>
 {% endblock %}
 {% block extra_scripts %}
+<script defer src="{% static 'js/public-nav.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const nav = document.getElementById('public-nav');
