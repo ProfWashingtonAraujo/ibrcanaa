@@ -43,6 +43,11 @@ elif SECRET_KEY in _INSECURE_SECRET_KEYS or SECRET_KEY.startswith('django-insecu
         'DJANGO_SECRET_KEY must be set to a unique secret value when DJANGO_DEBUG is not True.'
     )
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+
+# YouTube: o feed RSS do canal dispensa chave; a chave da API (opcional) habilita o
+# destaque ao vivo e o filtro de transmissões. Só é usada no servidor.
+YOUTUBE_CHANNEL_ID = (os.environ.get('YOUTUBE_CHANNEL_ID') or '').strip() or 'UCnJeIwpnusCcbJa9nAInb8Q'
+YOUTUBE_API_KEY = (os.environ.get('YOUTUBE_API_KEY') or '').strip()
 VERCEL_URL = os.environ.get('VERCEL_URL')
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
 VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL')
