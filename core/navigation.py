@@ -45,7 +45,7 @@ def build_admin_nav(request):
 
     people = [
         _item('Visão geral', 'overview', 'dashboard', {'dashboard'}, contacts),
-        _item('Membros', 'members', 'members', {'members', 'member_create', 'member_edit'}),
+        _item('Membros', 'members', 'members', {'members', 'member_create', 'member_edit', 'member_detail'}),
     ]
     if pastor:
         people.append(_item('Candidaturas', 'applications', 'membership_applications',

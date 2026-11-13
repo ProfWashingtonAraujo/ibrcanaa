@@ -353,3 +353,60 @@ body.admin-body.nav-open .sidebar{transform:none;visibility:visible;transition:t
 }
 @media(prefers-reduced-motion:reduce){body.admin-body .sidebar{transition:none}.skip-link{transition:none}}
 .week-panel .panel-heading>a{white-space:nowrap}
+
+/* Membros: abas, cartões e ficha (2026-11-13) */
+.people-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.people-count{margin:0;font-size:16px;color:#3d4b63}
+.people-count strong{font-size:22px;color:var(--ink)}
+.people-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.people-tabs a{flex:0 0 auto;padding:12px 14px;margin-bottom:-1px;border-bottom:3px solid transparent;color:#3d4b63;font-size:15px;font-weight:600;white-space:nowrap}
+.people-tabs a span{display:inline-block;min-width:22px;margin-left:4px;padding:1px 7px;border-radius:999px;background:#eaeef5;color:#3d4b63;font-size:12px;font-weight:700;text-align:center}
+.people-tabs a:hover{color:var(--ink)}
+.people-tabs a.active{border-bottom-color:#e3a72f;color:var(--ink);font-weight:700}
+.people-filters{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:18px}
+.people-search{position:relative;display:flex;align-items:center;flex:1 1 260px;min-width:0}
+.people-search svg{position:absolute;left:14px;width:18px;height:18px;fill:#5a6270;pointer-events:none}
+.people-search input{width:100%;min-height:44px;padding:0 14px 0 40px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink)}
+.people-filters select{min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink)}
+.people-clear{color:var(--blue);font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.people-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.people-card:hover{border-color:#c5d3ee;box-shadow:0 8px 24px rgba(25,50,100,.08)}
+.people-top{display:flex;align-items:center;gap:14px}
+.people-avatar{display:grid;place-items:center;flex:0 0 52px;width:52px;height:52px;border-radius:50%;background:#f5e4b9;color:#12274f;font:700 20px 'Manrope',sans-serif;object-fit:cover}
+.people-id{min-width:0}
+.people-id h2{margin:0 0 6px;font-size:18px;line-height:1.25}
+.people-link::after{content:"";position:absolute;inset:0;border-radius:16px}
+.people-link:hover{text-decoration:underline;text-underline-offset:3px}
+.people-card .tag{padding:4px 10px;font-size:12px}
+.people-ministries,.people-since{margin:0;font-size:14px;line-height:1.45;color:#3d4b63}
+.people-since{color:var(--muted)}
+.people-actions{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.people-actions .button{padding:8px 14px;font-size:14px}
+.people-pagination{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.people-pagination a{color:var(--blue);font-weight:700;margin-left:14px}
+.crumb{margin:0 0 12px;font-size:15px}
+.crumb a{color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.person-head{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.person-who{display:flex;align-items:center;gap:18px;min-width:0}
+.person-avatar{flex-basis:84px;width:84px;height:84px;font-size:32px}
+.person-who h2{margin:0 0 6px;font-size:28px}
+.person-who p{margin:4px 0 0}
+.person-access{font-size:14px;color:var(--muted)}
+.person-actions{display:flex;flex-wrap:wrap;gap:8px}
+.person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.person-grid h2{margin:0;font-size:19px}
+.person-facts{margin:12px 0 0}
+.person-facts>div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.person-facts>div:first-child{border-top:0}
+.person-facts dt{font-size:14px;color:var(--muted);font-weight:600}
+.person-facts dd{margin:0;font-size:15px;overflow-wrap:anywhere}
+.person-facts a,.person-note a{color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.person-chip{display:inline-block;margin:0 6px 6px 0;padding:4px 10px;border-radius:999px;background:#eaf0fc;color:var(--blue);font-size:13px;font-weight:700}
+.person-note{margin:12px 0 0;font-size:14px;color:var(--muted)}
+.person-head+.stat-row{margin-top:18px}
+@media(max-width:900px){.person-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.people-head{align-items:flex-start}.person-facts>div{grid-template-columns:1fr;gap:2px}.person-who h2{font-size:23px}.person-actions{width:100%}}
+.people-tabs{overflow-y:hidden;scrollbar-width:none}
+.people-tabs::-webkit-scrollbar{display:none}
+.people-card .tag,.person-head .tag{padding:4px 10px;font-size:13px;letter-spacing:0;text-transform:none}

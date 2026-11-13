@@ -30,6 +30,7 @@ urlpatterns = [
     path('admin/contatos/<int:pk>/atendido/', views.contact_mark_done, name='contact_mark_done'),
     path('admin/membros/', views.members, name='members'),
     path('admin/membros/novo/', views.member_form, name='member_create'),
+    path('admin/membros/<int:pk>/', views.member_detail, name='member_detail'),
     path('admin/membros/<int:pk>/editar/', views.member_form, name='member_edit'),
     path('admin/conteudo/', views.institutional_content, name='institutional_content'),
     path('admin/conteudo/nossa-igreja/', views.church_about_edit, name='church_about_edit'),

@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from urllib.parse import urlencode
 from datetime import timedelta
 from io import BytesIO
 
@@ -406,7 +407,7 @@ def admin_search(request):
     if len(query) >= 2:
         groups = [
             ('Pessoas', Member.objects.filter(Q(name__icontains=query) | Q(email__icontains=query) | Q(phone__icontains=query))[:8],
-             lambda m: (m.name, m.get_status_display(), reverse('member_edit', args=[m.pk]))),
+             lambda m: (m.name, m.get_status_display(), reverse('member_detail', args=[m.pk]))),
             ('Ministérios', Ministry.objects.filter(Q(name__icontains=query) | Q(leader_name__icontains=query))[:8],
              lambda m: (m.name, m.leader_name, reverse('ministry_edit', args=[m.pk]))),
             ('Eventos', Event.objects.filter(Q(title__icontains=query) | Q(location__icontains=query))[:8],
@@ -428,6 +429,24 @@ def admin_search(request):
     })
 
 
+MEMBER_TAB_LABELS = {
+    Member.Status.ACTIVE: 'Ativos',
+    Member.Status.LEADERSHIP: 'Liderança',
+    Member.Status.NEW: 'Novos',
+    Member.Status.VISITOR: 'Visitantes',
+    Member.Status.AWAY: 'Afastados',
+}
+
+
+def _member_whatsapp(member):
+    return _whatsapp_url(member.phone or member.home_phone or member.work_phone)
+
+
+def _age_on(birth_date, today=None):
+    today = today or timezone.localdate()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+
 @staff_required
 def members(request):
     context = dashboard_context(request.user)
@@ -445,17 +464,43 @@ def members(request):
     if selected_ministry.isdigit():
         members_query = members_query.filter(ministries__id=selected_ministry)
 
+    def query_for(**overrides):
+        params = {'q': search, 'status': selected_status, 'ministry': selected_ministry}
+        params.update(overrides)
+        return urlencode({key: value for key, value in params.items() if value})
+
+    status_counts = dict(Member.objects.values_list('status').annotate(total=Count('id')))
+    tabs = [{'value': '', 'label': 'Todos', 'count': sum(status_counts.values()), 'query': query_for(status='')}]
+    for value, _label in Member.Status.choices:
+        tabs.append({'value': value, 'label': MEMBER_TAB_LABELS[value], 'count': status_counts.get(value, 0), 'query': query_for(status=value)})
+
+    page = Paginator(members_query, 12).get_page(request.GET.get('page'))
+    for member in page:
+        member.whatsapp_url = _member_whatsapp(member)
+
     context.update({
-        'members': Paginator(members_query, 12).get_page(request.GET.get('page')),
+        'members': page,
         'filtered_count': members_query.count(),
         'search': search,
         'selected_status': selected_status,
         'selected_ministry': selected_ministry,
         'status_choices': Member.Status.choices,
         'ministries': Ministry.objects.all(),
+        'tabs': tabs,
+        'page_query': query_for(),
         'baptized_count': Member.objects.filter(Q(baptism_date__isnull=False) | Q(baptized=True)).count(),
     })
     return render(request, 'core/members.html', context)
+
+
+@staff_required
+def member_detail(request, pk):
+    member = get_object_or_404(Member.objects.prefetch_related('ministries').select_related('user'), pk=pk)
+    return render(request, 'core/member_detail.html', {
+        'member': member,
+        'whatsapp_url': _member_whatsapp(member),
+        'age': _age_on(member.birth_date) if member.birth_date else None,
+    })
 
 
 @staff_required

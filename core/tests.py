@@ -1667,3 +1667,83 @@ class UpcomingBirthdaysTests(TestCase):
         self.assertEqual(found[1]['age'], 27)
         feb = upcoming_birthdays(today=date(2027, 2, 27), days=3)
         self.assertEqual([item['member'].name for item in feb], ['Bissexto'])
+
+
+@WITHOUT_AXES
+class MembersDirectoryTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('staff2', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.staff, role=AccessProfile.Role.BOARD)
+        self.ministry = Ministry.objects.create(name='Louvor', leader_name='Líder')
+        self.ana = Member.objects.create(
+            name='Ana Oliveira', email='ana@example.com', phone='(88) 99999-1234',
+            status=Member.Status.LEADERSHIP, birth_date=date(1990, 5, 20),
+            church_entry_date=date(2020, 1, 10), baptism_date=date(2019, 6, 2),
+        )
+        self.ana.ministries.add(self.ministry)
+        Member.objects.create(name='Bruno Lima', email='bruno@example.com', status=Member.Status.VISITOR)
+        self.client.login(username='staff2', password='test-pass')
+
+    def test_tabs_show_counts_and_filter_by_status(self):
+        response = self.client.get(reverse('members'))
+        tabs = {tab['label']: tab['count'] for tab in response.context['tabs']}
+        self.assertEqual(tabs['Todos'], 2)
+        self.assertEqual(tabs['Liderança'], 1)
+        self.assertEqual(tabs['Visitantes'], 1)
+        self.assertEqual(tabs['Afastados'], 0)
+        filtered = self.client.get(reverse('members'), {'status': Member.Status.VISITOR})
+        self.assertContains(filtered, 'Bruno Lima')
+        self.assertNotContains(filtered, 'Ana Oliveira')
+        self.assertContains(filtered, 'aria-current="page"')
+
+    def test_singular_count_is_not_pluralized(self):
+        response = self.client.get(reverse('members'), {'q': 'Ana'})
+        self.assertContains(response, '<strong>1</strong> pessoa encontrada')
+        self.assertNotContains(response, '1 pessoas')
+
+    def test_cards_link_to_profile_and_offer_whatsapp_only_with_phone(self):
+        response = self.client.get(reverse('members'))
+        self.assertContains(response, reverse('member_detail', args=[self.ana.pk]))
+        self.assertContains(response, 'https://wa.me/5588999991234', count=1)
+        self.assertContains(response, 'mailto:bruno@example.com')
+
+    def test_pagination_keeps_filters(self):
+        Member.objects.bulk_create([
+            Member(name=f'Visitante {i:02}', email=f'v{i}@example.com', status=Member.Status.VISITOR) for i in range(13)
+        ])
+        response = self.client.get(reverse('members'), {'status': Member.Status.VISITOR})
+        self.assertContains(response, 'status=visitor&page=2')
+
+    def test_member_profile_shows_contact_journey_and_ministries(self):
+        response = self.client.get(reverse('member_detail', args=[self.ana.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ana Oliveira')
+        self.assertContains(response, 'Louvor')
+        self.assertContains(response, 'ana@example.com')
+        self.assertContains(response, '02/06/2019')
+        self.assertContains(response, reverse('member_edit', args=[self.ana.pk]))
+        self.assertContains(response, 'https://wa.me/5588999991234')
+
+    def test_member_profile_handles_missing_data_and_unknown_id(self):
+        bare = Member.objects.get(name='Bruno Lima')
+        response = self.client.get(reverse('member_detail', args=[bare.pk]))
+        self.assertContains(response, 'Sem ministério')
+        self.assertContains(response, 'Idade não informada')
+        self.assertNotContains(response, 'wa.me')
+        self.assertEqual(self.client.get(reverse('member_detail', args=[99999])).status_code, 404)
+
+    def test_member_profile_requires_panel_access(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('member_detail', args=[self.ana.pk])).status_code, 302)
+        plain = User.objects.create_user('plain', password='test-pass')
+        AccessProfile.objects.create(user=plain, role=AccessProfile.Role.MEMBER)
+        self.client.login(username='plain', password='test-pass')
+        self.assertEqual(self.client.get(reverse('member_detail', args=[self.ana.pk])).status_code, 302)
+
+    def test_global_search_opens_the_profile(self):
+        response = self.client.get(reverse('admin_search'), {'q': 'Oliveira'})
+        self.assertContains(response, reverse('member_detail', args=[self.ana.pk]))
+
+    def test_sidebar_marks_members_active_on_profile(self):
+        response = self.client.get(reverse('member_detail', args=[self.ana.pk]))
+        self.assertContains(response, 'class="side-link active"')
