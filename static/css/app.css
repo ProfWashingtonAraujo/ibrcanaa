@@ -428,3 +428,40 @@ body.admin-body.nav-open .sidebar{transform:none;visibility:visible;transition:t
 .bar-row b{text-align:right}
 .person-actions form{margin:0}
 @media(max-width:900px){.ministry-layout{grid-template-columns:1fr}}
+
+/* Cabeçalho de ficha com resumo à direita (padrão perfil) */
+.profile-head{padding:24px 28px}
+.profile-top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.profile-sub{margin:8px 0 0;font-size:15px;color:#3d4b63}
+.profile-stats{display:flex;gap:32px;margin:0}
+.profile-stats>div{display:grid;gap:2px;text-align:right}
+.profile-stats dt{font-size:14px;color:var(--muted);font-weight:600}
+.profile-stats dd{margin:0;font:700 28px 'Manrope',sans-serif}
+.profile-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.profile-actions form{margin:0}
+.profile-head .ministry-about{margin-top:16px}
+@media(max-width:700px){.profile-stats{width:100%;justify-content:space-between;gap:12px}.profile-stats>div{text-align:left}.profile-stats dd{font-size:24px}.profile-actions{justify-content:stretch}.profile-actions>*{flex:1}.profile-actions .button{width:100%}}
+
+/* Telas de edição (entity_form) */
+.admin-content .form-panel{max-width:960px;padding:28px;border-radius:16px;box-shadow:0 4px 18px rgba(25,50,100,.05)}
+.admin-content .form-panel .form-label{font-size:14px;color:#3d4b63}
+.admin-content .form-panel .asteriskField{display:inline;margin-left:3px;color:#a72531}
+.admin-content .form-panel .form-control,.admin-content .form-panel .form-select{font-size:16px;padding:12px 14px;border-radius:12px}
+.admin-content .form-panel .form-control:focus,.admin-content .form-panel .form-select:focus{border-color:var(--blue-2);box-shadow:0 0 0 4px rgba(39,82,179,.14);outline:none}
+.admin-content .form-panel .form-text{color:#5a6270;font-size:13px;line-height:1.45}
+.admin-content .form-panel .invalid-feedback{font-size:13px}
+.form-legend{margin:0 0 18px;font-size:14px;color:var(--muted)}
+.form-legend span{color:#a72531;font-weight:700}
+.form-error-summary{margin-bottom:20px;padding:16px 18px;border:1px solid #efc6ca;border-radius:12px}
+.form-error-summary strong{display:block;margin-bottom:6px}
+.form-error-summary ul{margin:0;padding-left:20px;line-height:1.6}
+.form-error-summary a{color:#a72531;text-decoration:underline;text-underline-offset:3px}
+.admin-content .form-panel .form-actions{position:sticky;bottom:0;z-index:5;margin:28px -28px -28px;padding:16px 28px;background:#fff;border-top:1px solid var(--line);border-radius:0 0 16px 16px}
+.admin-content .form-panel .form-actions .button:disabled{opacity:.65;cursor:wait}
+@media(max-width:700px){.admin-content .form-panel{padding:18px}.admin-content .form-panel .form-actions{margin:24px -18px -18px;padding:14px 18px}.admin-content .form-panel .form-actions .button{flex:1}}
+.profile-head{margin-bottom:18px}
+.admin-content .form-panel .form-grid label.form-label{display:block}
+.admin-content .form-panel .form-grid label.form-label>span.asteriskField{display:inline;font-size:inherit}
+.profile-head .tag{padding:4px 10px;font-size:13px;letter-spacing:0;text-transform:none}
+.profile-actions .button{white-space:nowrap}
+@media(max-width:700px){.profile-actions form{flex:0 0 auto}.profile-actions form .button{width:auto}.profile-actions .button-primary{flex:1}}

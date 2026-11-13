@@ -2,24 +2,27 @@
 {% block title %}{{ ministry.name }} | IBR Canaã{% endblock %}{% block section_name %}Ministérios{% endblock %}{% block page_title %}{{ ministry.name }}{% endblock %}
 {% block admin_content %}
 <p class="crumb"><a href="{% url 'ministries' %}">Voltar para Ministérios</a></p>
-<section class="panel person-head">
-  <div class="person-who">
-    <span class="people-avatar person-avatar" aria-hidden="true">{{ ministry.name|first }}</span>
-    <div>
-      <h2>{{ ministry.name }}</h2>
-      <p><span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span></p>
-      <p class="ministry-about">{{ ministry.description|default:'Sem descrição. O texto que você escrever na edição aparece no site.' }}</p>
+<section class="panel profile-head">
+  <div class="profile-top">
+    <div class="person-who">
+      <span class="people-avatar person-avatar" aria-hidden="true">{{ ministry.name|first }}</span>
+      <div>
+        <h2>{{ ministry.name }}</h2>
+        <p><span class="tag tag-{{ ministry.status }}">{{ ministry.get_status_display }}</span></p>
+        <p class="profile-sub">Líder: {{ ministry.leader_name }}. No site aparece como “{% if ministry.status == 'recruiting' %}Quero servir{% else %}Conhecer{% endif %}”.</p>
+      </div>
     </div>
+    <dl class="profile-stats">
+      <div><dt>Participantes</dt><dd>{{ total }}</dd></div>
+      <div><dt>Ativos e liderança</dt><dd>{{ active_total }}</dd></div>
+      <div><dt>Novos e visitantes</dt><dd>{{ newcomers_total }}</dd></div>
+    </dl>
   </div>
-  <div class="person-actions">
-    <a class="button button-primary" href="{% url 'ministry_edit' ministry.pk %}">Editar ministério</a>
+  <p class="ministry-about">{{ ministry.description|default:'Sem descrição. O texto que você escrever na edição aparece no site.' }}</p>
+  <div class="profile-actions">
     <form method="post" action="{% url 'ministry_delete' ministry.pk %}" onsubmit="return confirm('Excluir o ministério {{ ministry.name|escapejs }}? Os membros vinculados ficarão sem ministério.');">{% csrf_token %}<button class="button button-danger" type="submit">Excluir</button></form>
+    <a class="button button-primary" href="{% url 'ministry_edit' ministry.pk %}">Editar ministério</a>
   </div>
-</section>
-<section class="stat-row" aria-label="Resumo do ministério">
-  <div><span>Participantes</span><strong>{{ total }}</strong><small>{% if total %}Pessoas vinculadas{% else %}Ninguém vinculado ainda{% endif %}</small></div>
-  <div><span>Líder</span><strong>{{ ministry.leader_name }}</strong><small>Responsável pela equipe</small></div>
-  <div><span>No site</span><strong>{% if ministry.status == 'recruiting' %}Quero servir{% else %}Conhecer{% endif %}</strong><small>{% if ministry.status == 'recruiting' %}Convida visitantes a servir{% else %}Apresenta o ministério{% endif %}</small></div>
 </section>
 <section class="ministry-layout">
   <article class="panel">
@@ -38,6 +41,12 @@
   </article>
   <div class="ministry-side">
     <article class="panel">
+      <div class="panel-heading"><h2>Quem participa</h2></div>
+      {% if breakdown %}
+      <div class="bars">{% for row in breakdown %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar" role="img" aria-label="{{ row.percent }}% da equipe"><i style="width:{{ row.percent }}%"></i></div><b>{{ row.count }}</b></div>{% endfor %}</div>
+      {% else %}<p class="empty">A distribuição por situação aparece quando houver pessoas na equipe.</p>{% endif %}
+    </article>
+    <article class="panel">
       <div class="panel-heading"><h2>Adicionar pessoa</h2></div>
       {% if available_members %}
       <form class="ministry-add" method="post" action="{% url 'ministry_member_add' ministry.pk %}">{% csrf_token %}
@@ -46,12 +55,6 @@
         <button class="button button-primary" type="submit">Adicionar à equipe</button>
       </form>
       {% else %}<p class="empty">Todos os membros cadastrados já participam. <a href="{% url 'member_create' %}">Cadastrar novo membro</a></p>{% endif %}
-    </article>
-    <article class="panel">
-      <div class="panel-heading"><h2>Quem participa</h2></div>
-      {% if breakdown %}
-      <div class="bars">{% for row in breakdown %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar" role="img" aria-label="{{ row.percent }}% da equipe"><i style="width:{{ row.percent }}%"></i></div><b>{{ row.count }}</b></div>{% endfor %}</div>
-      {% else %}<p class="empty">A distribuição por situação aparece quando houver pessoas na equipe.</p>{% endif %}
     </article>
   </div>
 </section>

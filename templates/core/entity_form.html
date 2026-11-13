@@ -1,6 +1,35 @@
 {% extends 'core/admin_base.html' %}
 {% load crispy_forms_tags %}
 {% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}Cadastro{% endblock %}{% block page_title %}{{ title }}{% endblock %}
-{% block admin_content %}<article class="panel form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% crispy form %}<div class="form-actions"><a class="button button-ghost" href="{% if back_url_arg %}{% url back_url back_url_arg %}{% else %}{% url back_url %}{% endif %}">Cancelar</a><button class="button button-primary" type="submit">Salvar</button></div></form></article>{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{% if back_url_arg %}{% url back_url back_url_arg %}{% else %}{% url back_url %}{% endif %}">Voltar sem salvar</a></p>
+<article class="panel form-panel">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if form.errors %}
+    <div class="form-alert form-error-summary" role="alert" tabindex="-1">
+      <strong>Não foi possível salvar. Corrija {{ form.errors|length }} campo{{ form.errors|length|pluralize }}:</strong>
+      <ul>{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul>
+    </div>
+    {% endif %}
+    <p class="form-legend"><span aria-hidden="true">*</span> Campo obrigatório</p>
+    {% crispy form %}
+    <div class="form-actions"><a class="button button-ghost" href="{% if back_url_arg %}{% url back_url back_url_arg %}{% else %}{% url back_url %}{% endif %}">Cancelar</a><button class="button button-primary" type="submit">Salvar</button></div>
+  </form>
+</article>
+{% endblock %}
 {% block extra_head %}{{ form.media.css }}{% endblock %}
-{% block extra_scripts %}{{ form.media.js }}{% endblock %}
+{% block extra_scripts %}{{ form.media.js }}
+<script>
+(function () {
+  var summary = document.querySelector('.form-error-summary');
+  if (summary) summary.focus();
+  var form = document.querySelector('.form-panel form');
+  var button = form && form.querySelector('button[type="submit"]');
+  if (button) {
+    var label = button.textContent;
+    form.addEventListener('submit', function () { button.disabled = true; button.textContent = 'Salvando…'; });
+    window.addEventListener('pageshow', function () { button.disabled = false; button.textContent = label; });
+  }
+})();
+</script>
+{% endblock %}

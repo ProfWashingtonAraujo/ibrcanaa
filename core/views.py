@@ -581,6 +581,8 @@ def ministry_detail(request, pk):
         'ministry': ministry,
         'people': people,
         'total': total,
+        'active_total': counts.get(Member.Status.ACTIVE, 0) + counts.get(Member.Status.LEADERSHIP, 0),
+        'newcomers_total': counts.get(Member.Status.NEW, 0) + counts.get(Member.Status.VISITOR, 0),
         'breakdown': breakdown,
         'available_members': Member.objects.exclude(ministries=ministry).order_by('name'),
     })

@@ -1783,10 +1783,11 @@ class MinistryDetailTests(TestCase):
         self.assertContains(response, 'https://wa.me/5588999991234')
         self.assertContains(response, 'width:50%')
         self.assertContains(response, 'Conhecer')
+        self.assertEqual((response.context['total'], response.context['active_total'], response.context['newcomers_total']), (2, 1, 1))
         self.assertEqual([m.name for m in response.context['available_members']], ['Cris'])
         kids = self.client.get(reverse('ministry_detail', args=[self.kids.pk]))
         self.assertContains(kids, 'Quero servir')
-        self.assertContains(kids, 'Ninguém vinculado ainda')
+        self.assertContains(kids, 'Nenhuma pessoa neste ministério')
 
     def test_add_and_remove_member(self):
         add_url = reverse('ministry_member_add', args=[self.louvor.pk])
@@ -1816,3 +1817,30 @@ class MinistryDetailTests(TestCase):
     def test_global_search_opens_ministry_detail(self):
         response = self.client.get(reverse('admin_search'), {'q': 'Louv'})
         self.assertContains(response, reverse('ministry_detail', args=[self.louvor.pk]))
+
+
+@WITHOUT_AXES
+class EntityFormTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('staff4', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.staff, role=AccessProfile.Role.BOARD)
+        self.client.login(username='staff4', password='test-pass')
+
+    def test_form_shows_back_link_required_legend_and_sticky_actions(self):
+        response = self.client.get(reverse('ministry_create'))
+        self.assertContains(response, 'Voltar sem salvar')
+        self.assertContains(response, reverse('ministries'))
+        self.assertContains(response, 'Campo obrigatório')
+        self.assertContains(response, 'class="form-actions"')
+
+    def test_invalid_submit_summarises_errors_with_links_to_fields(self):
+        response = self.client.post(reverse('ministry_create'), {'name': '', 'leader_name': '', 'status': Ministry.Status.ACTIVE})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Não foi possível salvar. Corrija 2 campos:')
+        self.assertContains(response, 'href="#id_name"')
+        self.assertContains(response, 'role="alert"')
+        self.assertFalse(Ministry.objects.exists())
+
+    def test_valid_form_has_no_error_summary(self):
+        response = self.client.get(reverse('ministry_create'))
+        self.assertNotContains(response, 'Não foi possível salvar')
