@@ -8,7 +8,7 @@ from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
-from datetime import date, timedelta, datetime, timezone as dt_timezone
+from datetime import date, timedelta
 from io import BytesIO, StringIO
 
 from cloudinary.exceptions import AuthorizationRequired
@@ -137,72 +137,6 @@ class PublicViewsTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'id="public-calendar"')
         self.assertContains(response, reverse('public_event_feed'))
-
-    @patch('core.views.public_youtube_videos')
-    def test_home_allows_referrer_identity_for_embedded_players(self, mocked_videos):
-        mocked_videos.return_value = [
-            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 24, 12, 0, tzinfo=dt_timezone.utc)},
-            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 23, 12, 0, tzinfo=dt_timezone.utc)},
-            {'video_id': 'CCCCCCCCCCC', 'title': 'Terceiro vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 22, 12, 0, tzinfo=dt_timezone.utc)},
-            {'video_id': 'DDDDDDDDDDD', 'title': 'Quarto vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 21, 12, 0, tzinfo=dt_timezone.utc)},
-        ]
-        response = self.client.get(reverse('home'))
-        self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
-        self.assertContains(response, 'params="origin=http://testserver"', count=4)
-        self.assertContains(response, 'videoid="AAAAAAAAAAA"')
-        self.assertContains(response, 'videoid="BBBBBBBBBBB"')
-        self.assertContains(response, 'videoid="CCCCCCCCCCC"')
-        self.assertContains(response, 'videoid="DDDDDDDDDDD"')
-        self.assertContains(response, 'TRANSMISSÃO EM DESTAQUE · 24/08/2026')
-
-    @patch('core.views.public_youtube_videos')
-    def test_public_youtube_videos_feed_exposes_latest_videos(self, mocked_videos):
-        mocked_videos.return_value = [
-            {'video_id': 'AAAAAAAAAAA', 'title': 'Vídeo mais recente', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 24, 12, 0, tzinfo=dt_timezone.utc)},
-            {'video_id': 'BBBBBBBBBBB', 'title': 'Segundo vídeo', 'channel_title': 'Igreja Batista Regular Canaã', 'published': datetime(2026, 8, 23, 12, 0, tzinfo=dt_timezone.utc)},
-        ]
-        response = self.client.get(
-            reverse('public_youtube_videos_feed'),
-            HTTP_ORIGIN='https://profwashingtonaraujo.github.io',
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
-        self.assertEqual(response.headers['Cache-Control'], 'public, max-age=300')
-        self.assertEqual(response.json()['videos'][0]['video_id'], 'AAAAAAAAAAA')
-        self.assertIn('2026-08-24', response.json()['videos'][0]['published'])
-        self.assertEqual(response.json()['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
-
-    @patch('core.views.urlopen')
-    def test_youtube_streams_page_exposes_latest_broadcasts(self, mocked_urlopen):
-        from core.views import _get_youtube_videos_from_page
-
-        initial_data = {
-            'contents': [
-                {'lockupViewModel': {
-                    'contentId': 'AAAAAAAAAAA',
-                    'contentType': 'LOCKUP_CONTENT_TYPE_VIDEO',
-                    'metadata': {'lockupMetadataViewModel': {
-                        'title': {'content': 'Mensagem mais recente'},
-                    }},
-                }},
-                {'lockupViewModel': {
-                    'contentId': 'BBBBBBBBBBB',
-                    'contentType': 'LOCKUP_CONTENT_TYPE_VIDEO',
-                    'metadata': {'lockupMetadataViewModel': {
-                        'title': {'content': 'Mensagem anterior'},
-                    }},
-                }},
-            ],
-        }
-        response = BytesIO(f'<script>var ytInitialData = {json.dumps(initial_data)};</script>'.encode())
-        mocked_urlopen.return_value.__enter__.return_value = response
-
-        videos = _get_youtube_videos_from_page(limit=2)
-
-        request = mocked_urlopen.call_args.args[0]
-        self.assertEqual(request.full_url, 'https://www.youtube.com/@ibrcanaa/streams')
-        self.assertEqual([video['video_id'] for video in videos], ['AAAAAAAAAAA', 'BBBBBBBBBBB'])
-        self.assertEqual(videos[0]['title'], 'Mensagem mais recente')
 
     def test_home_shows_church_location_and_service_times(self):
         response = self.client.get(reverse('home'))

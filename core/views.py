@@ -1,16 +1,13 @@
-import json
 import logging
 from decimal import Decimal
 from datetime import timedelta
 from io import BytesIO
-from urllib.request import Request, urlopen
 
 from cloudinary.exceptions import Error as CloudinaryError
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.utils import OperationalError, ProgrammingError
@@ -25,7 +22,9 @@ from dal import autocomplete
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
 from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .models import DEFAULT_FEATURED_VIDEO_TITLE, DEFAULT_FEATURED_VIDEO_URL, youtube_video_id
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .youtube import home_videos
 from .permissions import (
     can_manage_users,
     financial_access_required,
@@ -48,35 +47,7 @@ EVENT_COLORS = {
 }
 DEFAULT_EVENT_COLOR = '#68758d'
 YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@ibrcanaa'
-YOUTUBE_VIDEOS_URL = f'{YOUTUBE_CHANNEL_URL}/streams'
-YOUTUBE_CACHE_KEY = 'public_youtube_videos'
-YOUTUBE_CACHE_TTL = 300
-YOUTUBE_FALLBACK_VIDEOS = [
-    {
-        'video_id': 'yDlicSLiB4s',
-        'title': 'Culto de Louvor e Adoração - 13/09/2026',
-        'channel_title': 'Igreja Batista Regular Canaã',
-        'published': '',
-    },
-    {
-        'video_id': '-akybA_1zl0',
-        'title': 'Escola Bíblica Dominical - 13/09/2026',
-        'channel_title': 'Igreja Batista Regular Canaã',
-        'published': '',
-    },
-    {
-        'video_id': 'Gl8TkGAlMbU',
-        'title': 'Culto de Louvor e Adoração - 06/09/2026',
-        'channel_title': 'Igreja Batista Regular Canaã',
-        'published': '',
-    },
-    {
-        'video_id': 'ZsDjmPmQubo',
-        'title': 'Escola Bíblica Dominical - 06/09/2026',
-        'channel_title': 'Igreja Batista Regular Canaã',
-        'published': '',
-    },
-]
+
 
 PUBLIC_HOME_FALLBACKS = {
     'church_about_page': {
@@ -108,82 +79,33 @@ PUBLIC_HOME_FALLBACKS = {
 }
 
 
-def _get_youtube_videos_from_page(limit=4):
-    request = Request(YOUTUBE_VIDEOS_URL, headers={
-        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-        'User-Agent': 'Mozilla/5.0',
-    })
-    with urlopen(request, timeout=5) as response:
-        page = response.read().decode('utf-8')
-
-    marker = 'var ytInitialData = '
-    start = page.index(marker) + len(marker)
-    initial_data = json.JSONDecoder().raw_decode(page[start:])[0]
-
-    videos = []
-    seen_ids = set()
-
-    def collect(item):
-        if len(videos) >= limit:
-            return
-        if isinstance(item, list):
-            for value in item:
-                collect(value)
-            return
-        if not isinstance(item, dict):
-            return
-
-        renderer = item.get('lockupViewModel')
-        if renderer and renderer.get('contentType') == 'LOCKUP_CONTENT_TYPE_VIDEO':
-            video_id = renderer.get('contentId', '')
-            title = (
-                renderer.get('metadata', {})
-                .get('lockupMetadataViewModel', {})
-                .get('title', {})
-                .get('content', '')
-            ).strip()
-            if video_id and title and video_id not in seen_ids:
-                seen_ids.add(video_id)
-                videos.append({
-                    'video_id': video_id,
-                    'title': title,
-                    'channel_title': 'Igreja Batista Regular Canaã',
-                    'published': '',
-                })
-
-        for value in item.values():
-            collect(value)
-
-    collect(initial_data)
-    return videos
-
-
-def public_youtube_videos(limit=4):
-    cache_key = f'{YOUTUBE_CACHE_KEY}:{limit}'
-    cached_videos = cache.get(cache_key)
-    if cached_videos is not None:
-        return cached_videos
-
+def _pinned_video():
+    """Vídeo fixo do destaque, editável em "Nossa igreja". `None` se vazio ou inválido."""
     try:
-        videos = _get_youtube_videos_from_page(limit=limit)
-    except (OSError, TimeoutError, UnicodeError, ValueError) as error:
-        logger.warning('Could not refresh YouTube videos: %s', error)
-        videos = []
-
-    if not videos:
-        videos = YOUTUBE_FALLBACK_VIDEOS[:limit]
-
-    cache.set(cache_key, videos, YOUTUBE_CACHE_TTL)
-    return videos
+        page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
+        url, title = page.featured_video_url, page.featured_video_title
+    except (OperationalError, ProgrammingError):
+        url, title = DEFAULT_FEATURED_VIDEO_URL, DEFAULT_FEATURED_VIDEO_TITLE
+    video_id = youtube_video_id(url)
+    if not video_id:
+        return None
+    return {
+        'video_id': video_id,
+        'title': (title or '').strip() or 'Vídeo em destaque',
+        'channel_title': 'Igreja Batista Regular Canaã',
+        'published': None,
+    }
 
 
 def _build_youtube_response(request):
+    youtube = home_videos(_pinned_video())
     response = JsonResponse({
         'channel': {
             'name': 'Igreja Batista Regular Canaã',
             'url': YOUTUBE_CHANNEL_URL,
         },
-        'videos': public_youtube_videos(),
+        'live': youtube['live'],
+        'videos': youtube['videos'],
     })
     if request.headers.get('Origin') == 'https://profwashingtonaraujo.github.io':
         response['Access-Control-Allow-Origin'] = 'https://profwashingtonaraujo.github.io'
@@ -225,6 +147,7 @@ def home(request):
         church_history_page = PUBLIC_HOME_FALLBACKS['church_history_page']
         public_ministries = []
         pastor_books = []
+    youtube = home_videos(_pinned_video())
     return render(request, 'core/home.html', {
         'form': form,
         'next_occurrence': next_occurrence,
@@ -233,7 +156,8 @@ def home(request):
         'church_about_page': church_about_page,
         'church_history_page': church_history_page,
         'daily_verse': get_daily_verse(timezone.localdate()),
-        'youtube_videos': public_youtube_videos(),
+        'youtube_videos': youtube['videos'],
+        'youtube_live': youtube['live'],
         'youtube_channel_url': YOUTUBE_CHANNEL_URL,
     })
 
@@ -292,7 +216,7 @@ def church_history_edit(request):
 
 def public_youtube_videos_feed(request):
     response = _build_youtube_response(request)
-    response['Cache-Control'] = 'public, max-age=300'
+    response['Cache-Control'] = 'public, max-age=30'
     return response
 
 

@@ -9,9 +9,11 @@ from django.db import IntegrityError, transaction
 from django.forms.models import model_to_dict
 from django.db.utils import OperationalError
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 
 from core.forms import ChurchAboutPageForm
 from core.models import ChurchAboutPage, YoutubeSnapshot
+from core.views import _pinned_video
 from core.youtube import (
     YoutubeError,
     _claim_refresh,
@@ -343,3 +345,107 @@ class LoadVideosTests(TestCase):
         with patch('core.youtube.load_videos', side_effect=OperationalError('sem tabela')):
             result = home_videos(PINNED, NOW)
         self.assertEqual(result, {'live': False, 'videos': [PINNED]})
+
+
+def listed(video_id, title, day, live=False):
+    return {
+        'video_id': video_id, 'title': title, 'channel_title': 'Igreja Batista Regular Canaã',
+        'published': datetime(2026, 11, day, 12, 0, tzinfo=dt_timezone.utc), 'live': live, 'transmission': True,
+    }
+
+
+LIVE_RESULT = {'live': True, 'videos': [
+    listed('LIVE0000001', 'Culto ao vivo', 15, live=True),
+    listed('AAAAAAAAAAA', 'Culto A', 8), listed('BBBBBBBBBBB', 'Culto B', 1), listed('CCCCCCCCCCC', 'Culto C', 25),
+]}
+PINNED_RESULT = {'live': False, 'videos': [
+    {**PINNED, 'video_id': 'i7tGR33yy-o', 'title': 'Podcast Canaã #01'},
+    listed('AAAAAAAAAAA', 'Culto A', 8), listed('BBBBBBBBBBB', 'Culto B', 1), listed('CCCCCCCCCCC', 'Culto C', 25),
+]}
+
+
+@patch('core.views.home_videos')
+class HomeYoutubeTests(TestCase):
+    def test_home_labels_the_live_and_marks_it_in_the_page(self, mocked):
+        mocked.return_value = LIVE_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, '● AO VIVO AGORA')
+        self.assertContains(response, 'data-live="true"')
+        self.assertContains(response, 'data-video-id="LIVE0000001"')
+        self.assertNotContains(response, 'EM DESTAQUE')
+
+    def test_home_labels_the_pinned_video(self, mocked):
+        mocked.return_value = PINNED_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'EM DESTAQUE')
+        self.assertContains(response, 'data-live="false"')
+        self.assertContains(response, 'data-video-id="i7tGR33yy-o"')
+        self.assertNotContains(response, 'TRANSMISSÃO EM DESTAQUE')
+        self.assertNotContains(response, 'AO VIVO AGORA')
+
+    def test_home_renders_featured_and_three_stack_items_with_origin_param(self, mocked):
+        mocked.return_value = PINNED_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.headers['Referrer-Policy'], 'strict-origin-when-cross-origin')
+        self.assertContains(response, 'params="origin=http://testserver"', count=4)
+        for video_id in ('i7tGR33yy-o', 'AAAAAAAAAAA', 'BBBBBBBBBBB', 'CCCCCCCCCCC'):
+            self.assertContains(response, f'videoid="{video_id}"')
+
+    def test_home_exposes_the_feed_url_for_polling(self, mocked):
+        mocked.return_value = PINNED_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, f'data-feed-url="{reverse("public_youtube_videos_feed")}"')
+
+    def test_home_still_loads_when_only_the_pinned_video_exists(self, mocked):
+        mocked.return_value = {'live': False, 'videos': [PINNED_RESULT['videos'][0]]}
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'params="origin=http://testserver"', count=1)
+
+    def test_home_still_loads_when_there_is_no_video_at_all(self, mocked):
+        mocked.return_value = {'live': False, 'videos': []}
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'video-featured')
+
+    def test_home_passes_the_pinned_video_to_home_videos(self, mocked):
+        mocked.return_value = PINNED_RESULT
+        self.client.get(reverse('home'))
+        pinned = mocked.call_args.args[0]
+        self.assertEqual(pinned['video_id'], 'i7tGR33yy-o')
+
+    def test_feed_endpoint_exposes_live_and_keeps_contract(self, mocked):
+        mocked.return_value = LIVE_RESULT
+        response = self.client.get(reverse('public_youtube_videos_feed'), HTTP_ORIGIN='https://profwashingtonaraujo.github.io')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://profwashingtonaraujo.github.io')
+        self.assertEqual(response.headers['Cache-Control'], 'public, max-age=30')
+        payload = response.json()
+        self.assertTrue(payload['live'])
+        self.assertEqual(payload['videos'][0]['video_id'], 'LIVE0000001')
+        self.assertIn('2026-11-15', payload['videos'][0]['published'])
+        self.assertEqual(payload['channel']['url'], 'https://www.youtube.com/@ibrcanaa')
+
+
+class PinnedVideoTests(TestCase):
+    def test_pinned_video_comes_from_the_about_page(self):
+        pinned = _pinned_video()
+        self.assertEqual(pinned['video_id'], 'i7tGR33yy-o')
+        self.assertIn('PodcastCanaã#01', pinned['title'])
+        self.assertIsNone(pinned['published'])
+
+    def test_blank_or_invalid_url_means_no_pinned_video(self):
+        page = ChurchAboutPage.objects.create(site_key='about')
+        for url in ('', 'https://example.com/video'):
+            with self.subTest(url=url):
+                ChurchAboutPage.objects.filter(pk=page.pk).update(featured_video_url=url)
+                self.assertIsNone(_pinned_video())
+
+    def test_blank_title_gets_a_generic_title(self):
+        page = ChurchAboutPage.objects.create(site_key='about')
+        ChurchAboutPage.objects.filter(pk=page.pk).update(featured_video_title='')
+        self.assertEqual(_pinned_video()['title'], 'Vídeo em destaque')
+
+    def test_pinned_video_uses_defaults_when_the_database_fails(self):
+        with patch('core.views.ChurchAboutPage.objects.get_or_create', side_effect=OperationalError('sem tabela')):
+            self.assertEqual(_pinned_video()['video_id'], 'i7tGR33yy-o')
