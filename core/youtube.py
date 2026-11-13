@@ -11,8 +11,16 @@ carrega a URL: os erros são trocados por mensagens fixas e nada é registrado e
 
 import json
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone as dt_timezone
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+from django.conf import settings
+from django.db.utils import OperationalError, ProgrammingError
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+
+from .models import YoutubeSnapshot
 
 FEED_URL = 'https://www.youtube.com/feeds/videos.xml'
 API_VIDEOS_URL = 'https://www.googleapis.com/youtube/v3/videos'
@@ -23,6 +31,13 @@ USER_AGENT = 'ibrcanaa-site/1.0'
 
 ATOM = '{http://www.w3.org/2005/Atom}'
 YT = '{http://www.youtube.com/xml/schemas/2015}'
+
+REFRESH_SECONDS = 60
+LIVE_MAX_AGE_SECONDS = 600
+STACK_SIZE = 3
+SNAPSHOT_KEY = 'channel'
+CHANNEL_TITLE = 'Igreja Batista Regular Canaã'
+UNDATED = datetime(1970, 1, 1, tzinfo=dt_timezone.utc)  # vídeos sem data vão para o fim
 
 
 class YoutubeError(Exception):
@@ -96,3 +111,111 @@ def fetch_video_details(video_ids, api_key):
             'transmission': 'liveStreamingDetails' in item and broadcast != 'upcoming',
         }
     return details
+
+
+def _claim_refresh(snapshot, now):
+    """Decide se esta requisição deve atualizar o instantâneo.
+
+    A atualização está vencida se a última tentativa tem 60 s ou mais. Quem
+    vence a atualização condicional de `checked_at` faz a consulta; as demais
+    requisições simultâneas seguem com os dados atuais. Como a tentativa é
+    marcada antes da consulta, uma falha só é repetida após o intervalo.
+    """
+    if snapshot.checked_at is not None and now - snapshot.checked_at < timedelta(seconds=REFRESH_SECONDS):
+        return False
+    claimed = YoutubeSnapshot.objects.filter(
+        pk=snapshot.pk, checked_at=snapshot.checked_at,
+    ).update(checked_at=now)
+    if claimed:
+        snapshot.checked_at = now
+    return bool(claimed)
+
+
+def _refresh(snapshot, now):
+    """Consulta o YouTube e grava o resultado. Em falha, mantém o instantâneo anterior."""
+    try:
+        entries = fetch_feed_entries(settings.YOUTUBE_CHANNEL_ID)
+    except YoutubeError:
+        return
+    if not entries:
+        return
+    details = None
+    if settings.YOUTUBE_API_KEY:
+        try:
+            details = fetch_video_details([entry['video_id'] for entry in entries], settings.YOUTUBE_API_KEY)
+        except YoutubeError:
+            details = None
+    videos = []
+    for entry in entries:
+        detail = (details or {}).get(entry['video_id'])
+        videos.append({
+            **entry,
+            'live': bool(detail and detail['live']),
+            'transmission': None if details is None else bool(detail and detail['transmission']),
+        })
+    snapshot.payload = {'videos': videos}
+    snapshot.updated_at = now
+    snapshot.save(update_fields=['payload', 'updated_at'])
+
+
+def load_videos(now=None):
+    """Vídeos do canal, atualizando o instantâneo se estiver vencido.
+
+    Cada item: `video_id`, `title`, `channel_title`, `published` (datetime ou None),
+    `live` e `transmission` (`None` quando não há chave da API). O estado `live`
+    é descartado se o último dado bom tiver mais de `LIVE_MAX_AGE_SECONDS`.
+    """
+    now = now or timezone.now()
+    snapshot, _ = YoutubeSnapshot.objects.get_or_create(key=SNAPSHOT_KEY)
+    if _claim_refresh(snapshot, now):
+        _refresh(snapshot, now)
+    live_is_trustworthy = (
+        snapshot.updated_at is not None
+        and now - snapshot.updated_at <= timedelta(seconds=LIVE_MAX_AGE_SECONDS)
+    )
+    videos = []
+    for item in (snapshot.payload or {}).get('videos', []):
+        videos.append({
+            'video_id': item['video_id'],
+            'title': item['title'],
+            'channel_title': CHANNEL_TITLE,
+            'published': parse_datetime(item.get('published') or ''),
+            'live': bool(item.get('live')) and live_is_trustworthy,
+            'transmission': item.get('transmission'),
+        })
+    return videos
+
+
+def build_home_videos(videos, pinned):
+    """Monta o destaque e a pilha da home. Função pura.
+
+    Destaque: a live, se houver; senão o vídeo fixo; senão a transmissão mais
+    recente. Pilha: as `STACK_SIZE` transmissões mais recentes, sem repetir o
+    destaque nem o vídeo fixo. Sem dados da API (`transmission` sempre `None`),
+    todos os vídeos do feed são candidatos.
+    """
+    live_video = next((item for item in videos if item['live']), None)
+    has_details = any(item['transmission'] is not None for item in videos)
+    candidates = [item for item in videos if item['transmission'] or not has_details]
+    candidates.sort(key=lambda item: item['published'] or UNDATED, reverse=True)
+
+    featured = live_video or pinned
+    if featured is None and candidates:
+        featured = candidates[0]
+    excluded = {featured['video_id']} if featured else set()
+    if pinned:
+        excluded.add(pinned['video_id'])
+    stack = [item for item in candidates if item['video_id'] not in excluded][:STACK_SIZE]
+    return {
+        'live': live_video is not None,
+        'videos': ([featured] if featured else []) + stack,
+    }
+
+
+def home_videos(pinned=None, now=None):
+    """Destaque e pilha da home. Sem tabelas do banco, mostra só o vídeo fixo."""
+    try:
+        videos = load_videos(now)
+    except (OperationalError, ProgrammingError):
+        videos = []
+    return build_home_videos(videos, pinned)
