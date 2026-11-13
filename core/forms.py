@@ -460,6 +460,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
     full_width_fields = {
         'intro', 'highlight_1_text', 'highlight_2_text', 'highlight_3_text',
         'spotify_playlist_title', 'spotify_playlist_text', 'spotify_playlist_url',
+        'featured_video_title', 'featured_video_url',
     }
 
     def clean_spotify_playlist_url(self):
@@ -476,6 +477,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
             'highlight_2_title', 'highlight_2_text',
             'highlight_3_title', 'highlight_3_text',
             'spotify_playlist_title', 'spotify_playlist_text', 'spotify_playlist_url',
+            'featured_video_title', 'featured_video_url',
         ]
         widgets = {
             'intro': forms.Textarea(attrs={'rows': 4}),
@@ -483,6 +485,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
             'highlight_2_text': forms.Textarea(attrs={'rows': 3}),
             'highlight_3_text': forms.Textarea(attrs={'rows': 3}),
             'spotify_playlist_text': forms.Textarea(attrs={'rows': 3}),
+            'featured_video_url': forms.URLInput(attrs={'placeholder': 'https://youtu.be/...'}),
             'spotify_playlist_url': forms.URLInput(attrs={
                 'placeholder': 'https://open.spotify.com/playlist/... ou /show/...',
             }),

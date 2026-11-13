@@ -36,6 +36,10 @@ def validate_youtube_url(value):
         raise ValidationError('Informe uma URL válida de vídeo do YouTube.')
 
 
+DEFAULT_FEATURED_VIDEO_URL = 'https://youtu.be/i7tGR33yy-o'
+DEFAULT_FEATURED_VIDEO_TITLE = 'MARXISMO CULTURAL + Marcos Perin + Carlos A. Bezerra + Márcio Bastos. PodcastCanaã#01'
+
+
 def spotify_embed_path(url):
     try:
         parsed = urlparse(url)
@@ -131,6 +135,16 @@ class ChurchAboutPage(models.Model):
         blank=True,
         default='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=bd85139b74144700',
     )
+    featured_video_title = models.CharField(
+        'título do vídeo em destaque', max_length=160, blank=True, default=DEFAULT_FEATURED_VIDEO_TITLE,
+    )
+    featured_video_url = models.URLField(
+        'vídeo em destaque na home (YouTube)',
+        blank=True,
+        default=DEFAULT_FEATURED_VIDEO_URL,
+        validators=[validate_youtube_url],
+        help_text='Aparece no destaque grande quando não há transmissão ao vivo.',
+    )
 
     class Meta:
         verbose_name = 'conteúdo da página Nossa igreja'
@@ -140,11 +154,31 @@ class ChurchAboutPage(models.Model):
         return 'Nossa igreja'
 
     @property
+    def featured_video_id(self):
+        return youtube_video_id(self.featured_video_url)
+
+    @property
     def spotify_embed_url(self):
         embed_path = spotify_embed_path(self.spotify_playlist_url)
         if not embed_path:
             return ''
         return f'https://open.spotify.com/embed/{embed_path}?utm_source=generator&theme=0'
+
+
+class YoutubeSnapshot(models.Model):
+    """Último resultado do feed do canal, compartilhado entre as instâncias do app."""
+
+    key = models.CharField(max_length=20, unique=True, default='channel')
+    payload = models.JSONField(default=dict)
+    updated_at = models.DateTimeField('última atualização com sucesso', null=True, blank=True)
+    checked_at = models.DateTimeField('última tentativa de atualização', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'instantâneo do YouTube'
+        verbose_name_plural = 'instantâneos do YouTube'
+
+    def __str__(self):
+        return f'YouTube ({self.key})'
 
 
 class ChurchHistoryPage(models.Model):
