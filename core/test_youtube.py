@@ -1,13 +1,20 @@
 import json
+import shutil
+import subprocess
 from datetime import datetime, timedelta, timezone as dt_timezone
 from io import BytesIO
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
 
+from pathlib import Path
+
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.forms.models import model_to_dict
 from django.db.utils import OperationalError
+from unittest import skipUnless
+
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
@@ -449,3 +456,81 @@ class PinnedVideoTests(TestCase):
     def test_pinned_video_uses_defaults_when_the_database_fails(self):
         with patch('core.views.ChurchAboutPage.objects.get_or_create', side_effect=OperationalError('sem tabela')):
             self.assertEqual(_pinned_video()['video_id'], 'i7tGR33yy-o')
+
+
+SCRIPT = Path(settings.BASE_DIR) / 'static' / 'js' / 'home-live.js'
+
+
+def decide(current, payload):
+    """Roda `nextFeaturedState` do script da home no Node e devolve o resultado."""
+    code = (
+        "const {nextFeaturedState} = require(process.argv[1]);"
+        "const [current, payload] = JSON.parse(process.argv[2]);"
+        "console.log(JSON.stringify(nextFeaturedState(current, payload)));"
+    )
+    done = subprocess.run(
+        ['node', '-e', code, str(SCRIPT), json.dumps([current, payload])],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(done.stdout)
+
+
+def payload_for(live, *video_ids):
+    return {'live': live, 'videos': [{'video_id': video_id, 'title': video_id} for video_id in video_ids]}
+
+
+class LivePollingPageTests(TestCase):
+    @patch('core.views.home_videos', return_value=PINNED_RESULT)
+    def test_home_includes_the_live_polling_script(self, _mocked):
+        self.assertContains(self.client.get(reverse('home')), 'js/home-live')
+
+    def test_live_style_exists(self):
+        css = (Path(settings.BASE_DIR) / 'static' / 'css' / 'app.css').read_text(encoding='utf-8')
+        self.assertIn('.is-live', css)
+
+
+class StaticPageTests(SimpleTestCase):
+    def test_pages_index_label_follows_the_payload(self):
+        html = (Path(settings.BASE_DIR) / 'pages' / 'index.html').read_text(encoding='utf-8')
+        self.assertNotIn('TRANSMISSÃO EM DESTAQUE', html)
+        self.assertIn('AO VIVO AGORA', html)
+        self.assertIn('EM DESTAQUE', html)
+        self.assertIn('i7tGR33yy-o', html)
+        self.assertNotIn('yDlicSLiB4s', html)
+
+    def test_pages_css_has_the_live_style(self):
+        css = (Path(settings.BASE_DIR) / 'pages' / 'assets' / 'app.css').read_text(encoding='utf-8')
+        self.assertIn('.is-live', css)
+
+
+@skipUnless(shutil.which('node'), 'Node não está instalado')
+class NextFeaturedStateTests(SimpleTestCase):
+    idle = {'live': False, 'videoId': 'PIN', 'activated': False, 'stackIds': ['A', 'B', 'C']}
+
+    def test_live_starting_replaces_the_featured_video_and_the_stack(self):
+        result = decide(self.idle, payload_for(True, 'LIVE', 'A', 'B', 'C'))
+        self.assertEqual(result, {'replaceFeatured': True, 'replaceStack': True})
+
+    def test_live_ending_brings_the_pinned_video_back(self):
+        current = {'live': True, 'videoId': 'LIVE', 'activated': False, 'stackIds': ['A', 'B', 'C']}
+        result = decide(current, payload_for(False, 'PIN', 'LIVE', 'A', 'B'))
+        self.assertEqual(result, {'replaceFeatured': True, 'replaceStack': True})
+
+    def test_nothing_changed_replaces_nothing(self):
+        self.assertEqual(decide(self.idle, payload_for(False, 'PIN', 'A', 'B', 'C')),
+                         {'replaceFeatured': False, 'replaceStack': False})
+
+    def test_new_transmission_updates_only_the_stack(self):
+        result = decide(self.idle, payload_for(False, 'PIN', 'NEW', 'A', 'B'))
+        self.assertEqual(result, {'replaceFeatured': False, 'replaceStack': True})
+
+    def test_visitor_already_watching_keeps_everything(self):
+        current = {**self.idle, 'activated': True}
+        result = decide(current, payload_for(True, 'LIVE', 'A', 'B', 'C'))
+        self.assertEqual(result, {'replaceFeatured': False, 'replaceStack': False})
+
+    def test_empty_or_malformed_payload_changes_nothing(self):
+        nothing = {'replaceFeatured': False, 'replaceStack': False}
+        self.assertEqual(decide(self.idle, {'live': False, 'videos': []}), nothing)
+        self.assertEqual(decide(self.idle, {}), nothing)
+        self.assertEqual(decide(self.idle, {'videos': [{'title': 'sem id'}]}), nothing)

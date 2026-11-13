@@ -131,36 +131,16 @@
           YouTube <span aria-hidden="true">↗</span></a>
       </div>
       <div class="video-gallery" data-youtube-gallery>
-        <article class="video-featured reveal" data-youtube-featured><lite-youtube videoid="yDlicSLiB4s" title="Culto de Louvor e Adoração - 13/09/2026"
-            playlabel="Reproduzir Culto de Louvor e Adoração - 13/09/2026"
+        <article class="video-featured reveal" data-youtube-featured><lite-youtube videoid="i7tGR33yy-o"
+            title="MARXISMO CULTURAL + Marcos Perin + Carlos A. Bezerra + Márcio Bastos. PodcastCanaã#01"
+            playlabel="Reproduzir MARXISMO CULTURAL + Marcos Perin + Carlos A. Bezerra + Márcio Bastos. PodcastCanaã#01"
             params="origin=https://profwashingtonaraujo.github.io"></lite-youtube>
-          <div><small>TRANSMISSÃO EM DESTAQUE</small>
-            <h3>Culto de Louvor e Adoração - 13/09/2026</h3>
+          <div><small>EM DESTAQUE</small>
+            <h3>MARXISMO CULTURAL + Marcos Perin + Carlos A. Bezerra + Márcio Bastos. PodcastCanaã#01</h3>
             <p>Igreja Batista Regular Canaã</p>
           </div>
         </article>
-        <div class="video-list" data-youtube-list>
-          <article class="reveal"><lite-youtube videoid="-akybA_1zl0"
-              title="Escola Bíblica Dominical - 13/09/2026"
-              playlabel="Reproduzir Escola Bíblica Dominical - 13/09/2026"
-              params="origin=https://profwashingtonaraujo.github.io"></lite-youtube>
-            <h3>Escola Bíblica Dominical - 13/09/2026</h3>
-            <p>Igreja Batista Regular Canaã</p>
-          </article>
-          <article class="reveal"><lite-youtube videoid="Gl8TkGAlMbU"
-              title="Culto de Louvor e Adoração - 06/09/2026"
-              playlabel="Reproduzir Culto de Louvor e Adoração - 06/09/2026"
-              params="origin=https://profwashingtonaraujo.github.io"></lite-youtube>
-            <h3>Culto de Louvor e Adoração - 06/09/2026</h3>
-            <p>Igreja Batista Regular Canaã</p>
-          </article>
-          <article class="reveal"><lite-youtube videoid="ZsDjmPmQubo" title="Escola Bíblica Dominical - 06/09/2026"
-              playlabel="Reproduzir Escola Bíblica Dominical - 06/09/2026"
-              params="origin=https://profwashingtonaraujo.github.io"></lite-youtube>
-            <h3>Escola Bíblica Dominical - 06/09/2026</h3>
-            <p>Igreja Batista Regular Canaã</p>
-          </article>
-        </div>
+        <div class="video-list" data-youtube-list></div>
       </div>
     </section>
 
@@ -306,7 +286,7 @@
       if (Number.isNaN(date.getTime())) return '';
       return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(date);
     };
-    const createVideoCard = (video, featured = false) => {
+    const createVideoCard = (video, featured = false, live = false) => {
       const article = document.createElement('article');
       article.className = featured ? 'video-featured reveal visible' : 'reveal visible';
       const player = document.createElement('lite-youtube');
@@ -318,7 +298,8 @@
       if (featured) {
         const copy = document.createElement('div');
         const label = document.createElement('small');
-        label.textContent = `TRANSMISSÃO EM DESTAQUE${formatPublished(video.published) ? ` · ${formatPublished(video.published)}` : ''}`;
+        label.textContent = live ? '● AO VIVO AGORA' : `EM DESTAQUE${formatPublished(video.published) ? ` · ${formatPublished(video.published)}` : ''}`;
+        if (live) label.className = 'is-live';
         const title = document.createElement('h3');
         title.textContent = video.title;
         const author = document.createElement('p');
@@ -351,7 +332,7 @@
         if (payload.channel?.url) {
           youtubeChannelLink.href = payload.channel.url;
         }
-        youtubeFeatured.replaceWith(createVideoCard(videos[0], true));
+        youtubeFeatured.replaceWith(createVideoCard(videos[0], true, Boolean(payload.live)));
         youtubeList.replaceChildren(...videos.slice(1, 4).map((video) => createVideoCard(video)));
       })
       .catch(() => { });

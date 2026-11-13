@@ -209,3 +209,8 @@
 
 /* Campo isca antispam do formulário de contato: fora da tela, sem afetar o layout. */
 .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Selo "Ao vivo agora" no destaque de vídeo. */
+.video-featured small.is-live{color:#d92d20;font-weight:800;letter-spacing:.14em;animation:live-pulse 1.6s ease-in-out infinite}
+@keyframes live-pulse{50%{opacity:.55}}
+@media(prefers-reduced-motion:reduce){.video-featured small.is-live{animation:none}}

@@ -110,6 +110,7 @@
 <footer class="public-footer"><a class="brand" href="#inicio"><img src="{% static 'logo.png' %}" alt=""><span><small>IGREJA</small><strong>Batista Regular Canaã</strong></span></a><span class="footer-credits"><span>© {% now 'Y' %} IBR Canaã. Uma comunidade para pertencer.</span><small>Desenvolvimento e criação por <a href="https://profwashingtonaraujo.github.io/carcara/" target="_blank" rel="noopener">Carcará Tech</a></small></span><a href="{% url 'login' %}">Área restrita</a></footer>
 {% endblock %}
 {% block extra_scripts %}
+<script defer src="{% static 'js/home-live.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const nav = document.getElementById('public-nav');
