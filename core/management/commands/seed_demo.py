@@ -1,8 +1,9 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from core.models import AccessProfile, Book, Event, Member, Ministry, Transaction
@@ -12,6 +13,11 @@ class Command(BaseCommand):
     help = 'Cria dados locais para apresentação e desenvolvimento.'
 
     def handle(self, *args, **options):
+        if not settings.DEBUG:
+            raise CommandError(
+                'seed_demo apaga eventos e lançamentos e cria usuários com senhas públicas; '
+                'só pode rodar com DJANGO_DEBUG=True (ambiente local).'
+            )
         admin, _ = User.objects.get_or_create(username='diretoria', defaults={
             'first_name': 'Washington',
             'last_name': 'Araújo',

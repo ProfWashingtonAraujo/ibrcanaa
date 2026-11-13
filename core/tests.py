@@ -1,14 +1,15 @@
 import json
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
 from unittest.mock import patch
 from datetime import date, timedelta, datetime, timezone as dt_timezone
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from cloudinary.exceptions import AuthorizationRequired
 from pypdf import PdfReader
@@ -1492,3 +1493,60 @@ class BootstrapUserTests(TestCase):
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_superuser)
         self.assertEqual(user.access_profile.role, AccessProfile.Role.BOARD)
+
+
+class SeedDemoSafetyTests(TestCase):
+    def test_seed_demo_is_blocked_when_debug_is_off(self):
+        with override_settings(DEBUG=False):
+            with self.assertRaises(CommandError):
+                call_command('seed_demo')
+        self.assertFalse(User.objects.filter(username='diretoria').exists())
+
+    def test_seed_demo_runs_when_debug_is_on(self):
+        with override_settings(DEBUG=True):
+            call_command('seed_demo', stdout=StringIO())
+        self.assertTrue(User.objects.filter(username='diretoria').exists())
+
+
+class ProductionSettingsTests(SimpleTestCase):
+    def _run_settings(self, env):
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        base = Path(__file__).resolve().parent.parent
+        clean = {k: v for k, v in os.environ.items() if not k.startswith('DJANGO_')}
+        clean.update(env)
+        return subprocess.run(
+            [sys.executable, '-c', 'import config.settings'],
+            cwd=base, env=clean, capture_output=True, text=True,
+        )
+
+    def test_missing_debug_defaults_to_off_and_requires_secret(self):
+        result = self._run_settings({'DATABASE_URL': 'sqlite:///x.db'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('DJANGO_SECRET_KEY', result.stderr)
+
+    def test_placeholder_secret_is_rejected(self):
+        result = self._run_settings({'DJANGO_SECRET_KEY': 'change-me-in-production', 'DATABASE_URL': 'sqlite:///x.db'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('DJANGO_SECRET_KEY', result.stderr)
+
+    def test_django_insecure_prefix_is_rejected(self):
+        result = self._run_settings({'DJANGO_SECRET_KEY': 'django-insecure-abc', 'DATABASE_URL': 'sqlite:///x.db'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('DJANGO_SECRET_KEY', result.stderr)
+
+    def test_debug_on_imports_without_secret_or_database(self):
+        result = self._run_settings({'DJANGO_DEBUG': 'True'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_non_true_debug_values_keep_debug_off(self):
+        result = self._run_settings({'DJANGO_DEBUG': '1', 'DATABASE_URL': 'sqlite:///x.db'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('DJANGO_SECRET_KEY', result.stderr)
+
+    def test_real_secret_is_accepted(self):
+        result = self._run_settings({'DJANGO_SECRET_KEY': 'x' * 50, 'DATABASE_URL': 'sqlite:///x.db'})
+        self.assertEqual(result.returncode, 0, result.stderr)

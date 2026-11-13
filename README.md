@@ -15,6 +15,10 @@ Não há dependência de Astro, Node.js, React, Vite ou Tailwind.
 
 ## Preparação
 
+Por segurança, `DJANGO_DEBUG` assume `False`. Só o valor `true` (sem distinguir maiúsculas) liga o debug; `1` ou `yes` contam como `False`. Para desenvolvimento local e para rodar os testes defina `DJANGO_DEBUG=True` (`$env:DJANGO_DEBUG="True"` no PowerShell; `export DJANGO_DEBUG=True` no Linux/macOS), por exemplo `DJANGO_DEBUG=True python manage.py test`. Fora do modo debug, `DJANGO_SECRET_KEY` (valor único, nunca o placeholder nem `django-insecure-...`) e `DATABASE_URL` são obrigatórias, e `seed_demo` é bloqueado.
+
+**Vercel e Render:** `DJANGO_SECRET_KEY` e `DATABASE_URL` precisam existir em todos os ambientes que executam o build (Production **e Preview** na Vercel). Sem elas o `build.sh` falha na importação do settings. No Render o `render.yaml` já gera a chave.
+
 No PowerShell:
 
 ```powershell

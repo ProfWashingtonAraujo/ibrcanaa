@@ -23,11 +23,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (os.environ.get('DJANGO_SECRET_KEY') or '').strip() or 'django-insecure-local-development-only'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+# Seguro por padrão: DEBUG só liga com DJANGO_DEBUG=True explícito.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').strip().lower() == 'true'
+
+# SECURITY WARNING: keep the secret key used in production secret!
+_INSECURE_SECRET_KEYS = {
+    '',
+    'change-me-in-production',
+    'django-insecure-local-development-only',
+}
+SECRET_KEY = (os.environ.get('DJANGO_SECRET_KEY') or '').strip()
+if DEBUG:
+    SECRET_KEY = SECRET_KEY or 'django-insecure-local-development-only'
+elif SECRET_KEY in _INSECURE_SECRET_KEYS or SECRET_KEY.startswith('django-insecure-'):
+    raise ImproperlyConfigured(
+        'DJANGO_SECRET_KEY must be set to a unique secret value when DJANGO_DEBUG is not True.'
+    )
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 VERCEL_URL = os.environ.get('VERCEL_URL')
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
