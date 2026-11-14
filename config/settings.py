@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'swingtime',
     'axes',
     'core',
+    'tesouraria',
 ]
 
 if CLOUDINARY_URL:

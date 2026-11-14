@@ -66,6 +66,7 @@ class AccessProfile(models.Model):
         DEACON = 'deacon', 'Diácono'
         SECRETARY = 'secretary', 'Secretário'
         TREASURER = 'treasurer', 'Tesoureiro'
+        COMMITTEE = 'committee', 'Comissão de Contas'
         MEMBER = 'member', 'Membro'
         VISITOR = 'visitor', 'Visitante'
         CHILD = 'child', 'Criança'

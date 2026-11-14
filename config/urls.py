@@ -22,6 +22,7 @@ from django.views.static import serve
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
+    path('tesouraria/', include('tesouraria.urls')),
     path('', include('core.urls')),
 ]
 

@@ -27,6 +27,7 @@ from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPa
 from .models import DEFAULT_FEATURED_VIDEO_TITLE, DEFAULT_FEATURED_VIDEO_URL, youtube_video_id
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
 from .youtube import home_videos
+from tesouraria.permissions import landing_url
 from .permissions import (
     can_manage_users,
     financial_access_required,
@@ -298,12 +299,12 @@ def contact_thanks(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard' if is_panel_user(request.user) else 'member_portal')
+        return redirect(landing_url(request.user))
     form = LoginForm(request, data=request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
-        return redirect('dashboard' if is_panel_user(user) else 'member_portal')
+        return redirect(landing_url(user))
     return render(request, 'core/login.html', {'form': form})
 
 
