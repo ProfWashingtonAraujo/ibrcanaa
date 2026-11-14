@@ -84,7 +84,15 @@ class MovementQuerySet(models.QuerySet):
         return self.filter(deleted_at__isnull=True)
 
     def confirmed(self):
+        """Só filtra a situação: NÃO exclui movimentos excluídos (`deleted_at`).
+
+        Código de saldo/resumo deve usar `counted()`.
+        """
         return self.filter(status=Status.CONFIRMED)
+
+    def counted(self):
+        """Movimentos que entram em saldos: vivos e confirmados."""
+        return self.live().confirmed()
 
 
 class Movement(models.Model):
