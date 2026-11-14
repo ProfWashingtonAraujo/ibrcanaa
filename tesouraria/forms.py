@@ -7,7 +7,7 @@ from core.forms import CrispyFormMixin
 
 from core.models import Member
 
-from .models import Account, Category, Kind, Method, MonthClosing, Movement, Payable, Transfer, TreasurySettings
+from .models import Account, Category, CommitteeOpinion, Kind, Method, MonthClosing, Movement, Payable, Transfer, TreasurySettings
 
 
 def active_categories(kind):
@@ -286,3 +286,18 @@ class CloseMonthForm(CrispyFormMixin, forms.Form):
 
     notes = forms.CharField(label='Observações (opcional)', required=False,
                             widget=forms.Textarea(attrs={'rows': 3}))
+
+
+class OpinionForm(CrispyFormMixin, forms.Form):
+    full_width_fields = {'text'}
+
+    result = forms.ChoiceField(label='Parecer', choices=CommitteeOpinion.Result.choices)
+    text = forms.CharField(label='Observações', required=False, max_length=CommitteeOpinion.TEXT_MAX,
+                           widget=forms.Textarea(attrs={'rows': 5}),
+                           help_text=f'Até {CommitteeOpinion.TEXT_MAX} caracteres. Obrigatório quando há ressalvas.')
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('result') == CommitteeOpinion.Result.RESERVATIONS and not (cleaned.get('text') or '').strip():
+            self.add_error('text', 'Descreva as ressalvas.')
+        return cleaned

@@ -2,17 +2,18 @@ from datetime import date, datetime, time
 from decimal import Decimal
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, closing as closing_service, ledger, payables as payables_service, pending as pending_service, recurring as recurring_service
+from . import audit, closing as closing_service, ledger, opinions as opinions_service, payables as payables_service, pending as pending_service, recurring as recurring_service
 from .balances import NO_DESTINATION, month_summary
-from .forms import TITHE_HINT, CashCountForm, CategoryForm, CloseMonthForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
-from .models import Account, AuditLog, Category, Kind, Method, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
-from .permissions import (can_edit_treasury, can_see_member_names, treasury_detail_required, treasury_edit_required,
+from .forms import TITHE_HINT, CashCountForm, CategoryForm, CloseMonthForm, ConfirmPendingForm, MovementForm, OpinionForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
+from .models import Account, AuditLog, Category, CommitteeOpinion, Kind, Method, MonthClosing, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
+from .permissions import (can_edit_treasury, can_give_opinion, committee_required, can_see_member_names, treasury_detail_required, treasury_edit_required,
                           treasury_names_required, treasury_view_required)
 from .tithers import tithers as tithers_service
 from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month, shift_month
@@ -40,7 +41,12 @@ def home(request):
                      .select_related('category').order_by('-date', '-id'))
     for movement in movements:
         movement.shown_description = description_for(movement, request.user)
+    month_opinions = opinions_service.opinions_for(summary.month)
+    giving = can_give_opinion(request.user) and summary.is_closed
     return render(request, 'tesouraria/home.html', {
+        'opinions': month_opinions,
+        'opinion_url': reverse('tesouraria:opinion') + f'?mes={summary.month:%Y-%m}' if giving else None,
+        'my_opinion': any(o.author_id == request.user.pk for o in month_opinions),
         'month': summary.month,
         'summary': summary,
         'movements': movements,
@@ -548,6 +554,32 @@ def month_reopen(request):
     return redirect(_month_home(month))
 
 
+# --- Parecer da Comissão de Contas ----------------------------------------------------------
+
+@committee_required
+def opinion(request):
+    month = parse_month(request.GET.get('mes'))
+    if not MonthClosing.objects.filter(month=month, closed_at__isnull=False).exists():
+        messages.error(request, f'O mês {month:%m/%Y} não está fechado; o parecer só pode ser dado sobre um mês fechado.')
+        return redirect(_month_home(month))
+    mine = CommitteeOpinion.objects.filter(month=month, author=request.user).first()
+    initial = {'result': mine.result, 'text': mine.text} if mine else None
+    form = OpinionForm(request.POST or None, initial=initial)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            opinions_service.record_opinion(month, request.user, form.cleaned_data['result'], form.cleaned_data['text'])
+        except TreasuryError as error:
+            messages.error(request, str(error))
+            return redirect(_month_home(month))
+        except ValidationError as error:
+            form.add_error(None, ' '.join(error.messages))
+        else:
+            messages.success(request, 'Parecer registrado.')
+            return redirect(_month_home(month))
+    return render(request, 'tesouraria/opinion.html', {
+        'form': form, 'month': month, 'cancel_url': _month_home(month)})
+
+
 # ---- Ofertas especiais, Dizimistas e Histórico ----
 
 def _parse_year(value, default):
@@ -610,7 +642,7 @@ AUDIT_LABELS = {
     'destination': 'Destino', 'name': 'Nome', 'active': 'Ativa', 'payee': 'Favorecido', 'due_date': 'Vencimento',
     'paid_date': 'Pago em', 'paid_amount': 'Valor pago', 'due_day': 'Dia do vencimento', 'note': 'Observação',
     'from_account': 'Conta de origem', 'to_account': 'Conta de destino', 'rejection_reason': 'Motivo da recusa',
-    'deleted_at': 'Excluído em', 'start_date': 'Início', 'opening_cash': 'Caixa inicial', 'opening_bank': 'Banco inicial',
+    'deleted_at': 'Excluído em', 'result': 'Parecer', 'text': 'Observações', 'start_date': 'Início', 'opening_cash': 'Caixa inicial', 'opening_bank': 'Banco inicial',
 }
 AUDIT_SKIP = {'id', 'created_at', 'updated_at', 'created_by_id'}
 

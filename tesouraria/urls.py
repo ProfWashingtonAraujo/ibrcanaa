@@ -29,6 +29,7 @@ urlpatterns = [
     path('conferencia/', views.cash_count, name='cash_count'),
     path('fechamento/', views.month_close, name='month_close'),
     path('fechamento/reabrir/', views.month_reopen, name='month_reopen'),
+    path('parecer/', views.opinion, name='opinion'),
     path('ofertas-especiais/', views.special, name='special'),
     path('dizimistas/', views.tithers, name='tithers'),
     path('historico/', views.audit_log, name='audit'),

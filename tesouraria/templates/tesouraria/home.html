@@ -35,6 +35,7 @@
   </div>
 </div>
 {% endif %}
+{% if summary.is_closed or opinions %}{% include 'tesouraria/_opinions.html' %}{% endif %}
 <section class="stat-row" aria-label="Resumo do mês">
   <div><span>Saldo do mês anterior</span><strong>R$ {{ summary.opening_cash|add:summary.opening_bank|floatformat:'2g' }}</strong></div>
   <div><span>Entradas</span><strong>R$ {{ summary.income_total|floatformat:'2g' }}</strong></div>

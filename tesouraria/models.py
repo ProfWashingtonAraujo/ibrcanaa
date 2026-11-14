@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxLengthValidator
 from django.db import models
 
 from .audit import ACTION_CHOICES
@@ -259,3 +260,31 @@ class AuditLog(models.Model):
         verbose_name = 'registro de auditoria'
         verbose_name_plural = 'registros de auditoria'
         ordering = ['-at', '-id']
+
+
+class CommitteeOpinion(models.Model):
+    """Parecer de um membro da Comissão de Contas sobre um mês fechado (um por mês e autor)."""
+
+    TEXT_MAX = 2000
+
+    class Result(models.TextChoices):
+        APPROVED = 'approved', 'Aprovado'
+        RESERVATIONS = 'reservations', 'Aprovado com ressalvas'
+
+    month = models.DateField('mês')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+',
+                               verbose_name='autor')
+    result = models.CharField('parecer', max_length=20, choices=Result.choices)
+    text = models.TextField('observações', blank=True, max_length=TEXT_MAX,
+                            validators=[MaxLengthValidator(TEXT_MAX)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'parecer da Comissão de Contas'
+        verbose_name_plural = 'pareceres da Comissão de Contas'
+        ordering = ['month', 'created_at', 'id']
+        constraints = [models.UniqueConstraint(fields=['month', 'author'], name='tesouraria_opinion_unique_month_author')]
+
+    def __str__(self):
+        return f'Parecer de {self.month:%m/%Y}: {self.get_result_display()}'

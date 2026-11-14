@@ -1,0 +1,9 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Parecer | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Parecer da Comissão de Contas{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar ao Caixa do Mês</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">{{ month|date:'F' }} de {{ month.year }}: informe o seu parecer sobre as contas do mês fechado. Você pode refazê-lo; a alteração fica no histórico.</p>
+  {% include 'core/_form_body.html' with submit_label='Registrar parecer' %}
+</article>
+{% endblock %}

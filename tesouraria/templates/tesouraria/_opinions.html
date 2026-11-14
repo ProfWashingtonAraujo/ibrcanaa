@@ -1,0 +1,16 @@
+{# Pareceres da Comissão de Contas de um mês. Contexto: `opinions` (ver tesouraria.opinions.opinions_for). #}
+<article class="panel">
+  <h2>Parecer da Comissão de Contas</h2>
+  {% for opinion in opinions %}
+  <div class="week-row">
+    <div class="week-main">
+      <strong>{{ opinion.get_result_display }}</strong>{% if opinion.stale %} <small>(de mês reaberto — será refeito)</small>{% endif %}
+      <small>{{ opinion.author_name }} · {{ opinion.updated_at|date:'d/m/Y' }}</small>
+      {% if opinion.text %}<p>{{ opinion.text|linebreaksbr }}</p>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <p class="panel-sub">Nenhum parecer da Comissão de Contas para este mês.</p>
+  {% endfor %}
+  {% if opinion_url %}<p><a class="button button-primary" href="{{ opinion_url }}">{% if my_opinion %}Refazer meu parecer{% else %}Dar parecer{% endif %}</a></p>{% endif %}
+</article>

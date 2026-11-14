@@ -221,3 +221,65 @@ class ClosingViewTests(ClosingBase):
                 self.assertNotContains(page, 'Reabrir')
                 self.assertNotContains(page, 'Conferir caixa')
         self.assertTrue(MonthClosing.objects.get(month=JAN).is_closed)
+
+
+@WITHOUT_AXES
+class ClosedMonthViewRefusalTests(ClosingBase):
+    """Na tela, o mês fechado recusa com mensagem clara, sem alterar dados e sem erro 500."""
+
+    def setUp(self):
+        super().setUp()
+        self.m = self.entrada(date(2026, 1, 5))
+        self.payable = Payable.objects.create(description='Luz', category=self.expense, amount=D('10.00'),
+                                              due_date=date(2026, 1, 20), created_by=self.tes)
+        self.paid_payable = Payable.objects.create(description='Agua', category=self.expense, amount=D('10.00'),
+                                                   due_date=date(2026, 1, 21), created_by=self.tes)
+        payables.pay_payable(self.paid_payable, user=self.tes, paid_amount=D('10.00'),
+                             paid_date=date(2026, 1, 22), account='bank', method='pix')
+        member_user = make_user('m')
+        from core.models import Member
+        self.pend = pending.create_portal_contribution(Member.objects.create(name='Fulano', user=member_user),
+                                                       self.income.name, D('10.00'))
+        Movement.objects.filter(pk=self.pend.pk).update(date=date(2026, 3, 10))
+        closing.close_month(JAN, self.tes)
+        self.client.login(username='tes', password='senha-forte-123')
+
+    def test_movement_edit_post(self):
+        r = self.client.post(reverse('tesouraria:movement_edit', args=[self.m.pk]), {
+            'date': '2026-01-05', 'category': self.income.pk, 'description': 'outro', 'amount': '99.00',
+            'account': 'cash', 'method': 'cash'})
+        self.assertContains(r, 'fechado')
+        self.m.refresh_from_db()
+        self.assertEqual(self.m.amount, D('50.00'))
+
+    def test_movement_delete_post(self):
+        r = self.client.post(reverse('tesouraria:movement_delete', args=[self.m.pk]), follow=True)
+        self.assertContains(r, 'fechado')
+        self.m.refresh_from_db()
+        self.assertIsNone(self.m.deleted_at)
+
+    def test_payable_pay_post(self):
+        r = self.client.post(reverse('tesouraria:payable_pay', args=[self.payable.pk]), {
+            'paid_amount': '10.00', 'paid_date': '2026-01-25', 'account': 'bank', 'method': 'pix'})
+        self.assertContains(r, 'fechado')
+        self.payable.refresh_from_db()
+        self.assertEqual(self.payable.status, Payable.Status.OPEN)
+
+    def test_payable_undo_post(self):
+        r = self.client.post(reverse('tesouraria:payable_undo', args=[self.paid_payable.pk]), follow=True)
+        self.assertContains(r, 'fechado')
+        self.paid_payable.refresh_from_db()
+        self.assertEqual(self.paid_payable.status, Payable.Status.PAID)
+
+    def test_pending_confirm_post(self):
+        r = self.client.post(reverse('tesouraria:pending_confirm', args=[self.pend.pk]), {
+            f'c{self.pend.pk}-account': 'cash', f'c{self.pend.pk}-method': 'cash',
+            f'c{self.pend.pk}-date': '2026-01-12'})
+        self.assertContains(r, 'fechado')
+        self.pend.refresh_from_db()
+        self.assertEqual(self.pend.status, 'pending')
+
+    def test_cash_count_post(self):
+        r = self.client.post(reverse('tesouraria:cash_count') + '?mes=2026-01', {'counted_cash': '1.00'})
+        self.assertContains(r, 'fechado')
+        self.assertIsNone(MonthClosing.objects.get(month=JAN).counted_cash)
