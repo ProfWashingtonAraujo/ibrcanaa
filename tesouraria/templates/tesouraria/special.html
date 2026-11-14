@@ -1,0 +1,36 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Ofertas especiais | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Ofertas especiais{% endblock %}
+{% block admin_content %}
+<nav class="crumb tes-month" aria-label="Mês exibido">
+  <a href="?mes={{ prev_param }}">&larr; Mês anterior</a> · <strong>{{ month|date:'F' }} de {{ month.year }}</strong> · <a href="?mes={{ next_param }}">Próximo mês &rarr;</a>
+</nav>
+<form class="tes-filters" method="get" aria-label="Escolher o ano">
+  <input type="hidden" name="mes" value="{{ month_param }}">
+  <label>Ano<input type="number" name="ano" min="2000" max="2100" value="{{ year }}"></label>
+  <button class="button button-ghost" type="submit">Ver ano</button>
+</form>
+<article class="panel">
+  <h2>{{ month|date:'F' }} de {{ month.year }}</h2>
+  {% for g in month_groups %}
+  <h3>{{ g.label }} · R$ {{ g.total|floatformat:'2g' }}</h3>
+  <table class="tes-table">
+    <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <tbody>{% for m in g.movements %}<tr><td>{{ m.date|date:'d/m/Y' }}</td><td>{{ m.shown_description }}</td><td>R$ {{ m.amount|floatformat:'2g' }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% empty %}
+  <p class="panel-sub">Nenhuma oferta especial neste mês. Quando uma entrada de categoria especial for lançada com destino, ela aparece aqui.</p>
+  {% endfor %}
+</article>
+<article class="panel">
+  <h2>Ano de {{ year }}</h2>
+  {% for g in year_groups %}
+  <h3>{{ g.label }} · R$ {{ g.total|floatformat:'2g' }}</h3>
+  <table class="tes-table">
+    <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+    <tbody>{% for m in g.movements %}<tr><td>{{ m.date|date:'d/m/Y' }}</td><td>{{ m.shown_description }}</td><td>R$ {{ m.amount|floatformat:'2g' }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% empty %}
+  <p class="panel-sub">Nenhuma oferta especial em {{ year }}.</p>
+  {% endfor %}
+</article>
+{% endblock %}

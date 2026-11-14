@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime, time
+from decimal import Decimal
 
 from django.contrib import messages
 from django.db.models import Count, Exists, OuterRef, Q
@@ -8,11 +9,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import audit, closing as closing_service, ledger, payables as payables_service, pending as pending_service, recurring as recurring_service
-from .balances import month_summary
+from .balances import NO_DESTINATION, month_summary
 from .forms import TITHE_HINT, CashCountForm, CategoryForm, CloseMonthForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
-from .models import Account, Category, Kind, Method, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
-from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
-                          treasury_view_required)
+from .models import Account, AuditLog, Category, Kind, Method, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
+from .permissions import (can_edit_treasury, can_see_member_names, treasury_detail_required, treasury_edit_required,
+                          treasury_names_required, treasury_view_required)
+from .tithers import tithers as tithers_service
 from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month, shift_month
 from .visibility import description_for
 
@@ -544,3 +546,107 @@ def month_reopen(request):
     else:
         messages.success(request, f'Mês {month:%m/%Y} reaberto.')
     return redirect(_month_home(month))
+
+
+# ---- Ofertas especiais, Dizimistas e Histórico ----
+
+def _parse_year(value, default):
+    """Ano de 2000 a 2100; qualquer outra coisa vira o padrão."""
+    try:
+        year = int(value)
+    except (TypeError, ValueError):
+        return default
+    return year if 2000 <= year <= 2100 else default
+
+
+def _special_groups(start, end, user):
+    rows = (Movement.objects.counted()
+            .filter(kind=Kind.INCOME, category__is_special=True, date__gte=start, date__lte=end)
+            .select_related('category', 'member').order_by('-date', '-id'))
+    groups = {}
+    for movement in rows:
+        label = movement.destination.strip() or NO_DESTINATION
+        movement.shown_description = description_for(movement, user)
+        group = groups.setdefault(label, {'label': label, 'total': Decimal('0.00'), 'movements': []})
+        group['total'] += movement.amount
+        group['movements'].append(movement)
+    return sorted(groups.values(), key=lambda g: (-g['total'], g['label']))
+
+
+@treasury_detail_required
+def special(request):
+    month = parse_month(request.GET.get('mes'))
+    year = _parse_year(request.GET.get('ano'), month.year)
+    return render(request, 'tesouraria/special.html', {
+        'month': month, 'year': year, 'month_param': f'{month:%Y-%m}',
+        'prev_param': f'{shift_month(month, -1):%Y-%m}', 'next_param': f'{shift_month(month, 1):%Y-%m}',
+        'month_groups': _special_groups(month, month_end(month), request.user),
+        'year_groups': _special_groups(date(year, 1, 1), date(year, 12, 31), request.user),
+    })
+
+
+@treasury_names_required
+def tithers(request):
+    if request.GET.get('ano'):
+        year = _parse_year(request.GET.get('ano'), timezone.localdate().year)
+        start, end, label, period = date(year, 1, 1), date(year, 12, 31), str(year), 'ano'
+        month = date(year, 1, 1)
+    else:
+        month = parse_month(request.GET.get('mes'))
+        start, end, label, period = month, month_end(month), f'{month:%m/%Y}', 'mes'
+    rows, unidentified = tithers_service(start, end)
+    return render(request, 'tesouraria/tithers.html', {
+        'rows': rows, 'unidentified': unidentified, 'label': label, 'period': period,
+        'month': month, 'year': month.year, 'month_param': f'{month:%Y-%m}',
+        'prev_param': f'{shift_month(month, -1):%Y-%m}', 'next_param': f'{shift_month(month, 1):%Y-%m}',
+        'total': sum((r.total for r in rows), Decimal('0.00')) + unidentified,
+    })
+
+
+AUDIT_LIMIT = 200
+AUDIT_LABELS = {
+    'date': 'Data', 'kind': 'Tipo', 'amount': 'Valor', 'category_id': 'Categoria (id)', 'description': 'Descrição',
+    'account': 'Conta', 'method': 'Forma', 'status': 'Situação', 'source': 'Origem', 'member_id': 'Membro (id)',
+    'destination': 'Destino', 'name': 'Nome', 'active': 'Ativa', 'payee': 'Favorecido', 'due_date': 'Vencimento',
+    'paid_date': 'Pago em', 'paid_amount': 'Valor pago', 'due_day': 'Dia do vencimento', 'note': 'Observação',
+    'from_account': 'Conta de origem', 'to_account': 'Conta de destino', 'rejection_reason': 'Motivo da recusa',
+    'deleted_at': 'Excluído em', 'start_date': 'Início', 'opening_cash': 'Caixa inicial', 'opening_bank': 'Banco inicial',
+}
+AUDIT_SKIP = {'id', 'created_at', 'updated_at', 'created_by_id'}
+
+
+def _audit_details(log):
+    """Linhas legíveis (campo, antes, depois) com o que mudou; texto puro, o template escapa."""
+    before, after = log.before or {}, log.after or {}
+    rows = []
+    for key in list(dict.fromkeys([*before, *after])):
+        if key in AUDIT_SKIP or (key in before and key in after and before[key] == after[key]):
+            continue
+        rows.append((AUDIT_LABELS.get(key, key), '' if before.get(key) in (None, '') else str(before.get(key)),
+                     '' if after.get(key) in (None, '') else str(after.get(key))))
+    return rows
+
+
+@treasury_detail_required
+def audit_log(request):
+    logs = AuditLog.objects.select_related('user')
+    month_raw = request.GET.get('mes')
+    month = parse_month(month_raw) if month_raw else None
+    if month:
+        tz = timezone.get_current_timezone()
+        following = shift_month(month, 1)
+        logs = logs.filter(at__gte=timezone.make_aware(datetime.combine(month, time.min), tz),
+                           at__lt=timezone.make_aware(datetime.combine(following, time.min), tz))
+    action = request.GET.get('acao')
+    action = action if action in dict(audit.ACTION_CHOICES) else None
+    if action:
+        logs = logs.filter(action=action)
+    logs = list(logs.order_by('-at', '-id')[:AUDIT_LIMIT])
+    show_details = can_see_member_names(request.user)
+    if show_details:
+        for log in logs:
+            log.details = _audit_details(log)
+    return render(request, 'tesouraria/audit.html', {
+        'logs': logs, 'limit': AUDIT_LIMIT, 'truncated': len(logs) == AUDIT_LIMIT, 'show_details': show_details,
+        'actions': audit.ACTION_CHOICES, 'filters': {'mes': f'{month:%Y-%m}' if month else '', 'acao': action or ''},
+    })

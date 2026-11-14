@@ -1,0 +1,21 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Dizimistas | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Dizimistas{% endblock %}
+{% block admin_content %}
+<nav class="crumb tes-month" aria-label="Período exibido">
+  {% if period == 'mes' %}<a href="?mes={{ prev_param }}">&larr; Mês anterior</a> · <strong>{{ month|date:'F' }} de {{ month.year }}</strong> · <a href="?mes={{ next_param }}">Próximo mês &rarr;</a> · <a href="?ano={{ year }}">Ver o ano de {{ year }}</a>
+  {% else %}<a href="?ano={{ year|add:'-1' }}">&larr; Ano anterior</a> · <strong>Ano de {{ year }}</strong> · <a href="?ano={{ year|add:'1' }}">Próximo ano &rarr;</a> · <a href="?mes={{ month_param }}">Ver por mês</a>{% endif %}
+</nav>
+<article class="panel">
+  <h2>Quem devolveu dízimo em {{ label }}</h2>
+  {% if rows %}
+  <table class="tes-table">
+    <thead><tr><th>Membro</th><th>Total</th><th>Dízimos</th><th>Última data</th></tr></thead>
+    <tbody>{% for r in rows %}<tr><td>{{ r.member.name }}</td><td>R$ {{ r.total|floatformat:'2g' }}</td><td>{{ r.count }}</td><td>{{ r.last_date|date:'d/m/Y' }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}
+  <p class="panel-sub">Nenhum dízimo identificado em {{ label }}. Ao confirmar uma contribuição do portal ou lançar um dízimo informando o membro, ele aparece aqui.</p>
+  {% endif %}
+  <p><strong>Sem identificação:</strong> R$ {{ unidentified|floatformat:'2g' }}</p>
+  <p><strong>Total de dízimos no período:</strong> R$ {{ total|floatformat:'2g' }}</p>
+</article>
+{% endblock %}

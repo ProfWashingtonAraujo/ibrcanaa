@@ -1,0 +1,37 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Histórico | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Histórico de alterações{% endblock %}
+{% block admin_content %}
+<form class="tes-filters" method="get" aria-label="Filtrar histórico">
+  <label>Mês<input type="month" name="mes" value="{{ filters.mes }}"></label>
+  <label>Ação<select name="acao"><option value="">Todas</option>{% for value, label in actions %}<option value="{{ value }}"{% if filters.acao == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <button class="button button-ghost" type="submit">Filtrar</button>
+  <a class="button button-ghost" href="{% url 'tesouraria:audit' %}">Limpar</a>
+</form>
+<article class="panel">
+  {% if logs %}
+  <table class="tes-table">
+    <thead><tr><th>Data</th><th>Quem</th><th>Ação</th><th>Resumo</th></tr></thead>
+    <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.at|date:'d/m/Y H:i' }}</td>
+      <td>{% if log.user %}{{ log.user.get_full_name|default:log.user.username }}{% else %}Sistema{% endif %}</td>
+      <td>{{ log.get_action_display }}</td>
+      <td>{{ log.summary }}
+        {% if show_details and log.details %}
+        <details><summary>Ver detalhes</summary>
+          <table class="tes-table"><thead><tr><th>Campo</th><th>Antes</th><th>Depois</th></tr></thead>
+          <tbody>{% for field, old, new in log.details %}<tr><td>{{ field }}</td><td>{{ old }}</td><td>{{ new }}</td></tr>{% endfor %}</tbody></table>
+        </details>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if truncated %}<p class="panel-sub">Mostrando só as {{ limit }} alterações mais recentes. Use o filtro de mês ou de ação para ver as anteriores.</p>{% endif %}
+  {% else %}
+  <p class="panel-sub">Nenhuma alteração registrada neste filtro. Cada lançamento, confirmação, pagamento ou fechamento passa a aparecer aqui.</p>
+  {% endif %}
+</article>
+{% endblock %}
