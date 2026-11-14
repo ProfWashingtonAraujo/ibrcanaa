@@ -1,0 +1,112 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Relatório | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Relatório mensal{% endblock %}
+{% block admin_content %}
+<nav class="crumb tes-month tes-noprint" aria-label="Mês exibido">
+  {% if not before_start %}<a href="?mes={{ prev_param }}">&larr; Mês anterior</a> · {% endif %}
+  <strong>{{ month|date:'F' }} de {{ month.year }}</strong>
+  {% if not before_start %} · <a href="?mes={{ next_param }}">Próximo mês &rarr;</a>{% endif %}
+</nav>
+{% if before_start %}
+<article class="panel">
+  <h2>Mês anterior ao início</h2>
+  <p class="panel-sub">{{ month|date:'F' }} de {{ month.year }} é anterior ao início da Tesouraria, que começa em {{ start_month|date:'F' }} de {{ start_month.year }}.</p>
+  <p><a class="button button-primary" href="?mes={{ start_month_param }}">Ir para o mês de início</a></p>
+</article>
+{% else %}
+<div class="people-head tes-actions tes-noprint"><p class="people-count">{{ church_name }} · {{ month_label }}</p>
+  <div class="week-actions">
+    <a class="button button-primary" href="{% url 'tesouraria:report_pdf' %}?mes={{ month_param }}" target="_blank" rel="noopener">Abrir PDF</a>
+    <button class="button button-ghost" type="button" onclick="window.print()">Imprimir</button>
+  </div>
+</div>
+<h2 class="tes-print-title">{{ church_name }} — Relatório da Tesouraria, {{ month_label }}</h2>
+{% if is_open %}<p class="panel-sub tes-open-warning"><strong>{{ open_warning }}</strong></p>{% else %}<p class="panel-sub"><strong class="tes-seal">Mês fechado</strong></p>{% endif %}
+<section class="stat-row" aria-label="Resumo do mês">
+  <div><span>Saldo do mês anterior</span><strong>R$ {{ summary.opening_cash|add:summary.opening_bank|floatformat:'2g' }}</strong></div>
+  <div><span>Entradas</span><strong>R$ {{ summary.income_total|floatformat:'2g' }}</strong></div>
+  <div><span>Saídas</span><strong>R$ {{ summary.expense_total|floatformat:'2g' }}</strong></div>
+  <div><span>Saldo do Caixa</span><strong>R$ {{ summary.closing_cash|floatformat:'2g' }}</strong></div>
+  <div><span>Saldo do Banco</span><strong>R$ {{ summary.closing_bank|floatformat:'2g' }}</strong></div>
+  <div><span>Saldo total</span><strong>R$ {{ summary.closing_total|floatformat:'2g' }}</strong></div>
+  {% if summary.counted_cash is not None %}
+  <div><span>Caixa contado</span><strong>R$ {{ summary.counted_cash|floatformat:'2g' }}</strong></div>
+  <div><span>Diferença da contagem</span><strong>R$ {{ summary.cash_difference|floatformat:'2g' }}</strong></div>
+  {% endif %}
+</section>
+<div class="week-grid">
+  <article class="panel week-panel">
+    <h2>Entradas por forma</h2>
+    <div class="week-list">
+      <div class="week-row"><span>Em dinheiro</span><strong>R$ {{ summary.income_cash|floatformat:'2g' }}</strong></div>
+      <div class="week-row"><span>Por Pix</span><strong>R$ {{ summary.income_pix|floatformat:'2g' }}</strong></div>
+      <div class="week-row"><span>Outras formas</span><strong>R$ {{ summary.income_other|floatformat:'2g' }}</strong></div>
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <h2>Depósitos e saques</h2>
+    <div class="week-list">
+      <div class="week-row"><span>Depósitos no banco</span><strong>R$ {{ summary.deposits_to_bank|floatformat:'2g' }}</strong></div>
+      <div class="week-row"><span>Saques para o caixa</span><strong>R$ {{ summary.withdrawals_to_cash|floatformat:'2g' }}</strong></div>
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <h2>Entradas por categoria</h2>
+    <div class="week-list">
+      {% for category, total in summary.income_by_category %}<div class="week-row"><span>{{ category.name }}</span><strong>R$ {{ total|floatformat:'2g' }}</strong></div>
+      {% empty %}<p class="panel-sub">Nenhuma entrada no mês.</p>{% endfor %}
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <h2>Saídas por categoria</h2>
+    <div class="week-list">
+      {% for category, total in summary.expense_by_category %}<div class="week-row"><span>{{ category.name }}</span><strong>R$ {{ total|floatformat:'2g' }}</strong></div>
+      {% empty %}<p class="panel-sub">Nenhuma saída no mês.</p>{% endfor %}
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <h2>Ofertas especiais por destino</h2>
+    <div class="week-list">
+      {% for destination, total in summary.special_by_destination %}<div class="week-row"><span>{{ destination }}</span><strong>R$ {{ total|floatformat:'2g' }}</strong></div>
+      {% empty %}<p class="panel-sub">Nenhuma oferta especial neste mês.</p>{% endfor %}
+    </div>
+  </article>
+  <article class="panel week-panel">
+    <h2>Contas do mês</h2>
+    <div class="week-list">
+      {% for p in paid_payables %}<div class="week-row"><span>Paga: {{ p.description }} · {{ p.paid_date|date:'d/m/Y' }}</span><strong>R$ {{ p.paid_amount|floatformat:'2g' }}</strong></div>{% endfor %}
+      {% for p in open_payables %}<div class="week-row"><span>A pagar: {{ p.description }} · {{ p.due_date|date:'d/m/Y' }}</span><strong>R$ {{ p.amount|floatformat:'2g' }}</strong></div>{% endfor %}
+      <div class="week-row"><span>Total pago no mês</span><strong>R$ {{ summary.payables_paid_total|floatformat:'2g' }}</strong></div>
+      <div class="week-row"><span>Total a pagar</span><strong>R$ {{ summary.payables_open_total|floatformat:'2g' }}</strong></div>
+      <div class="week-row"><span>Saldo depois de pagar o que falta</span><strong>R$ {{ summary.projected_total|floatformat:'2g' }}</strong></div>
+    </div>
+  </article>
+</div>
+{% if summary.is_closed or opinions %}{% include 'tesouraria/_opinions.html' %}{% endif %}
+<article class="panel">
+  <h2>Resumo do ano {{ month.year }}</h2>
+  <table class="tes-table">
+    <thead><tr><th scope="col">Mês</th><th scope="col">Entradas</th><th scope="col">Saídas</th><th scope="col">Saldo total</th></tr></thead>
+    <tbody>
+      {% for row in year_rows %}
+      <tr{% if row.month == month %} class="tes-current"{% endif %}><th scope="row">{{ row.month|date:'F' }}</th><td>R$ {{ row.income|floatformat:'2g' }}</td><td>R$ {{ row.expense|floatformat:'2g' }}</td><td>R$ {{ row.total|floatformat:'2g' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+<article class="panel">
+  <h2>Movimentos do mês</h2>
+  <table class="tes-table">
+    <thead><tr><th scope="col">Data</th><th scope="col">Descrição</th><th scope="col">Categoria</th><th scope="col">Forma</th><th scope="col">Valor</th></tr></thead>
+    <tbody>
+      {% for movement in movements %}
+      <tr><td>{{ movement.date|date:'d/m/Y' }}</td><td>{{ movement.shown_description }}</td><td>{{ movement.category.name }}</td><td>{{ movement.get_method_display }}</td>
+        <td class="tes-amount {% if movement.kind == 'expense' %}tes-expense{% endif %}">{% if movement.kind == 'expense' %}&minus; {% endif %}R$ {{ movement.amount|floatformat:'2g' }}</td></tr>
+      {% empty %}
+      <tr><td colspan="5">Nenhum movimento confirmado neste mês.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+<div class="tes-signatures"><div><span>Tesoureiro</span></div><div><span>Comissão de Contas</span></div></div>
+{% endif %}
+{% endblock %}

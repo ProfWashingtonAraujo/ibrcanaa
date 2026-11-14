@@ -571,3 +571,23 @@ a.person-chip:hover{background:#dbe6fb}
 .tes-filters label{display:grid;gap:4px;font-size:13px;font-weight:700;color:#43516b}
 .tes-filters select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#f9fbfe;color:var(--ink);font-size:15px}
 .tes-filters select:focus-visible,.tes-filters .button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.tes-table{width:100%;border-collapse:collapse;font-size:14px}
+.tes-table th,.tes-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tes-table thead th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#43516b}
+.tes-table tbody th{font-weight:700}
+.tes-table td:last-child,.tes-table th:last-child:not(:first-child){text-align:right}
+.tes-current{background:#f1f5fd}
+.tes-open-warning{color:#a23a2e}
+.tes-print-title,.tes-signatures{display:none}
+.tes-signatures{grid-template-columns:1fr 1fr;gap:40px;margin-top:70px;text-align:center}
+.tes-signatures div{border-top:1px solid #000;padding-top:6px}
+@media print{
+  .sidebar,.topbar,.skip-link,.side-scrim,.menu-button,.tes-noprint{display:none!important}
+  body.admin-body,.admin-main,.admin-content{background:#fff!important;color:#000}
+  .admin-shell{display:block}.admin-content{padding:0}
+  .panel,.stat-row>div{box-shadow:none!important;border:1px solid #999;break-inside:avoid;background:#fff}
+  .tes-print-title{display:block;font-size:18px;margin:0 0 8px}
+  .tes-signatures{display:grid;break-inside:avoid}
+  .tes-table{font-size:11px}.tes-table thead{display:table-header-group}.tes-table tr{break-inside:avoid}
+  .tes-open-warning{color:#000;border:1px solid #000;padding:4px 8px}
+}

@@ -4,12 +4,13 @@ from decimal import Decimal
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Exists, OuterRef, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, closing as closing_service, ledger, opinions as opinions_service, payables as payables_service, pending as pending_service, recurring as recurring_service
+from . import audit, closing as closing_service, report as report_service, ledger, opinions as opinions_service, payables as payables_service, pending as pending_service, recurring as recurring_service
 from .balances import NO_DESTINATION, month_summary
 from .forms import TITHE_HINT, CashCountForm, CategoryForm, CloseMonthForm, ConfirmPendingForm, MovementForm, OpinionForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
 from .models import Account, AuditLog, Category, CommitteeOpinion, Kind, Method, MonthClosing, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
@@ -682,3 +683,48 @@ def audit_log(request):
         'logs': logs, 'limit': AUDIT_LIMIT, 'truncated': len(logs) == AUDIT_LIMIT, 'show_details': show_details,
         'actions': audit.ACTION_CHOICES, 'filters': {'mes': f'{month:%Y-%m}' if month else '', 'acao': action or ''},
     })
+
+
+# --- Relatório mensal -----------------------------------------------------------------------
+
+def _report_gate(request, month):
+    """Mesma regra da `home` para tesouraria sem configuração ou mês anterior ao início.
+
+    Devolve `(None, resposta)` quando o relatório não pode ser montado, ou `(contexto, None)`.
+    """
+    try:
+        return report_service.build_report_context(month, user=request.user), None
+    except NotConfigured:
+        if can_edit_treasury(request.user):
+            return None, redirect('tesouraria:settings')
+        return None, render(request, 'tesouraria/not_configured.html')
+    except BeforeStart:
+        start_month = month_start(TreasurySettings.get().start_date)
+        return None, render(request, 'tesouraria/report.html', {
+            'month': month, 'before_start': True,
+            'start_month': start_month, 'start_month_param': f'{start_month:%Y-%m}',
+        })
+
+
+@treasury_view_required
+def report(request):
+    month = parse_month(request.GET.get('mes'))
+    context, early = _report_gate(request, month)
+    if early is not None:
+        return early
+    context.update(prev_param=f'{shift_month(context["month"], -1):%Y-%m}',
+                   next_param=f'{shift_month(context["month"], 1):%Y-%m}')
+    return render(request, 'tesouraria/report.html', context)
+
+
+@treasury_view_required
+def report_pdf(request):
+    month = parse_month(request.GET.get('mes'))
+    try:
+        data = report_service.render_report_pdf(month, user=request.user)
+    except (NotConfigured, BeforeStart):
+        return redirect(reverse('tesouraria:report') + f'?mes={month:%Y-%m}')
+    response = HttpResponse(data, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="relatorio-{month:%Y-%m}.pdf"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
