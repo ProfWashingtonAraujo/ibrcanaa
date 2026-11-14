@@ -160,6 +160,21 @@ class ShellTests(TestCase):
                           'Ofertas especiais', 'Histórico', 'Histórico anterior'})
         self.assertEqual({l for l, v in by_label.items() if v(tes)}, set(by_label))
 
+    def test_nav_route_names_and_icons_are_valid(self):
+        from core.navigation import ICONS
+        from tesouraria.navigation import ITEMS
+        plan_routes = set(
+            'home settings categories category_create category_edit category_delete category_reactivate '
+            'movements movement_create movement_edit movement_delete transfer_create transfer_delete '
+            'pending pending_confirm pending_reject payables payable_create payable_edit payable_pay '
+            'payable_undo payable_cancel recurring recurring_create recurring_edit recurring_toggle '
+            'special tithers audit cash_count month_close month_reopen opinion report report_pdf legacy'.split())
+        for item in ITEMS:
+            with self.subTest(item=item['label']):
+                self.assertIn(item['url_name'], plan_routes)
+                self.assertTrue(item['active'] <= plan_routes)
+                self.assertIn(item['icon'], ICONS)
+
     def test_panel_link_only_for_panel_users(self):
         configure()
         self.login('tes', Role.TREASURER)  # staff

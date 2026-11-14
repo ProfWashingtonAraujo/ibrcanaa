@@ -29,9 +29,9 @@ ITEMS = [
     {'label': 'A confirmar', 'icon': 'inbox', 'url_name': 'pending', 'active': {'pending'}, 'visible': can_edit_treasury, 'count': _pending_count},
     {'label': 'Contas a pagar', 'icon': 'applications', 'url_name': 'payables', 'active': {'payables'}, 'visible': can_view_details, 'count': _overdue_count},
     {'label': 'Lançamentos', 'icon': 'content', 'url_name': 'movements', 'active': {'movements'}, 'visible': can_view_details},
-    {'label': 'Ofertas especiais', 'icon': 'ministries', 'url_name': 'specials', 'active': {'specials'}, 'visible': can_view_details},
-    {'label': 'Histórico', 'icon': 'events', 'url_name': 'history', 'active': {'history'}, 'visible': can_view_details},
-    {'label': 'Histórico anterior', 'icon': 'books', 'url_name': 'history_legacy', 'active': {'history_legacy'}, 'visible': can_view_details},
+    {'label': 'Ofertas especiais', 'icon': 'ministries', 'url_name': 'special', 'active': {'special'}, 'visible': can_view_details},
+    {'label': 'Histórico', 'icon': 'events', 'url_name': 'audit', 'active': {'audit'}, 'visible': can_view_details},
+    {'label': 'Histórico anterior', 'icon': 'books', 'url_name': 'legacy', 'active': {'legacy'}, 'visible': can_view_details},
     {'label': 'Configurações', 'icon': 'settings', 'url_name': 'settings', 'active': {'settings'}, 'visible': can_edit_treasury},
 ]
 
