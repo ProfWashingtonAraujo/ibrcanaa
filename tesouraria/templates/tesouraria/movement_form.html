@@ -1,0 +1,17 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">{% if kind == 'income' %}Registre uma entrada confirmada no caixa ou no banco.{% else %}Registre uma saída já paga, do caixa ou do banco.{% endif %} O mês precisa estar aberto.</p>
+  {% include 'core/_form_body.html' %}
+</article>
+<script>
+(function () {
+  // Sugestão de conta pela forma; a pessoa pode trocar depois.
+  var method = document.getElementById('id_method'), account = document.getElementById('id_account');
+  if (!method || !account) return;
+  method.addEventListener('change', function () { account.value = method.value === 'cash' ? 'cash' : 'bank'; });
+})();
+</script>
+{% endblock %}

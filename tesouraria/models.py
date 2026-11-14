@@ -121,6 +121,11 @@ class Movement(models.Model):
         verbose_name = 'movimento'
         verbose_name_plural = 'movimentos'
         ordering = ['-date', '-id']
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(status='confirmed') | models.Q(account__isnull=False),
+                name='tesouraria_movement_confirmed_has_account'),
+        ]
 
     def __str__(self):
         return f'{self.get_kind_display()} {self.amount} em {self.date}'

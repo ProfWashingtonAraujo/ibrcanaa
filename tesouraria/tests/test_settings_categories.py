@@ -16,7 +16,7 @@ Role = AccessProfile.Role
 
 def make_movement(category, when=date(2026, 3, 10)):
     return Movement.objects.create(date=when, kind=category.kind, amount=Decimal('10.00'),
-                                   category=category, description='x')
+                                   category=category, description='x', account='cash')
 
 
 @WITHOUT_AXES

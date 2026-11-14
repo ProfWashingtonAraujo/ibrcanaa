@@ -1,16 +1,19 @@
 from datetime import date
 
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit
+from . import audit, ledger
 from .balances import month_summary
-from .forms import CategoryForm, SettingsForm
-from .models import Category, Kind, Movement, TreasurySettings
-from .permissions import can_edit_treasury, treasury_edit_required, treasury_view_required
-from .rules import BeforeStart, NotConfigured, month_end, month_start, parse_month
+from .forms import TITHE_HINT, CategoryForm, MovementForm, SettingsForm, TransferForm
+from .models import Account, Category, Kind, Method, Movement, Transfer, TreasurySettings
+from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
+                          treasury_view_required)
+from .rules import BeforeStart, NotConfigured, TreasuryError, month_end, month_start, parse_month
 from .visibility import description_for
 
 
@@ -40,6 +43,7 @@ def home(request):
         'movements': movements,
         'prev_param': f'{_shift(summary.month, -1):%Y-%m}',
         'next_param': f'{_shift(summary.month, 1):%Y-%m}',
+        'can_edit': can_edit_treasury(request.user),
     })
 
 
@@ -123,3 +127,147 @@ def category_reactivate(request, pk):
                  before=before, after=audit.snapshot(category))
     messages.success(request, f'Categoria "{category.name}" reativada.')
     return redirect('tesouraria:categories')
+
+
+# --- Lançamentos, depósitos e lista ---------------------------------------------------------
+
+def _tithe_hint(request, form):
+    if form.tithe_without_member:
+        messages.warning(request, TITHE_HINT + '.')
+
+
+def _movement_form(request, movement, kind, title):
+    initial = MovementForm.initial_from(movement) if movement else None
+    form = MovementForm(request.POST or None, kind=kind, initial=initial)
+    if request.method == 'POST' and form.is_valid():
+        fields = form.cleaned_data
+        try:
+            if movement is None:
+                ledger.create_movement(request.user, **fields)
+                messages.success(request, 'Lançamento registrado.')
+            else:
+                ledger.update_movement(request.user, movement, **fields)
+                messages.success(request, 'Lançamento alterado.')
+        except TreasuryError as error:
+            form.add_error(None, str(error))
+        else:
+            _tithe_hint(request, form)
+            return redirect('tesouraria:movements')
+    return render(request, 'tesouraria/movement_form.html', {
+        'form': form, 'title': title, 'kind': kind, 'cancel_url': reverse('tesouraria:movements')})
+
+
+@treasury_edit_required
+def movement_create(request):
+    kind = Kind.EXPENSE if request.GET.get('tipo') == Kind.EXPENSE else Kind.INCOME
+    return _movement_form(request, None, kind, 'Nova saída' if kind == Kind.EXPENSE else 'Nova entrada')
+
+
+@treasury_edit_required
+def movement_edit(request, pk):
+    movement = get_object_or_404(Movement.objects.live().select_related('category'), pk=pk)
+    if request.method != 'POST':
+        try:
+            ledger.ensure_editable(movement)
+        except TreasuryError as error:
+            messages.error(request, str(error))
+            return redirect('tesouraria:movements')
+    return _movement_form(request, movement, movement.kind, 'Editar lançamento')
+
+
+@treasury_edit_required
+@require_POST
+def movement_delete(request, pk):
+    movement = get_object_or_404(Movement.objects.live(), pk=pk)
+    try:
+        ledger.delete_movement(request.user, movement)
+    except TreasuryError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, 'Lançamento excluído.')
+    return redirect(_back(request, movement.date))
+
+
+@treasury_edit_required
+def transfer_create(request):
+    form = TransferForm(request.POST or None, initial={'date': timezone.localdate()})
+    if request.method == 'POST' and form.is_valid():
+        try:
+            ledger.create_transfer(request.user, **form.cleaned_data)
+        except TreasuryError as error:
+            form.add_error(None, str(error))
+        else:
+            messages.success(request, 'Depósito registrado.')
+            return redirect('tesouraria:movements')
+    return render(request, 'tesouraria/transfer_form.html', {
+        'form': form, 'title': 'Depósito ou saque', 'cancel_url': reverse('tesouraria:movements')})
+
+
+@treasury_edit_required
+@require_POST
+def transfer_delete(request, pk):
+    transfer = get_object_or_404(Transfer.objects.filter(deleted_at__isnull=True), pk=pk)
+    try:
+        ledger.delete_transfer(request.user, transfer)
+    except TreasuryError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, 'Transferência excluída.')
+    return redirect(_back(request, transfer.date))
+
+
+def _back(request, when):
+    return f"{reverse('tesouraria:movements')}?mes={when:%Y-%m}"
+
+
+def _int_or_none(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+@treasury_detail_required
+def movements(request):
+    month = parse_month(request.GET.get('mes'))
+    kind = request.GET.get('tipo')
+    kind = kind if kind in Kind.values else None
+    account = request.GET.get('conta')
+    account = account if account in Account.values else None
+    method = request.GET.get('forma')
+    method = method if method in Method.values else None
+    category_id = _int_or_none(request.GET.get('categoria'))
+    if category_id is not None and not Category.objects.filter(pk=category_id).exists():
+        category_id = None
+
+    rows = (Movement.objects.live().select_related('category', 'member')
+            .filter(date__gte=month, date__lte=month_end(month)))
+    if kind:
+        rows = rows.filter(kind=kind)
+    if category_id:
+        rows = rows.filter(category_id=category_id)
+    if account:
+        rows = rows.filter(account=account)
+    if method:
+        rows = rows.filter(method=method)
+    rows = list(rows.order_by('-date', '-id'))
+    for movement in rows:
+        movement.shown_description = description_for(movement, request.user)
+
+    transfers = []
+    if not (kind or category_id or method):
+        found = Transfer.objects.filter(deleted_at__isnull=True, date__gte=month, date__lte=month_end(month))
+        if account:
+            found = found.filter(Q(from_account=account) | Q(to_account=account))
+        transfers = list(found.order_by('-date', '-id'))
+
+    return render(request, 'tesouraria/movements.html', {
+        'movements': rows, 'transfers': transfers, 'month': month,
+        'month_param': f'{month:%Y-%m}',
+        'prev_param': f'{_shift(month, -1):%Y-%m}', 'next_param': f'{_shift(month, 1):%Y-%m}',
+        'filters': {'tipo': kind or '', 'categoria': category_id or '', 'conta': account or '',
+                    'forma': method or ''},
+        'categories': Category.objects.order_by('kind', 'name'),
+        'kinds': Kind.choices, 'accounts': Account.choices, 'methods': Method.choices,
+        'can_edit': can_edit_treasury(request.user),
+    })

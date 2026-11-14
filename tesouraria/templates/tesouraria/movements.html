@@ -1,0 +1,66 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Lançamentos | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Lançamentos{% endblock %}
+{% block admin_content %}
+<nav class="crumb tes-month" aria-label="Mês exibido">
+  <a href="?mes={{ prev_param }}">&larr; Mês anterior</a> · <strong>{{ month|date:'F' }} de {{ month.year }}</strong> · <a href="?mes={{ next_param }}">Próximo mês &rarr;</a>
+</nav>
+{% if can_edit %}
+<div class="people-head tes-actions"><p class="people-count">Lançar no caixa</p>
+  <div class="week-actions">
+    <a class="button button-primary" href="{% url 'tesouraria:movement_create' %}?tipo=income">Nova entrada</a>
+    <a class="button button-primary" href="{% url 'tesouraria:movement_create' %}?tipo=expense">Nova saída</a>
+    <a class="button button-ghost" href="{% url 'tesouraria:transfer_create' %}">Depósito</a>
+  </div>
+</div>
+{% endif %}
+<form class="tes-filters" method="get" aria-label="Filtrar lançamentos">
+  <input type="hidden" name="mes" value="{{ month_param }}">
+  <label>Tipo<select name="tipo"><option value="">Todos</option>{% for value, label in kinds %}<option value="{{ value }}"{% if filters.tipo == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Categoria<select name="categoria"><option value="">Todas</option>{% for category in categories %}<option value="{{ category.pk }}"{% if filters.categoria == category.pk %} selected{% endif %}>{{ category.name }} ({{ category.get_kind_display }})</option>{% endfor %}</select></label>
+  <label>Conta<select name="conta"><option value="">Todas</option>{% for value, label in accounts %}<option value="{{ value }}"{% if filters.conta == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Forma<select name="forma"><option value="">Todas</option>{% for value, label in methods %}<option value="{{ value }}"{% if filters.forma == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <button class="button button-ghost" type="submit">Filtrar</button>
+  <a class="button button-ghost" href="?mes={{ month_param }}">Limpar</a>
+</form>
+<article class="panel">
+  <h2>Movimentos</h2>
+  <div class="week-list">
+    {% for movement in movements %}
+    <div class="week-row">
+      <div class="week-main">
+        <strong>{{ movement.shown_description }}{% if movement.status != 'confirmed' %} <span class="tes-tag">{{ movement.get_status_display }}</span>{% endif %}</strong>
+        <small>{{ movement.date|date:'d/m/Y' }} · {{ movement.category.name }} · {{ movement.get_method_display }}{% if movement.account %} · {{ movement.get_account_display }}{% endif %}{% if movement.destination %} · Destino: {{ movement.destination }}{% endif %}</small>
+      </div>
+      <strong class="tes-amount {% if movement.kind == 'expense' %}tes-expense{% endif %}">{% if movement.kind == 'expense' %}&minus; {% endif %}R$ {{ movement.amount|floatformat:'2g' }}</strong>
+      {% if can_edit and movement.status == 'confirmed' %}
+      <div class="week-actions">
+        <a class="button button-ghost" href="{% url 'tesouraria:movement_edit' movement.pk %}">Editar</a>
+        <form method="post" action="{% url 'tesouraria:movement_delete' movement.pk %}" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="button button-ghost" type="submit">Excluir</button></form>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}<p class="panel-sub">Nenhum lançamento encontrado.</p>{% endfor %}
+  </div>
+</article>
+{% if transfers %}
+<article class="panel">
+  <h2>Depósitos e saques</h2>
+  <div class="week-list">
+    {% for transfer in transfers %}
+    <div class="week-row">
+      <div class="week-main">
+        <strong>{{ transfer.get_from_account_display }} &rarr; {{ transfer.get_to_account_display }}</strong>
+        <small>{{ transfer.date|date:'d/m/Y' }}{% if transfer.note %} · {{ transfer.note }}{% endif %}</small>
+      </div>
+      <strong class="tes-amount">R$ {{ transfer.amount|floatformat:'2g' }}</strong>
+      {% if can_edit %}
+      <div class="week-actions">
+        <form method="post" action="{% url 'tesouraria:transfer_delete' transfer.pk %}" onsubmit="return confirm('Excluir esta transferência?');">{% csrf_token %}<button class="button button-ghost" type="submit">Excluir</button></form>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</article>
+{% endif %}
+{% endblock %}

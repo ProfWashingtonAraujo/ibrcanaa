@@ -566,3 +566,8 @@ a.person-chip:hover{background:#dbe6fb}
 .tes-amount{white-space:nowrap}
 .tes-expense{color:#a23a2e}
 .tes-tag{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;background:#eef2f8;color:#3d4b63;font-size:13px;font-weight:700}
+.tes-actions{flex-wrap:wrap}
+.tes-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:14px}
+.tes-filters label{display:grid;gap:4px;font-size:13px;font-weight:700;color:#43516b}
+.tes-filters select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#f9fbfe;color:var(--ink);font-size:15px}
+.tes-filters select:focus-visible,.tes-filters .button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}

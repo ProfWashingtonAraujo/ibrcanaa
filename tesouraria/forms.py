@@ -1,8 +1,12 @@
+from decimal import Decimal
+
 from django import forms
 
 from core.forms import CrispyFormMixin
 
-from .models import Category, Kind, MonthClosing, Movement, Transfer, TreasurySettings
+from core.models import Member
+
+from .models import Account, Category, Kind, Method, MonthClosing, Movement, Transfer, TreasurySettings
 
 
 def active_categories(kind):
@@ -86,3 +90,83 @@ class CategoryForm(CrispyFormMixin, forms.ModelForm):
 
     def clean_name(self):
         return self.cleaned_data['name'].strip()
+
+
+TITHE_HINT = 'Informe o membro para ele constar na relação de dizimistas'
+DATE_WIDGET = forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d')
+
+
+def _positive_amount(value):
+    if value <= 0:
+        raise forms.ValidationError('O valor deve ser maior que zero.')
+    return value
+
+
+class MovementForm(CrispyFormMixin, forms.Form):
+    full_width_fields = {'description'}
+
+    date = forms.DateField(label='Data', widget=DATE_WIDGET)
+    category = forms.ModelChoiceField(label='Categoria', queryset=Category.objects.none())
+    description = forms.CharField(label='Descrição', max_length=180)
+    amount = forms.DecimalField(label='Valor (R$)', max_digits=12, decimal_places=2, validators=[_positive_amount],
+                                widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0.01'}))
+    method = forms.ChoiceField(label='Forma', choices=Method.choices, initial=Method.CASH)
+    account = forms.ChoiceField(label='Conta', choices=Account.choices, initial=Account.CASH,
+                                help_text='Sugerida pela forma: dinheiro no Caixa, Pix e outras no Banco. '
+                                          'Você pode trocar.')
+    member = forms.ModelChoiceField(label='Membro', queryset=Member.objects.none(), required=False,
+                                    help_text='Opcional. Para dízimos, informe o membro para ele constar na '
+                                              'relação de dizimistas.')
+    destination = forms.CharField(label='Destino da oferta especial', max_length=120, required=False,
+                                  help_text='Obrigatório quando a categoria é oferta especial.')
+
+    def __init__(self, *args, kind=Kind.INCOME, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.kind = kind
+        self.fields['category'].queryset = active_categories(kind)
+        self.fields['member'].queryset = Member.objects.order_by('name')
+        if kind != Kind.INCOME:
+            del self.fields['member']
+        self.tithe_without_member = False
+
+    def clean(self):
+        cleaned = super().clean()
+        category = cleaned.get('category')
+        if category is not None:
+            if category.is_special:
+                if not (cleaned.get('destination') or '').strip():
+                    self.add_error('destination', 'Informe o destino da oferta especial.')
+            else:
+                cleaned['destination'] = ''
+            self.tithe_without_member = bool(category.is_tithe and not cleaned.get('member'))
+        cleaned.setdefault('member', None)
+        return cleaned
+
+    def clean_description(self):
+        return self.cleaned_data['description'].strip()
+
+    def clean_amount(self):
+        value = self.cleaned_data['amount']
+        if value.quantize(Decimal('0.01')) != value:
+            raise forms.ValidationError('Use no máximo duas casas decimais.')
+        return value
+
+    @classmethod
+    def initial_from(cls, movement):
+        return {name: getattr(movement, name) for name in
+                ('date', 'category', 'description', 'amount', 'account', 'method', 'member', 'destination')}
+
+
+class TransferForm(CrispyFormMixin, forms.Form):
+    from_account = forms.ChoiceField(label='Sai da conta', choices=Account.choices, initial=Account.CASH)
+    to_account = forms.ChoiceField(label='Entra na conta', choices=Account.choices, initial=Account.BANK)
+    date = forms.DateField(label='Data', widget=DATE_WIDGET)
+    amount = forms.DecimalField(label='Valor (R$)', max_digits=12, decimal_places=2, validators=[_positive_amount],
+                                widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0.01'}))
+    note = forms.CharField(label='Observação', max_length=180, required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('from_account') and cleaned.get('from_account') == cleaned.get('to_account'):
+            raise forms.ValidationError('A conta de origem deve ser diferente da conta de destino.')
+        return cleaned

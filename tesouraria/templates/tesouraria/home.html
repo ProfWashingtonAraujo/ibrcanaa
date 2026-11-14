@@ -13,6 +13,15 @@
   <p><a class="button button-primary" href="?mes={{ start_month_param }}">Ir para o mês de início</a></p>
 </article>
 {% else %}
+{% if can_edit %}
+<div class="people-head tes-actions"><p class="people-count">Lançar no caixa</p>
+  <div class="week-actions">
+    <a class="button button-primary" href="{% url 'tesouraria:movement_create' %}?tipo=income">Nova entrada</a>
+    <a class="button button-primary" href="{% url 'tesouraria:movement_create' %}?tipo=expense">Nova saída</a>
+    <a class="button button-ghost" href="{% url 'tesouraria:transfer_create' %}">Depósito</a>
+  </div>
+</div>
+{% endif %}
 <section class="stat-row" aria-label="Resumo do mês">
   <div><span>Saldo do mês anterior</span><strong>R$ {{ summary.opening_cash|add:summary.opening_bank|floatformat:'2g' }}</strong></div>
   <div><span>Entradas</span><strong>R$ {{ summary.income_total|floatformat:'2g' }}</strong></div>

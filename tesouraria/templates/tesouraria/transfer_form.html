@@ -1,0 +1,9 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">Move dinheiro entre o Caixa e o Banco. O saldo total não muda e o valor não conta como entrada nem saída. Depósito: do Caixa para o Banco; saque: do Banco para o Caixa.</p>
+  {% include 'core/_form_body.html' %}
+</article>
+{% endblock %}
