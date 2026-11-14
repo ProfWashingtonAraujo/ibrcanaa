@@ -255,6 +255,13 @@ acesso restrito é consequência, não objetivo.
   Relatórios. Saem junto `financial_access_required`, `can_access_finance` e
   `show_finances`, trocados pelas permissões novas.
 
+## Acréscimo do Washington (14/11, depois da aprovação)
+
+O nome do membro **precisa ficar gravado** em cada contribuição, para a igreja
+ter a **relação de dizimistas** (membros que devolvem dízimo). A máscara para a
+Diretoria é só de exibição. A relação é uma tela própria, visível ao tesoureiro
+e à Comissão, e a categoria de dízimo é marcada como tal.
+
 ## Calls minhas (conferir)
 
 1. Acesso da Diretoria **somente leitura** e fim do acesso de Secretário e
