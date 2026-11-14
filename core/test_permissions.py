@@ -28,7 +28,6 @@ class PermissionPredicateTests(TestCase):
         self.assertFalse(permissions.is_panel_user(user))
         self.assertFalse(permissions.is_pastor(user))
         self.assertFalse(permissions.can_manage_users(user))
-        self.assertFalse(permissions.can_access_finance(user))
 
     def test_panel_access_follows_role_for_staff_users(self):
         for role in AccessProfile.ADMIN_ROLES:
@@ -62,10 +61,9 @@ class PermissionPredicateTests(TestCase):
         self.assertFalse(permissions.can_manage_users(make_user('t', Role.TREASURER, is_staff=True)))
         self.assertFalse(permissions.can_manage_users(make_user('m', Role.MEMBER)))
 
-    def test_finance_is_blocked_for_pastor_and_non_panel_users(self):
-        self.assertFalse(permissions.can_access_finance(make_user('p', Role.PASTOR, is_staff=True)))
-        self.assertTrue(permissions.can_access_finance(make_user('t', Role.TREASURER, is_staff=True)))
-        self.assertFalse(permissions.can_access_finance(make_user('m', Role.MEMBER, is_staff=True)))
+    def test_old_finance_predicates_are_gone(self):
+        self.assertFalse(hasattr(permissions, 'can_access_finance'))
+        self.assertFalse(hasattr(permissions, 'financial_access_required'))
 
 
 class PermissionViewTests(TestCase):
@@ -78,9 +76,9 @@ class PermissionViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse('login'), response['Location'])
 
-    def test_staff_flag_with_member_role_cannot_open_finance(self):
+    def test_staff_flag_with_member_role_cannot_open_treasury(self):
         self.login(make_user('sneaky', Role.MEMBER, is_staff=True))
-        self.assertEqual(self.client.get(reverse('finance')).status_code, 403)
+        self.assertEqual(self.client.get(reverse('tesouraria:home')).status_code, 403)
 
     def test_staff_flag_with_member_role_cannot_manage_users(self):
         self.login(make_user('sneaky', Role.MEMBER, is_staff=True))
@@ -103,15 +101,15 @@ class PermissionViewTests(TestCase):
         self.login(user)
         self.assertEqual(self.client.get(reverse('member_portal')).status_code, 200)
 
-    def test_board_can_open_panel_and_finance(self):
+    def test_board_can_open_panel_and_treasury(self):
         self.login(make_user('board', Role.BOARD, is_staff=True))
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
-        self.assertEqual(self.client.get(reverse('finance')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('tesouraria:home')).status_code, 200)
 
-    def test_pastor_sees_panel_but_not_finance(self):
+    def test_pastor_sees_panel_but_not_treasury(self):
         self.login(make_user('pastor', Role.PASTOR, is_staff=True))
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
-        self.assertEqual(self.client.get(reverse('finance')).status_code, 403)
+        self.assertEqual(self.client.get(reverse('tesouraria:home')).status_code, 403)
 
     def test_membership_applications_are_pastor_only(self):
         self.login(make_user('board', Role.BOARD, is_staff=True))

@@ -22,15 +22,17 @@ from django.utils import timezone
 from dal import autocomplete
 
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
-from .charts import finance_composition_chart, membership_tenure_chart, reports_chart, weekly_cashflow_chart
-from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, TransactionForm, UserAccountForm
+from .charts import membership_tenure_chart, reports_chart
+from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, UserAccountForm
 from .models import DEFAULT_FEATURED_VIDEO_TITLE, DEFAULT_FEATURED_VIDEO_URL, youtube_video_id
-from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry
 from .youtube import home_videos
+from tesouraria.models import Kind, Movement, Status
+from tesouraria.pending import create_portal_contribution
 from tesouraria.permissions import landing_url
+from tesouraria.rules import TreasuryError
 from .permissions import (
     can_manage_users,
-    financial_access_required,
     is_panel_user,
     is_pastor,
     pastor_required,
@@ -319,7 +321,6 @@ def logout_view(request):
 def dashboard_context(user=None):
     active_statuses = [Member.Status.ACTIVE, Member.Status.LEADERSHIP]
     members = Member.objects.prefetch_related('ministries')
-    show_finances = not user or not is_pastor(user)
     church_entry_dates = list(
         members.exclude(church_entry_date=None).values_list('church_entry_date', flat=True)
     )
@@ -334,14 +335,8 @@ def dashboard_context(user=None):
         'average_church_years': average_church_years,
         'journey_count': len(church_entry_dates),
         'event_count': Event.objects.count(),
-        'show_finances': show_finances,
         'upcoming_events': Event.objects.filter(starts_at__gte=timezone.now())[:4],
     }
-    if show_finances:
-        transactions = Transaction.objects.all()
-        income = transactions.filter(kind=Transaction.Kind.INCOME).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        expense = transactions.filter(kind=Transaction.Kind.EXPENSE).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        context.update({'income': income, 'expense': expense, 'balance': income - expense})
     return context
 
 
@@ -1098,30 +1093,6 @@ def sync_calendar_event(event):
         event.save(update_fields=['calendar_event'])
 
 
-@financial_access_required
-def finance(request):
-    context = dashboard_context(request.user)
-    transactions = Transaction.objects.select_related('member')
-    category_totals = transactions.values('category').annotate(total=Sum('amount')).order_by('-total')
-    context.update({
-        'transactions': transactions,
-        'category_totals': category_totals,
-        'finance_chart': finance_composition_chart(context['income'], context['expense']),
-        'cashflow_chart': weekly_cashflow_chart(transactions),
-    })
-    return render(request, 'core/finance.html', context)
-
-
-@financial_access_required
-def transaction_form(request):
-    form = TransactionForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Lançamento registrado com sucesso.')
-        return redirect('finance')
-    return render(request, 'core/entity_form.html', {'form': form, 'title': 'Novo lançamento', 'back_url': 'finance'})
-
-
 @staff_required
 def reports(request):
     context = dashboard_context(request.user)
@@ -1210,32 +1181,33 @@ def member_portal(request):
         return HttpResponseForbidden('Este usuário não possui perfil de membro.')
     contribution_form = MemberContributionForm(request.POST or None)
     if request.method == 'POST' and contribution_form.is_valid():
-        category = contribution_form.cleaned_data['category']
-        note = contribution_form.cleaned_data['note']
-        description = f'{category[:-1]} via portal - {member.name}'
-        if note:
-            description = f'{description}: {note}'
-        Transaction.objects.create(
-            date=timezone.localdate(),
-            description=description,
-            category=category,
-            kind=Transaction.Kind.INCOME,
-            amount=contribution_form.cleaned_data['amount'],
-            member=member,
-        )
-        messages.success(request, 'Contribuição registrada com sucesso. Obrigado!')
-        return redirect('member_portal')
+        try:
+            # A declaração entra na fila "A confirmar" da Tesouraria; não mexe em saldo.
+            create_portal_contribution(
+                member,
+                contribution_form.cleaned_data['category'],
+                contribution_form.cleaned_data['amount'],
+                contribution_form.cleaned_data['note'],
+            )
+        except TreasuryError as error:
+            contribution_form.add_error(None, str(error))
+        else:
+            messages.success(request, 'Contribuição registrada. Ela aparece como aguardando confirmação até a Tesouraria conferir. Obrigado!')
+            return redirect('member_portal')
 
-    contributions = member.transactions.filter(kind=Transaction.Kind.INCOME)
+    # Só as contribuições do próprio membro, nunca as de outros.
+    contributions = Movement.objects.live().filter(member=member, kind=Kind.INCOME).select_related('category')
+    confirmed = contributions.filter(status=Status.CONFIRMED)
     upcoming = Event.objects.filter(starts_at__gte=timezone.now())[:4]
-    contribution_total = contributions.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    contribution_total = confirmed.aggregate(total=Sum('amount'))['total'] or Decimal('0')
     first_name = member.name.split()[0]
     return render(request, 'core/member_portal.html', {
         'member': member,
         'first_name': first_name,
         'contributions': contributions[:5],
         'contribution_total': contribution_total,
-        'contribution_count': contributions.count(),
+        'contribution_count': confirmed.count(),
+        'pending_count': contributions.filter(status=Status.PENDING).count(),
         'contribution_form': contribution_form,
         'upcoming_events': upcoming,
         'next_event': upcoming.first(),

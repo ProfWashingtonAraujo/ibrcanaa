@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, Transaction, spotify_embed_path
+from .models import AccessProfile, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, Member, MembershipApplication, Ministry, spotify_embed_path
 
 
 class CrispyFormMixin:
@@ -588,13 +588,6 @@ class CourseEvaluationForm(forms.ModelForm):
             'learning': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Conte o que mais marcou sua caminhada.'}),
             'feedback': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Opcional'}),
         }
-
-
-class TransactionForm(CrispyFormMixin, forms.ModelForm):
-    class Meta:
-        model = Transaction
-        fields = ['date', 'description', 'category', 'kind', 'amount', 'member']
-        widgets = {'date': forms.DateInput(attrs={'type': 'date'})}
 
 
 class MemberContributionForm(forms.Form):

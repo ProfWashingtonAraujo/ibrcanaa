@@ -3,10 +3,14 @@ from django.urls import reverse
 from core.permissions import is_panel_user
 
 from .navigation import build_treasury_nav
+from .permissions import can_view_treasury
 
 
 def treasury_shell(request):
     """Menu e parâmetros da casca só nas páginas da Tesouraria (prefixo /tesouraria/)."""
+    if request.path.startswith('/admin/'):
+        # Atalho "Tesouraria" na barra do topo do painel (sem item no menu lateral).
+        return {'treasury_url': reverse('tesouraria:home')} if can_view_treasury(request.user) else {}
     if not request.path.startswith('/tesouraria/'):
         return {}
     return {

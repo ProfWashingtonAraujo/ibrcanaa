@@ -16,6 +16,7 @@ from pypdf import PdfReader
 
 from .bible import DAILY_VERSES, get_daily_verse
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry, Transaction
+from tesouraria.models import Category, Kind, Movement, Status
 
 # Estas classes testam autorização, não o limite de login. O backend do django-axes exige
 # `request` em authenticate(), que client.login() não envia. O limite de login é coberto
@@ -280,7 +281,7 @@ class AccessTests(TestCase):
         self.client.login(username='staff', password='test-pass')
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="nav-symbol"><svg', count=10)
+        self.assertContains(response, 'class="nav-symbol"><svg', count=9)
         self.assertContains(response, 'Publicações')
         self.assertContains(response, 'Conteúdo')
         self.assertContains(response, 'class="side-logout"')
@@ -345,34 +346,6 @@ class AccessTests(TestCase):
         self.assertEqual(page.photo_1_url, 'https://example.com/historia-1.jpg')
         self.assertEqual(page.photo_2_url, 'https://example.com/historia-2.jpg')
         self.assertEqual(page.photo_3_url, 'https://example.com/historia-3.jpg')
-
-    def test_pastor_cannot_access_or_see_financial_data(self):
-        pastor = User.objects.create_user('pastor.finance', password='test-pass', is_staff=True)
-        AccessProfile.objects.create(user=pastor, role=AccessProfile.Role.PASTOR)
-        Transaction.objects.create(
-            date='2026-08-12', description='Valor confidencial', category='Dízimos',
-            kind=Transaction.Kind.INCOME, amount='9876.54',
-        )
-        self.client.login(username='pastor.finance', password='test-pass')
-
-        dashboard = self.client.get(reverse('dashboard'))
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertFalse(dashboard.context['show_finances'])
-        self.assertNotIn('balance', dashboard.context)
-        self.assertNotContains(dashboard, 'Financeiro')
-        self.assertNotContains(dashboard, 'Movimentação atual')
-        self.assertNotContains(dashboard, '9876,54')
-
-        reports = self.client.get(reverse('reports'))
-        self.assertEqual(reports.status_code, 200)
-        self.assertNotContains(reports, 'Saldo financeiro')
-        self.assertNotContains(reports, '9876,54')
-        self.assertEqual(self.client.get(reverse('finance')).status_code, 403)
-        self.assertEqual(self.client.get(reverse('transaction_create')).status_code, 403)
-
-        self.client.logout()
-        self.client.login(username='staff', password='test-pass')
-        self.assertEqual(self.client.get(reverse('finance')).status_code, 200)
 
     def test_members_can_be_searched_and_filtered(self):
         ministry = Ministry.objects.create(name='Louvor', leader_name='Líder')
@@ -1070,12 +1043,14 @@ class AccessTests(TestCase):
         member.baptism_date = date(2007, 1, 20)
         member.church_entry_date = date(2016, 2, 14)
         member.save(update_fields=['conversion_date', 'baptism_date', 'church_entry_date'])
-        Transaction.objects.create(
-            date='2026-08-01',
+        Movement.objects.create(
+            date=date(2026, 8, 1),
             description='Contribuição mensal',
-            category='Dízimos',
-            kind=Transaction.Kind.INCOME,
+            category=Category.objects.get(name='Dízimos', kind=Kind.INCOME),
+            kind=Kind.INCOME,
             amount='150.00',
+            account='bank',
+            status=Status.CONFIRMED,
             member=self.member_user.member_profile,
         )
         self.client.login(username='member', password='test-pass')
@@ -1092,31 +1067,6 @@ class AccessTests(TestCase):
         self.assertContains(response, 'tesouraria_001.png')
         self.assertContains(response, 'Contribua também pelo QR Code')
 
-    def test_member_contribution_updates_finance_dashboard(self):
-        member = self.member_user.member_profile
-        self.client.login(username='member', password='test-pass')
-
-        response = self.client.post(reverse('member_portal'), {
-            'category': 'Dízimos',
-            'amount': '250.50',
-            'note': 'Contribuição de agosto',
-            'member': '999',
-            'kind': Transaction.Kind.EXPENSE,
-        })
-
-        self.assertRedirects(response, reverse('member_portal'))
-        contribution = Transaction.objects.get(member=member, amount='250.50')
-        self.assertEqual(contribution.kind, Transaction.Kind.INCOME)
-        self.assertEqual(contribution.category, 'Dízimos')
-
-        portal = self.client.get(reverse('member_portal'))
-        self.assertContains(portal, 'R$ 250,50')
-        self.client.logout()
-        self.client.login(username='staff', password='test-pass')
-        finance = self.client.get(reverse('finance'))
-        self.assertEqual(finance.context['income'], contribution.amount)
-        self.assertContains(finance, 'Contribuição de agosto')
-
     def test_invalid_member_contribution_is_not_recorded(self):
         self.client.login(username='member', password='test-pass')
         response = self.client.post(reverse('member_portal'), {
@@ -1125,6 +1075,7 @@ class AccessTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Certifique-se que este valor seja maior ou igual a 1.00')
+        self.assertFalse(Movement.objects.exists())
         self.assertEqual(Transaction.objects.count(), 0)
 
     @patch('core.views.fetch_chapter')
@@ -1583,10 +1534,10 @@ class AdminWeekAndNavigationTests(TestCase):
         for title in ('Pessoas', 'Ensino', 'Agenda e site', 'Gestão'):
             self.assertContains(response, f'>{title}</h2>')
         self.assertNotContains(response, 'Candidaturas')
-        self.assertContains(response, 'Financeiro')
+        self.assertNotContains(response, 'Financeiro')
         self.assertContains(response, 'aria-current="page"')
 
-    def test_pastor_sees_applications_but_not_finance(self):
+    def test_pastor_sees_applications_and_no_financial_menu(self):
         self.client.login(username='pastor', password='test-pass')
         response = self.client.get(reverse('dashboard'))
         self.assertContains(response, 'Candidaturas')

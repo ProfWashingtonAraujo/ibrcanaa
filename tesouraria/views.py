@@ -8,7 +8,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
+
+from core.models import Transaction
 
 from . import audit, closing as closing_service, report as report_service, ledger, opinions as opinions_service, payables as payables_service, pending as pending_service, recurring as recurring_service
 from .balances import NO_DESTINATION, month_summary
@@ -682,6 +684,27 @@ def audit_log(request):
     return render(request, 'tesouraria/audit.html', {
         'logs': logs, 'limit': AUDIT_LIMIT, 'truncated': len(logs) == AUDIT_LIMIT, 'show_details': show_details,
         'actions': audit.ACTION_CHOICES, 'filters': {'mes': f'{month:%Y-%m}' if month else '', 'acao': action or ''},
+    })
+
+
+# --- Histórico anterior (Financeiro antigo, somente leitura) --------------------------------
+
+LEGACY_LIMIT = 200
+
+
+@treasury_detail_required
+@require_GET
+def legacy(request):
+    """Lançamentos do Financeiro antigo (`core.Transaction`), só para consulta.
+
+    A tabela antiga não foi migrada para o livro novo (não tem conta nem forma).
+    """
+    queryset = Transaction.objects.select_related('member').order_by('-date', '-id')
+    total = queryset.count()
+    transactions = list(queryset[:LEGACY_LIMIT])
+    return render(request, 'tesouraria/legacy.html', {
+        'transactions': transactions, 'total': total, 'limit': LEGACY_LIMIT,
+        'truncated': total > len(transactions),
     })
 
 

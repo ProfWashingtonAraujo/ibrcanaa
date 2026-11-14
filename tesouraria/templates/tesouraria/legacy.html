@@ -1,0 +1,29 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Histórico anterior | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Histórico anterior{% endblock %}
+{% block admin_content %}
+<!-- legacy:start -->
+<article class="panel">
+  <p class="panel-sub">Lançamentos do Financeiro antigo, guardados só para consulta. Eles não entram nos saldos da Tesouraria: o livro novo começa na data de início e nos saldos de abertura informados nas Configurações.</p>
+  {% if transactions %}
+  <table class="tes-table">
+    <thead><tr><th scope="col">Data</th><th scope="col">Descrição</th><th scope="col">Categoria</th><th scope="col">Tipo</th><th scope="col">Membro</th><th scope="col">Valor</th></tr></thead>
+    <tbody>
+    {% for item in transactions %}
+    <tr>
+      <td>{{ item.date|date:'d/m/Y' }}</td>
+      <td>{{ item.description }}</td>
+      <td>{{ item.category }}</td>
+      <td>{{ item.get_kind_display }}</td>
+      <td>{{ item.member.name|default:'-' }}</td>
+      <td class="tes-amount {% if item.kind == 'expense' %}tes-expense{% endif %}">{% if item.kind == 'expense' %}&minus; {% endif %}R$ {{ item.amount|floatformat:'2g' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if truncated %}<p class="panel-sub">Mostrando só os {{ limit }} lançamentos mais recentes de {{ total }}. Os anteriores continuam guardados na tabela antiga.</p>{% endif %}
+  {% else %}
+  <p class="panel-sub">Nenhum lançamento antigo registrado.</p>
+  {% endif %}
+</article>
+<!-- legacy:end -->
+{% endblock %}

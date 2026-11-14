@@ -37,6 +37,7 @@
       <div class="topbar-actions">
         {% if shell.search|default_if_none:True %}<form class="admin-search" role="search" method="get" action="{% url 'admin_search' %}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg><input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Buscar no painel" aria-label="Buscar no painel" autocomplete="off"><kbd aria-hidden="true">/</kbd></form>{% endif %}
         {% if shell.panel_url %}<a class="button button-ghost" href="{{ shell.panel_url }}">Ir para o painel</a>{% endif %}
+        {% if treasury_url %}<a class="button button-ghost" href="{{ treasury_url }}">Tesouraria</a>{% endif %}
         <a class="button button-ghost" href="{% url 'home' %}">Ver site</a><span class="date-chip">{% now 'd M Y' %}</span>
       </div>
     </header>

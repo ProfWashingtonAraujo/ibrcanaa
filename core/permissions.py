@@ -11,7 +11,8 @@ Regras:
   (contas antigas criadas por `createsuperuser`).
 - Gestão de usuários: superusuário, Pastor ou Admin (Diretoria).
 - Candidaturas e conteúdo confidencial: somente Pastor.
-- Financeiro: painel, exceto Pastor.
+- Tesouraria: regras próprias em `tesouraria.permissions` (sem acesso para
+  Pastor, Secretário e Diácono).
 """
 
 from functools import wraps
@@ -53,10 +54,6 @@ def can_manage_users(user):
     return user.is_superuser or get_role(user) in AccessProfile.USER_MANAGER_ROLES
 
 
-def can_access_finance(user):
-    return is_panel_user(user) and not is_pastor(user)
-
-
 def staff_required(view):
     return user_passes_test(is_panel_user, login_url='login')(view)
 
@@ -82,13 +79,3 @@ def pastor_required(view):
 
     return wrapped
 
-
-def financial_access_required(view):
-    @wraps(view)
-    @login_required
-    def wrapped(request, *args, **kwargs):
-        if not can_access_finance(request.user):
-            return HttpResponseForbidden('O perfil Pastor não possui acesso à área financeira.')
-        return view(request, *args, **kwargs)
-
-    return wrapped

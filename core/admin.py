@@ -16,8 +16,20 @@ class MemberAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ['date', 'description', 'category', 'kind', 'amount']
+    """Lançamentos do Financeiro antigo: só consulta. O livro vale na Tesouraria."""
+
+    list_display = ['date', 'description', 'category', 'kind', 'amount', 'member']
     list_filter = ['kind', 'category']
+    list_select_related = ['member']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Book)

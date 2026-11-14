@@ -22,7 +22,10 @@ def create_portal_contribution(member, category_name: str, amount: Decimal, note
     amount = Decimal(amount)
     if amount <= 0:
         raise TreasuryError('O valor deve ser maior que zero.')
-    category = Category.objects.get(name=category_name, kind=Kind.INCOME)
+    category = Category.objects.filter(name=category_name, kind=Kind.INCOME, active=True).first()
+    if category is None:
+        raise TreasuryError(f'A categoria "{category_name}" não está disponível na Tesouraria no momento. '
+                            'Avise o Tesoureiro e tente de novo mais tarde.')
     label = category.name[:-1] if category.name.endswith('s') else category.name
     movement = Movement.objects.create(
         date=timezone.localdate(), kind=Kind.INCOME, amount=amount, category=category,

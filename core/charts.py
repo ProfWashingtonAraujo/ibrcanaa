@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import plotly.graph_objects as go
 from plotly.offline import plot
 from django.utils import timezone
@@ -52,44 +50,6 @@ def membership_tenure_chart(members):
         hovertemplate='<b>%{x}</b><br>Tempo de igreja: %{y:.1f} anos<extra></extra>',
     ))
     figure.update_yaxes(ticksuffix=' anos', gridcolor=GRID, zeroline=False, rangemode='tozero')
-    figure.update_xaxes(showgrid=False)
-    return _render(figure)
-
-
-def finance_composition_chart(income, expense):
-    figure = go.Figure(go.Pie(
-        labels=['Entradas', 'Saídas'],
-        values=[income, expense],
-        hole=.68,
-        marker=dict(colors=[BLUE, GOLD], line=dict(color='white', width=4)),
-        textinfo='none',
-        hovertemplate='<b>%{label}</b><br>R$ %{value:,.2f}<br>%{percent}<extra></extra>',
-    ))
-    balance = income - expense
-    figure.add_annotation(
-        text=f'<span style="font-size:11px;color:{MUTED}">SALDO</span><br><b>R$ {balance:,.0f}</b>',
-        x=.5,
-        y=.5,
-        showarrow=False,
-        font=dict(size=18, color=INK),
-    )
-    return _render(figure, height=285)
-
-
-def weekly_cashflow_chart(transactions):
-    totals = defaultdict(lambda: {'income': 0, 'expense': 0})
-    for transaction in transactions:
-        week = transaction.date.strftime('%d/%m')
-        totals[week][transaction.kind] += float(transaction.amount)
-    labels = list(totals)[-6:]
-    income = [totals[label]['income'] for label in labels]
-    expense = [totals[label]['expense'] for label in labels]
-    figure = go.Figure([
-        go.Bar(name='Entradas', x=labels, y=income, marker_color=BLUE, hovertemplate='Entradas<br>R$ %{y:,.2f}<extra></extra>'),
-        go.Bar(name='Saídas', x=labels, y=expense, marker_color=GOLD, hovertemplate='Saídas<br>R$ %{y:,.2f}<extra></extra>'),
-    ])
-    figure.update_layout(barmode='group', bargap=.32, showlegend=True, legend=dict(orientation='h', y=1.12, x=0))
-    figure.update_yaxes(gridcolor=GRID, zeroline=False, tickprefix='R$ ')
     figure.update_xaxes(showgrid=False)
     return _render(figure)
 

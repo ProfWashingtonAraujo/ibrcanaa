@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from importlib import import_module
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -7,6 +8,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from core.models import AccessProfile, Book, Event, Member, Ministry, Transaction
+from tesouraria import pending
+from tesouraria.models import Category, Kind, Method, Movement, Payable, RecurringBill, Source, Status, Transfer, TreasurySettings
+from tesouraria.rules import month_start, shift_month
+
+# Mesmas categorias iniciais da migração da Tesouraria.
+DEFAULT_CATEGORIES = import_module('tesouraria.migrations.0002_default_categories')
 
 
 class Command(BaseCommand):
@@ -15,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not settings.DEBUG:
             raise CommandError(
-                'seed_demo apaga eventos e lançamentos e cria usuários com senhas públicas; '
+                'seed_demo apaga eventos e cria usuários com senhas públicas; '
                 'só pode rodar com DJANGO_DEBUG=True (ambiente local).'
             )
         admin, _ = User.objects.get_or_create(username='diretoria', defaults={
@@ -113,15 +120,88 @@ class Command(BaseCommand):
             starts_at = (now + timedelta(days=days)).replace(hour=hour, minute=0, second=0, microsecond=0)
             Event.objects.create(title=title, starts_at=starts_at, kind=kind, location=location, expected_attendance=expected)
 
-        Transaction.objects.all().delete()
+        # Financeiro antigo: só alguns lançamentos de exemplo para o "Histórico anterior".
+        # Nada é apagado; cada linha é criada uma vez.
         for days, description, category, kind, amount, member in [
-            (1, 'Dízimo - Membro anônimo', 'Dízimos', Transaction.Kind.INCOME, '500.00', None),
-            (2, 'Conta de luz', 'Manutenção', Transaction.Kind.EXPENSE, '350.00', None),
-            (3, 'Oferta culto de domingo', 'Ofertas', Transaction.Kind.INCOME, '1250.50', None),
-            (5, 'Material escola bíblica', 'Materiais', Transaction.Kind.EXPENSE, '120.00', None),
-            (7, 'Dízimo - João Silva', 'Dízimos', Transaction.Kind.INCOME, '1000.00', members['João Silva']),
-            (9, 'Ajuda missionária', 'Missões', Transaction.Kind.EXPENSE, '800.00', None),
+            (40, 'Dízimo - Membro anônimo', 'Dízimos', Transaction.Kind.INCOME, '500.00', None),
+            (42, 'Conta de luz', 'Manutenção', Transaction.Kind.EXPENSE, '350.00', None),
+            (45, 'Oferta culto de domingo', 'Ofertas', Transaction.Kind.INCOME, '1250.50', None),
+            (47, 'Material escola bíblica', 'Materiais', Transaction.Kind.EXPENSE, '120.00', None),
+            (50, 'Dízimo - João Silva', 'Dízimos', Transaction.Kind.INCOME, '1000.00', members['João Silva']),
+            (52, 'Ajuda missionária', 'Missões', Transaction.Kind.EXPENSE, '800.00', None),
         ]:
-            Transaction.objects.create(date=date.today() - timedelta(days=days), description=description, category=category, kind=kind, amount=Decimal(amount), member=member)
+            Transaction.objects.get_or_create(description=description, kind=kind, amount=Decimal(amount), defaults={
+                'date': date.today() - timedelta(days=days), 'category': category, 'member': member,
+            })
 
-        self.stdout.write(self.style.SUCCESS('Dados criados. Diretoria: diretoria / Canaa@2026 | Membro: membro / Membro@2026'))
+        treasurer = self._user('tesoureiro', 'Tesoureiro@2026', AccessProfile.Role.TREASURER, 'Tesoureiro', 'Demonstração')
+        self._user('comissao', 'Comissao@2026', AccessProfile.Role.COMMITTEE, 'Comissão', 'de Contas')
+        self._treasury(treasurer, members['João Silva'])
+
+        self.stdout.write(self.style.SUCCESS(
+            'Dados criados. Diretoria: diretoria / Canaa@2026 | Membro: membro / Membro@2026 | '
+            'Tesoureiro: tesoureiro / Tesoureiro@2026 | Comissão de Contas: comissao / Comissao@2026'
+        ))
+
+    def _user(self, username, password, role, first_name, last_name):
+        user, _ = User.objects.get_or_create(username=username, defaults={
+            'first_name': first_name, 'last_name': last_name, 'email': f'{username}@ibrcanaa.local',
+        })
+        user.set_password(password)
+        # Mesmo critério dos formulários: `is_staff` segue o papel.
+        user.is_staff = role in AccessProfile.ADMIN_ROLES
+        user.save()
+        AccessProfile.objects.update_or_create(user=user, defaults={'role': role})
+        return user
+
+    def _treasury(self, treasurer, tither):
+        """Tesouraria de exemplo: abertura no mês passado, movimentos, fila, contas a pagar."""
+        for name, extra in DEFAULT_CATEGORIES.INCOME:
+            Category.objects.get_or_create(name=name, kind=Kind.INCOME, defaults=extra)
+        for name in DEFAULT_CATEGORIES.EXPENSE:
+            Category.objects.get_or_create(name=name, kind=Kind.EXPENSE)
+        income = {c.name: c for c in Category.objects.filter(kind=Kind.INCOME)}
+        expense = {c.name: c for c in Category.objects.filter(kind=Kind.EXPENSE)}
+
+        today = date.today()
+        this_month = month_start(today)
+        last_month = shift_month(this_month, -1)
+        # Só cria a abertura uma vez: depois de um mês fechado ela não pode mudar.
+        TreasurySettings.objects.get_or_create(pk=1, defaults={
+            'start_date': last_month, 'opening_cash': Decimal('350.00'), 'opening_bank': Decimal('4200.00'),
+        })
+        start = TreasurySettings.get().start_date
+
+        def on(month, day):
+            return max(start, min(month.replace(day=day), today))
+
+        rows = [
+            (on(last_month, 3), Kind.INCOME, income['Dízimos'], '600.00', 'Dízimo - João Silva', 'bank', Method.PIX, tither, ''),
+            (on(last_month, 6), Kind.INCOME, income['Ofertas'], '845.30', 'Oferta do culto de domingo', 'cash', Method.CASH, None, ''),
+            (on(last_month, 12), Kind.EXPENSE, expense['Água e luz'], '312.40', 'Conta de luz', 'bank', Method.PIX, None, ''),
+            (on(last_month, 20), Kind.INCOME, income['Ofertas especiais'], '420.00', 'Oferta para missões', 'cash', Method.CASH, None, 'Missões'),
+            (on(this_month, 1), Kind.INCOME, income['Ofertas'], '690.00', 'Oferta do culto de domingo (demonstração)', 'cash', Method.CASH, None, ''),
+            (on(this_month, 2), Kind.EXPENSE, expense['Material'], '95.00', 'Material de limpeza', 'cash', Method.CASH, None, ''),
+        ]
+        for day, kind, category, amount, description, account, method, member, destination in rows:
+            Movement.objects.get_or_create(description=description, source=Source.TREASURY, defaults={
+                'date': day, 'kind': kind, 'category': category, 'amount': Decimal(amount), 'account': account,
+                'method': method, 'member': member, 'destination': destination, 'status': Status.CONFIRMED,
+                'created_by': treasurer,
+            })
+        Transfer.objects.get_or_create(note='Depósito das ofertas (demonstração)', defaults={
+            'date': on(last_month, 22), 'from_account': 'cash', 'to_account': 'bank', 'amount': Decimal('500.00'),
+            'created_by': treasurer,
+        })
+
+        if not Movement.objects.filter(member=tither, source=Source.PORTAL, status=Status.PENDING).exists():
+            pending.create_portal_contribution(tither, 'Dízimos', Decimal('150.00'), 'Dízimo declarado no portal')
+
+        Payable.objects.get_or_create(description='Manutenção do ar-condicionado', recurring=None, defaults={
+            'payee': 'Refrigeração Canaã', 'category': expense['Manutenção'], 'amount': Decimal('280.00'),
+            'due_date': today + timedelta(days=7), 'created_by': treasurer,
+        })
+        RecurringBill.objects.get_or_create(description='Conta de água', defaults={
+            'payee': 'Companhia de água', 'category': expense['Água e luz'], 'amount': Decimal('120.00'),
+            'due_day': 10, 'start_date': this_month, 'created_by': treasurer,
+        })

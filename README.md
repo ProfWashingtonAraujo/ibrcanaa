@@ -44,6 +44,8 @@ Acesse `http://127.0.0.1:8000/`.
 
 - Diretoria: `diretoria` / `Canaa@2026`
 - Membro: `membro` / `Membro@2026`
+- Tesoureiro: `tesoureiro` / `Tesoureiro@2026`
+- Comissão de Contas: `comissao` / `Comissao@2026`
 
 Troque essas senhas antes de utilizar dados reais.
 
@@ -55,9 +57,32 @@ Troque essas senhas antes de utilizar dados reais.
 - Dashboard administrativo
 - Cadastro e edição de membros
 - Cadastro de eventos
-- Lançamentos financeiros
+- Tesouraria (caixa do mês, contas a pagar, fechamento e relatório)
 - Relatórios consolidados
 - Django Admin em `/django-admin/`
+
+## Tesouraria
+
+A Tesouraria fica em `/tesouraria/`, com menu próprio. Ela substitui o antigo Financeiro: a página Financeiro, o item de menu, a tela de novo lançamento e o saldo no painel e em Relatórios saíram para todos os perfis.
+
+**Perfis**
+
+- **Tesoureiro** (e superusuário): faz tudo. Ao entrar, cai direto no Caixa do Mês e tem o atalho "Ir para o painel".
+- **Diretoria (Admin):** somente leitura do Caixa do Mês e do Relatório, sem o nome do membro nas contribuições. Acessa pelo atalho "Tesouraria" no topo do painel.
+- **Comissão de Contas:** leitura de tudo (lançamentos, contas a pagar, fechamentos, histórico de alterações e dizimistas) e registra o parecer de cada mês fechado.
+- Pastor, Secretário, Diácono e membros não têm acesso.
+
+**Abrir o primeiro mês:** o Tesoureiro vai em Configurações e informa a data de início e os saldos reais do Caixa e do Banco nesse dia. Os saldos de cada mês partem daí, e esses valores só podem mudar enquanto nenhum mês estiver fechado.
+
+**Fluxo do mês**
+
+1. Lançar entradas, saídas e depósitos (Caixa para Banco, ou saque) no Caixa do Mês.
+2. Tratar a fila **A confirmar**: as contribuições declaradas no portal do membro chegam ali e só contam no saldo depois de confirmadas (com conta e forma). Recusar pede um motivo, que o membro vê no portal.
+3. Pagar as **Contas a pagar**. As recorrentes e parceladas geram a conta do mês ao abrir a tela.
+4. **Conferir o caixa** (dinheiro contado) e **fechar o mês**. Os meses fecham em ordem; com contribuição a confirmar no mês, o fechamento fica bloqueado.
+5. Emitir o **Relatório** (tela ou PDF). A Comissão registra o parecer.
+
+**Histórico anterior:** os lançamentos do Financeiro antigo não foram migrados (não têm conta nem forma). Ficam intactos e somente leitura em Tesouraria > Histórico anterior, visível ao Tesoureiro e à Comissão, e no Django Admin, também só para consulta.
 
 ## Testes
 

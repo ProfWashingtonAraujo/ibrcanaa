@@ -60,10 +60,9 @@ def build_admin_nav(request):
         _item('Eventos', 'events', 'events', {'events', 'event_create', 'event_edit'}),
         _item('Conteúdo do site', 'content', 'institutional_content', {'institutional_content', 'church_about_edit', 'church_history_edit'}),
     ]
-    management = []
-    if not pastor:
-        management.append(_item('Financeiro', 'finance', 'finance', {'finance', 'transaction_create'}))
-    management.append(_item('Relatórios', 'reports', 'reports', {'reports'}))
+    management = [
+        _item('Relatórios', 'reports', 'reports', {'reports'}),
+    ]
     if user.is_superuser or can_manage_users(user):
         management.append(_item('Configurações', 'settings', 'user_accounts', {'user_accounts', 'user_account_create', 'user_account_edit'}))
 

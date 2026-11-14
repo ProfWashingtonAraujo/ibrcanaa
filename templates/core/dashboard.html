@@ -45,7 +45,6 @@
   <div><span>Membros</span><strong>{{ member_count }}</strong><small>{{ active_count }} ativos</small></div>
   <div><span>Visitantes e novos</span><strong>{{ visitor_count }}</strong><small>Em integração</small></div>
   <div><span>Tempo médio de igreja</span><strong>{{ average_church_years|floatformat:1 }} anos</strong><small>{{ journey_count }} com data de entrada</small></div>
-  {% if show_finances %}<div><span>Saldo do período</span><strong>R$ {{ balance|floatformat:2 }}</strong><small><a href="{% url 'finance' %}">Abrir financeiro</a></small></div>{% endif %}
 </section>
 <section class="dashboard-grid lower">
   <article class="panel chart-panel"><div class="panel-heading"><div><h2>Tempo de igreja</h2><p class="panel-sub">Distribuição dos membros por tempo de casa</p></div></div><div class="plotly-chart">{{ membership_chart|safe }}</div></article>

@@ -35,6 +35,7 @@ urlpatterns = [
     path('relatorio/pdf/', views.report_pdf, name='report_pdf'),
     path('dizimistas/', views.tithers, name='tithers'),
     path('historico/', views.audit_log, name='audit'),
+    path('historico-anterior/', views.legacy, name='legacy'),
     path('categorias/', views.categories, name='categories'),
     path('categorias/nova/', views.category_create, name='category_create'),
     path('categorias/<int:pk>/editar/', views.category_edit, name='category_edit'),
