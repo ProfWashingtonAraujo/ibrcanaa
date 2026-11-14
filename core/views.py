@@ -635,10 +635,10 @@ def book_form(request, pk=None):
         book = form.save()
         messages.success(request, 'Livro salvo com sucesso.')
         return redirect('books')
-    return render(request, 'core/entity_form.html', {
+    return render(request, 'core/book_form.html', {
         'form': form,
         'title': 'Editar livro' if instance else 'Novo livro',
-        'back_url': 'books',
+        'cancel_url': reverse('books'),
     })
 
 
@@ -1047,10 +1047,10 @@ def event_form(request, pk=None):
         sync_calendar_event(event)
         messages.success(request, 'Evento salvo com sucesso.')
         return redirect('events')
-    return render(request, 'core/entity_form.html', {
+    return render(request, 'core/event_form.html', {
         'form': form,
         'title': 'Editar evento' if instance else 'Novo evento',
-        'back_url': 'events',
+        'cancel_url': reverse('events'),
     })
 
 

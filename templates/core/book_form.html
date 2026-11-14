@@ -1,0 +1,53 @@
+{% extends 'core/form_with_preview.html' %}
+{% block section %}Publicações{% endblock %}
+{% block preview %}
+<div class="book-preview" aria-hidden="true">
+  <div class="bp-cover" data-bp-cover><span class="bp-badge" data-bp-badge>Livro</span><em data-bp-nocover>Sem capa</em></div>
+  <div class="bp-copy">
+    <small data-bp-author>Autor</small>
+    <h3 data-bp-title>Título do livro</h3>
+    <p class="bp-sub" data-bp-subtitle hidden></p>
+    <p class="bp-desc" data-bp-desc>Um livro para fortalecer a fé, o ensino e a caminhada cristã.</p>
+    <div class="bp-meta"><strong data-bp-price>Consulte</strong><span data-bp-status>Em preparação</span></div>
+    <div class="bp-actions"><span data-bp-sample hidden>Ler amostra</span><span class="bp-buy" data-bp-buy hidden>Comprar</span></div>
+  </div>
+</div>
+<p class="preview-note" data-bp-note hidden>Este livro está marcado como indisponível e não aparece na vitrine do site.</p>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = function (attr) { return document.querySelector('[' + attr + ']'); };
+  var f = { title: $('id_title'), subtitle: $('id_subtitle'), author: $('id_author_name'), desc: $('id_description'), cover: $('id_cover_url'),
+            price: $('id_price'), buy: $('id_purchase_url'), sample: $('id_preview_url'), featured: $('id_is_featured'), available: $('id_is_available') };
+  var DEFAULT_DESC = 'Um livro para fortalecer a fé, o ensino e a caminhada cristã.';
+  function isUrl(v) { return /^https?:\/\//i.test(v); }
+  function update() {
+    var cover = q('data-bp-cover');
+    var coverUrl = (f.cover.value || '').trim();
+    if (isUrl(coverUrl)) { cover.style.backgroundImage = 'url(' + JSON.stringify(coverUrl) + ')'; q('data-bp-nocover').hidden = true; }
+    else { cover.style.backgroundImage = ''; q('data-bp-nocover').hidden = false; }
+    q('data-bp-badge').textContent = f.featured && f.featured.checked ? 'Destaque' : 'Livro';
+    q('data-bp-author').textContent = (f.author.value || '').trim() || 'Autor';
+    q('data-bp-title').textContent = (f.title.value || '').trim() || 'Título do livro';
+    var sub = (f.subtitle.value || '').trim();
+    q('data-bp-subtitle').textContent = sub; q('data-bp-subtitle').hidden = !sub;
+    q('data-bp-desc').textContent = (f.desc.value || '').trim() || DEFAULT_DESC;
+    var price = parseFloat(String(f.price.value).replace(',', '.'));
+    q('data-bp-price').textContent = isNaN(price) ? 'Consulte' : 'R$ ' + price.toFixed(2).replace('.', ',');
+    var hasBuy = isUrl((f.buy.value || '').trim());
+    q('data-bp-status').textContent = hasBuy ? 'Disponível para aquisição' : 'Em preparação';
+    q('data-bp-buy').hidden = !hasBuy;
+    q('data-bp-sample').hidden = !isUrl((f.sample.value || '').trim());
+    q('data-bp-note').hidden = !f.available || f.available.checked;
+  }
+  Object.keys(f).forEach(function (k) {
+    if (!f[k]) return;
+    f[k].addEventListener('input', update);
+    f[k].addEventListener('change', update);
+  });
+  update();
+})();
+</script>
+{% endblock %}

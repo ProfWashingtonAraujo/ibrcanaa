@@ -2,25 +2,28 @@
 {% block title %}{{ member.name }} | IBR Canaã{% endblock %}{% block section_name %}Membros{% endblock %}{% block page_title %}{{ member.name }}{% endblock %}
 {% block admin_content %}
 <p class="crumb"><a href="{% url 'members' %}">Voltar para Membros</a></p>
-<section class="panel person-head">
-  <div class="person-who">
-    {% if member.user.access_profile.photo %}<img class="people-avatar person-avatar" src="{{ member.user.access_profile.photo.url }}" alt="">{% elif member.avatar_url %}<img class="people-avatar person-avatar" src="{{ member.avatar_url }}" alt="">{% else %}<span class="people-avatar person-avatar" aria-hidden="true">{{ member.name|first }}</span>{% endif %}
-    <div>
-      <h2>{{ member.name }}</h2>
-      <p><span class="tag tag-{{ member.status }}">{{ member.get_status_display }}</span></p>
-      <p class="person-access">{% if member.user %}Acesso ao sistema: {{ member.user.username }}{% else %}Sem acesso ao sistema{% endif %}</p>
+<section class="panel profile-head">
+  <div class="profile-top">
+    <div class="person-who">
+      {% if member.user.access_profile.photo %}<img class="people-avatar person-avatar" src="{{ member.user.access_profile.photo.url }}" alt="">{% elif member.avatar_url %}<img class="people-avatar person-avatar" src="{{ member.avatar_url }}" alt="">{% else %}<span class="people-avatar person-avatar" aria-hidden="true">{{ member.name|first }}</span>{% endif %}
+      <div>
+        <h2>{{ member.name }}</h2>
+        <p><span class="tag tag-{{ member.status }}">{{ member.get_status_display }}</span></p>
+        <p class="profile-sub"><a class="profile-mail" href="mailto:{{ member.email }}">{{ member.email }}</a></p>
+        <p class="person-access">{% if member.user %}Acesso ao sistema: {{ member.user.username }}{% else %}Sem acesso ao sistema{% endif %}</p>
+      </div>
     </div>
+    <dl class="profile-stats profile-stats-text">
+      <div><dt>Na igreja há</dt><dd>{{ member.church_duration }}</dd></div>
+      <div><dt>Batismo</dt><dd>{% if member.baptism_date %}{{ member.baptism_date|date:'d/m/Y' }}{% elif member.baptized %}Batizado{% else %}Não informado{% endif %}</dd></div>
+      <div><dt>Idade</dt><dd>{% if age is not None %}{{ age }} ano{{ age|pluralize }}{% else %}Não informada{% endif %}</dd></div>
+    </dl>
   </div>
-  <div class="person-actions">
+  <div class="profile-actions">
     {% if whatsapp_url %}<a class="button button-ghost" href="{{ whatsapp_url }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
     <a class="button button-ghost" href="mailto:{{ member.email }}">E-mail</a>
     <a class="button button-primary" href="{% url 'member_edit' member.pk %}">Editar ficha</a>
   </div>
-</section>
-<section class="stat-row" aria-label="Resumo da jornada">
-  <div><span>Na igreja há</span><strong>{{ member.church_duration }}</strong><small>{% if member.church_entry_date %}Desde {{ member.church_entry_date|date:'d/m/Y' }}{% else %}Entrada não informada{% endif %}</small></div>
-  <div><span>Batismo</span><strong>{% if member.baptism_date %}{{ member.baptism_date|date:'d/m/Y' }}{% elif member.baptized %}Batizado{% else %}Não informado{% endif %}</strong><small>{% if member.conversion_date %}Convertido em {{ member.conversion_date|date:'d/m/Y' }}{% else %}Conversão não informada{% endif %}</small></div>
-  <div><span>Aniversário</span><strong>{% if member.birth_date %}{{ member.birth_date|date:'d/m' }}{% else %}Não informado{% endif %}</strong><small>{% if age is not None %}{{ age }} ano{{ age|pluralize }}{% else %}Idade não informada{% endif %}</small></div>
 </section>
 <section class="person-grid">
   <article class="panel">
@@ -36,7 +39,10 @@
   <article class="panel">
     <div class="panel-heading"><h2>Vida na igreja</h2></div>
     <dl class="person-facts">
-      <div><dt>Ministérios</dt><dd>{% for ministry in member.ministries.all %}<span class="person-chip">{{ ministry.name }}</span>{% empty %}Sem ministério. <a href="{% url 'member_edit' member.pk %}">Vincular a um ministério</a>{% endfor %}</dd></div>
+      <div><dt>Ministérios</dt><dd>{% for ministry in member.ministries.all %}<a class="person-chip" href="{% url 'ministry_detail' ministry.pk %}">{{ ministry.name }}</a>{% empty %}Sem ministério. <a href="{% url 'member_edit' member.pk %}">Vincular a um ministério</a>{% endfor %}</dd></div>
+      <div><dt>Entrada na igreja</dt><dd>{% if member.church_entry_date %}{{ member.church_entry_date|date:'d/m/Y' }}{% else %}Não informada{% endif %}</dd></div>
+      <div><dt>Conversão</dt><dd>{% if member.conversion_date %}{{ member.conversion_date|date:'d/m/Y' }}{% else %}Não informada{% endif %}</dd></div>
+      <div><dt>Aniversário</dt><dd>{% if member.birth_date %}{{ member.birth_date|date:'d/m/Y' }}{% else %}Não informado{% endif %}</dd></div>
       <div><dt>Profissão</dt><dd>{{ member.profession|default:'Não informada' }}</dd></div>
       <div><dt>Cadastrado em</dt><dd>{{ member.created_at|date:'d/m/Y' }}</dd></div>
     </dl>

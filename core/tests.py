@@ -506,7 +506,7 @@ class AccessTests(TestCase):
             'password2': 'OutraSenha@2026',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Não foi possível salvar o membro.')
+        self.assertContains(response, 'Não foi possível salvar. Corrija')
         self.assertContains(response, 'As senhas não coincidem')
         self.assertFalse(Member.objects.filter(email='divergente@example.com').exists())
 
@@ -770,7 +770,7 @@ class AccessTests(TestCase):
             })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Não foi possível salvar o membro.')
+        self.assertContains(response, 'Não foi possível salvar. Corrija')
         self.assertContains(response, 'Não foi possível enviar a foto.')
         self.assertFalse(User.objects.filter(username='falha.upload').exists())
         self.assertFalse(Member.objects.filter(email='falha.upload@example.com').exists())
@@ -1728,7 +1728,8 @@ class MembersDirectoryTests(TestCase):
         bare = Member.objects.get(name='Bruno Lima')
         response = self.client.get(reverse('member_detail', args=[bare.pk]))
         self.assertContains(response, 'Sem ministério')
-        self.assertContains(response, 'Idade não informada')
+        self.assertIsNone(response.context['age'])
+        self.assertContains(response, '<dt>Idade</dt><dd>Não informada</dd>')
         self.assertNotContains(response, 'wa.me')
         self.assertEqual(self.client.get(reverse('member_detail', args=[99999])).status_code, 404)
 
@@ -1885,3 +1886,61 @@ class MinistryFormScreenTests(TestCase):
         self.assertRedirects(response, reverse('ministries'))
         self.ministry.refresh_from_db()
         self.assertEqual((self.ministry.name, self.ministry.status), ('Louvor e Adoração', Ministry.Status.RECRUITING))
+
+
+@WITHOUT_AXES
+class FormScreensTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('staff6', password='test-pass', is_staff=True)
+        AccessProfile.objects.create(user=self.staff, role=AccessProfile.Role.BOARD)
+        self.client.login(username='staff6', password='test-pass')
+
+    def test_member_detail_header_has_summary_and_actions(self):
+        member = Member.objects.create(
+            name='Ana', email='ana@x.com', phone='(88) 99999-1234', birth_date=date(1990, 5, 20),
+            baptism_date=date(2019, 6, 2), church_entry_date=date(2020, 1, 10),
+        )
+        response = self.client.get(reverse('member_detail', args=[member.pk]))
+        self.assertContains(response, 'class="panel profile-head"')
+        self.assertContains(response, '<dt>Na igreja há</dt>')
+        self.assertContains(response, '<dd>02/06/2019</dd>')
+        self.assertContains(response, 'Editar ficha')
+        self.assertContains(response, '20/05/1990')
+        self.assertContains(response, '10/01/2020')
+        self.assertNotContains(response, 'stat-row')
+
+    def test_member_form_has_section_index_without_numbers_and_required_marks(self):
+        response = self.client.get(reverse('member_create'))
+        self.assertContains(response, 'class="mf-index"')
+        self.assertContains(response, 'href="#secao-5"')
+        self.assertContains(response, 'id="secao-1"')
+        self.assertContains(response, 'Campo obrigatório')
+        self.assertContains(response, 'class="req"')
+        self.assertNotContains(response, 'Ver ficha')
+        self.assertContains(response, f'href="{reverse("members")}">Cancelar')
+
+    def test_member_form_edit_shows_context_and_returns_to_profile(self):
+        member = Member.objects.create(name='Bia', email='bia@x.com')
+        response = self.client.get(reverse('member_edit', args=[member.pk]))
+        self.assertContains(response, 'Ver ficha')
+        self.assertContains(response, 'profile-head-compact')
+        self.assertContains(response, f'href="{reverse("member_detail", args=[member.pk])}">Cancelar')
+
+    def test_book_form_has_live_preview(self):
+        response = self.client.get(reverse('book_create'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="book-preview"')
+        self.assertContains(response, 'data-bp-title')
+        self.assertContains(response, 'Como aparece no site')
+        self.assertContains(response, f'href="{reverse("books")}">Cancelar')
+
+    def test_event_form_has_live_preview_and_still_saves(self):
+        response = self.client.get(reverse('event_create'))
+        self.assertContains(response, 'class="event-preview"')
+        self.assertContains(response, 'Como aparece na agenda')
+        saved = self.client.post(reverse('event_create'), {
+            'title': 'Culto de Ação de Graças', 'starts_at': '2027-01-10T19:00', 'kind': 'Culto',
+            'location': 'Templo', 'expected_attendance': 120, 'description': 'Gratidão.',
+        })
+        self.assertRedirects(saved, reverse('events'))
+        self.assertTrue(Event.objects.filter(title='Culto de Ação de Graças').exists())

@@ -1,0 +1,15 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}{% block section %}Cadastro{% endblock %}{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+<div class="form-layout">
+  <article class="panel form-panel">{% include 'core/_form_body.html' %}</article>
+  <aside class="panel preview-panel" aria-labelledby="preview-title">
+    <h2 id="preview-title">{% block preview_title %}Como aparece no site{% endblock %}</h2>
+    <p class="panel-sub">A prévia muda enquanto você digita.</p>
+    {% block preview %}{% endblock %}
+  </aside>
+</div>
+{% endblock %}
+{% block extra_head %}{{ form.media.css }}{% endblock %}
+{% block extra_scripts %}{{ form.media.js }}{% block page_scripts %}{% endblock %}{% endblock %}

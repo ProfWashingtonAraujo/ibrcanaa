@@ -1,0 +1,42 @@
+{% extends 'core/form_with_preview.html' %}
+{% block section %}Eventos{% endblock %}
+{% block preview_title %}Como aparece na agenda{% endblock %}
+{% block preview %}
+<div class="event-preview" aria-hidden="true">
+  <span class="ep-kind" data-ep-kind>Culto</span>
+  <h3 data-ep-title>Título do evento</h3>
+  <p class="ep-date" data-ep-date>Escolha a data e o horário</p>
+  <p class="ep-place" data-ep-place hidden></p>
+  <p class="ep-desc" data-ep-desc hidden></p>
+  <span class="ep-button">Quero participar</span>
+</div>
+<p class="preview-note">É assim que o visitante vê o evento ao clicar nele na agenda do site. O público esperado aparece só aqui no painel.</p>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = function (attr) { return document.querySelector('[' + attr + ']'); };
+  var title = $('id_title'), when = $('id_starts_at'), kind = $('id_kind'), place = $('id_location'), desc = $('id_description');
+  var COLORS = { 'Culto': '#2752b3', 'EBD': '#e67e22', 'Conferência': '#8b5e3c', 'PG': '#9b72cf' };
+  var formatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
+  function update() {
+    q('data-ep-title').textContent = (title.value || '').trim() || 'Título do evento';
+    var label = kind && kind.selectedOptions[0] ? kind.selectedOptions[0].textContent.trim() : 'Evento';
+    var tag = q('data-ep-kind');
+    tag.textContent = label;
+    tag.closest('.event-preview').style.setProperty('--event-color', COLORS[kind && kind.value] || '#5a6270');
+    var date = when && when.value ? new Date(when.value) : null;
+    q('data-ep-date').textContent = date && !isNaN(date.getTime()) ? formatter.format(date) : 'Escolha a data e o horário';
+    var p = q('data-ep-place'); p.textContent = (place.value || '').trim(); p.hidden = !p.textContent;
+    var d = q('data-ep-desc'); d.textContent = (desc.value || '').trim(); d.hidden = !d.textContent;
+  }
+  [title, when, kind, place, desc].forEach(function (el) {
+    if (!el) return;
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+  });
+  update();
+})();
+</script>
+{% endblock %}

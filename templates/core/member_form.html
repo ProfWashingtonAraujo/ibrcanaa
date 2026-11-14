@@ -1,12 +1,35 @@
 {% extends 'core/admin_base.html' %}
 {% block title %}{{ title }} | IBR Canaã{% endblock %}{% block section_name %}Membros{% endblock %}{% block page_title %}{{ title }}{% endblock %}
 {% block admin_content %}
-<section class="application-form-intro"><div><span class="eyebrow gold">Cadastro de membros</span><h2>{% if member %}{{ member.name }}{% else %}Nova pessoa{% endif %}</h2><p>Centralize informações pessoais, familiares, ministeriais e de acesso ao portal.</p></div><span class="confidential-chip">Uso interno</span></section>
-<form method="post" enctype="multipart/form-data" class="application-form">{% csrf_token %}
-  {% if form.errors %}<div class="form-alert form-error-summary" id="member-form-errors" tabindex="-1"><strong>Não foi possível salvar o membro.</strong><span>Revise os campos abaixo:</span><ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}"><b>{{ field.label }}:</b> {{ error }}</a></li>{% endfor %}{% endfor %}{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
-  {% for title, description, fields in form.sections %}<section class="application-section"><div class="application-section-heading"><span>{{ forloop.counter|stringformat:'02d' }}</span><div><h3>{{ title }}</h3><p>{{ description }}</p></div></div><div class="application-fields">{% for field in fields %}<div class="application-field{% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'textarea' or field.name == 'address' or field.name == 'ministries' or field.name == 'photo' or field.name == 'username' %} wide{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}</div></section>{% endfor %}
-  <div class="application-actions"><a class="button button-ghost" href="{% url 'members' %}">Cancelar</a><button class="button button-primary" type="submit">Salvar membro</button></div>
-</form>
+{% if member %}{% url 'member_detail' member.pk as cancel_url %}{% else %}{% url 'members' as cancel_url %}{% endif %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+{% if member %}
+<section class="panel profile-head profile-head-compact">
+  <div class="profile-top">
+    <div class="person-who">
+      {% if member.user.access_profile.photo %}<img class="people-avatar person-avatar" src="{{ member.user.access_profile.photo.url }}" alt="">{% elif member.avatar_url %}<img class="people-avatar person-avatar" src="{{ member.avatar_url }}" alt="">{% else %}<span class="people-avatar person-avatar" aria-hidden="true">{{ member.name|first }}</span>{% endif %}
+      <div>
+        <h2>{{ member.name }}</h2>
+        <p class="profile-sub"><span class="tag tag-{{ member.status }}">{{ member.get_status_display }}</span></p>
+        <p class="profile-sub">Dados de uso interno da igreja.</p>
+      </div>
+    </div>
+    <a class="button button-ghost" href="{% url 'member_detail' member.pk %}">Ver ficha</a>
+  </div>
+</section>
+{% endif %}
+<div class="mf-layout">
+  <nav class="mf-index" aria-label="Seções do cadastro">
+    <p class="mf-index-title">Neste cadastro</p>
+    {% for title, description, fields in form.sections %}<a href="#secao-{{ forloop.counter }}">{{ title }}</a>{% endfor %}
+  </nav>
+  <form method="post" enctype="multipart/form-data" class="application-form member-form">{% csrf_token %}
+    {% if form.errors %}<div class="form-alert form-error-summary" id="member-form-errors" role="alert" tabindex="-1"><strong>Não foi possível salvar. Corrija {{ form.errors|length }} campo{{ form.errors|length|pluralize }}:</strong><ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}"><b>{{ field.label }}:</b> {{ error }}</a></li>{% endfor %}{% endfor %}{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+    <p class="form-legend"><span aria-hidden="true">*</span> Campo obrigatório</p>
+    {% for title, description, fields in form.sections %}<section class="application-section" id="secao-{{ forloop.counter }}"><div class="application-section-heading"><div><h3>{{ title }}</h3><p>{{ description }}</p></div></div><div class="application-fields">{% for field in fields %}<div class="application-field{% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'textarea' or field.name == 'address' or field.name == 'ministries' or field.name == 'photo' or field.name == 'username' %} wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</label>{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}</div></section>{% endfor %}
+    <div class="application-actions"><a class="button button-ghost" href="{{ cancel_url }}">Cancelar</a><button class="button button-primary" type="submit">Salvar membro</button></div>
+  </form>
+</div>
 {% endblock %}
 {% block extra_head %}{{ form.media.css }}{% endblock %}
 {% block extra_scripts %}
@@ -77,6 +100,30 @@
   const formErrors = document.getElementById('member-form-errors');
   if (formErrors) {
     formErrors.focus();
+  }
+
+  const memberForm = document.querySelector('.member-form');
+  const submitButton = memberForm && memberForm.querySelector('button[type="submit"]');
+  if (submitButton) {
+    const submitLabel = submitButton.textContent;
+    memberForm.addEventListener('submit', () => { submitButton.disabled = true; submitButton.textContent = 'Salvando…'; });
+    window.addEventListener('pageshow', () => { submitButton.disabled = false; submitButton.textContent = submitLabel; });
+  }
+
+  const indexLinks = Array.from(document.querySelectorAll('.mf-index a'));
+  if (indexLinks.length && 'IntersectionObserver' in window) {
+    indexLinks[0].classList.add('active');
+    const byId = new Map(indexLinks.map((link) => [link.getAttribute('href').slice(1), link]));
+    const spy = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          indexLinks.forEach((link) => link.classList.remove('active'));
+          const link = byId.get(entry.target.id);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    document.querySelectorAll('.member-form .application-section').forEach((section) => spy.observe(section));
   }
 </script>
 {% endblock %}
