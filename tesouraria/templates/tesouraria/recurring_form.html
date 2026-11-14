@@ -1,0 +1,9 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">A cada mês o sistema cria uma conta a pagar comum, que você paga, edita ou cancela normalmente. Alterações de valor, favorecido ou dia do vencimento valem apenas para as próximas contas, ainda não geradas; as já criadas não mudam.</p>
+  {% include 'core/_form_body.html' %}
+</article>
+{% endblock %}

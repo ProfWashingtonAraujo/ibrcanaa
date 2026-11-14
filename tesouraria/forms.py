@@ -235,3 +235,41 @@ class PayForm(CrispyFormMixin, forms.Form):
         if value.quantize(Decimal('0.01')) != value:
             raise forms.ValidationError('Use no máximo duas casas decimais.')
         return value
+
+
+class RecurringForm(CrispyFormMixin, forms.Form):
+    full_width_fields = {'description'}
+
+    description = forms.CharField(label='Descrição', max_length=180)
+    payee = forms.CharField(label='Favorecido', max_length=120, required=False)
+    category = forms.ModelChoiceField(label='Categoria', queryset=Category.objects.none())
+    amount = forms.DecimalField(label='Valor estimado (R$)', max_digits=12, decimal_places=2,
+                                validators=[_positive_amount],
+                                widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0.01'}))
+    due_day = forms.IntegerField(label='Dia do vencimento', min_value=1, max_value=31,
+                                 help_text='Em meses mais curtos, vale o último dia do mês.')
+    start_date = forms.DateField(label='Primeiro mês', widget=DATE_WIDGET,
+                                 help_text='A primeira conta é a do mês desta data (parcela 1).')
+    installments = forms.IntegerField(label='Número de parcelas', required=False, min_value=1, max_value=600,
+                                      help_text='Deixe em branco para uma conta fixa, sem fim.')
+
+    def __init__(self, *args, current_category=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed = active_categories(Kind.EXPENSE)
+        if current_category is not None:  # categoria arquivada continua valendo na recorrência que já a usa
+            allowed = Category.objects.filter(Q(pk__in=allowed.values('pk')) | Q(pk=current_category.pk))
+        self.fields['category'].queryset = allowed
+
+    def clean_description(self):
+        return self.cleaned_data['description'].strip()
+
+    def clean_amount(self):
+        value = self.cleaned_data['amount']
+        if value.quantize(Decimal('0.01')) != value:
+            raise forms.ValidationError('Use no máximo duas casas decimais.')
+        return value
+
+    @classmethod
+    def initial_from(cls, bill):
+        return {name: getattr(bill, name) for name in
+                ('description', 'payee', 'category', 'amount', 'due_day', 'start_date', 'installments')}

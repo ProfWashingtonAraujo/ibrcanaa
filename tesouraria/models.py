@@ -75,8 +75,7 @@ class Category(models.Model):
         return self.name
 
     def in_use(self):
-        """Task 9 estende para contas recorrentes."""
-        return self.movement_set.exists() or self.payable_set.exists()
+        return self.movement_set.exists() or self.payable_set.exists() or self.recurringbill_set.exists()
 
 
 class MovementQuerySet(models.QuerySet):
@@ -178,6 +177,34 @@ class MonthClosing(models.Model):
         return self.closed_at is not None
 
 
+class RecurringBill(models.Model):
+    """Modelo de conta que se repete todo mês (aluguel, luz) ou em parcelas (`installments`)."""
+
+    description = models.CharField('descrição', max_length=180)
+    payee = models.CharField('favorecido', max_length=120, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name='categoria')
+    amount = _money('valor estimado')
+    due_day = models.PositiveSmallIntegerField('dia do vencimento')
+    start_date = models.DateField('primeiro mês')
+    installments = models.PositiveSmallIntegerField('número de parcelas', null=True, blank=True)
+    active = models.BooleanField('ativa', default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='+', verbose_name='criada por')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'conta recorrente'
+        verbose_name_plural = 'contas recorrentes'
+        ordering = ['-active', 'description', 'id']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(due_day__gte=1, due_day__lte=31),
+                                   name='tesouraria_recurring_due_day_1_31'),
+        ]
+
+    def __str__(self):
+        return self.description
+
+
 class Payable(models.Model):
     class Status(models.TextChoices):
         OPEN = 'open', 'Em aberto'
@@ -194,6 +221,11 @@ class Payable(models.Model):
                                     related_name='payable', verbose_name='saída gerada')
     paid_amount = _money('valor pago', null=True, blank=True)
     paid_date = models.DateField('data do pagamento', null=True, blank=True)
+    recurring = models.ForeignKey(RecurringBill, on_delete=models.SET_NULL, null=True, blank=True,
+                                  verbose_name='recorrência')
+    period = models.DateField('mês de referência', null=True, blank=True)
+    installment_number = models.PositiveSmallIntegerField('parcela', null=True, blank=True)
+    installments_total = models.PositiveSmallIntegerField('total de parcelas', null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name='+', verbose_name='criada por')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,6 +235,10 @@ class Payable(models.Model):
         verbose_name = 'conta a pagar'
         verbose_name_plural = 'contas a pagar'
         ordering = ['due_date', 'id']
+        constraints = [
+            models.UniqueConstraint(fields=['recurring', 'period'], condition=models.Q(recurring__isnull=False),
+                                    name='tesouraria_payable_unique_recurring_period'),
+        ]
 
     def __str__(self):
         return f'{self.description} ({self.due_date})'

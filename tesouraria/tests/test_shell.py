@@ -156,7 +156,7 @@ class ShellTests(TestCase):
         tes = make_user('t', Role.TREASURER)
         self.assertEqual({l for l, v in by_label.items() if v(board)}, {'Caixa do Mês', 'Relatório'})
         self.assertEqual({l for l, v in by_label.items() if v(com)},
-                         {'Caixa do Mês', 'Relatório', 'Dizimistas', 'Contas a pagar', 'Lançamentos',
+                         {'Caixa do Mês', 'Relatório', 'Dizimistas', 'Contas a pagar', 'Contas recorrentes', 'Lançamentos',
                           'Ofertas especiais', 'Histórico', 'Histórico anterior'})
         self.assertEqual({l for l, v in by_label.items() if v(tes)}, set(by_label))
 

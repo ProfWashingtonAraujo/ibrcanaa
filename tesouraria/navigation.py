@@ -29,6 +29,7 @@ ITEMS = [
     {'label': 'Dizimistas', 'icon': 'members', 'url_name': 'tithers', 'active': {'tithers'}, 'visible': can_see_member_names},
     {'label': 'A confirmar', 'icon': 'inbox', 'url_name': 'pending', 'active': {'pending'}, 'visible': can_edit_treasury, 'count': _pending_count},
     {'label': 'Contas a pagar', 'icon': 'applications', 'url_name': 'payables', 'active': {'payables'}, 'visible': can_view_details, 'count': _overdue_count},
+    {'label': 'Contas recorrentes', 'icon': 'events', 'url_name': 'recurring', 'active': {'recurring', 'recurring_create', 'recurring_edit'}, 'visible': can_view_details},
     {'label': 'Lançamentos', 'icon': 'content', 'url_name': 'movements', 'active': {'movements'}, 'visible': can_view_details},
     {'label': 'Ofertas especiais', 'icon': 'ministries', 'url_name': 'special', 'active': {'special'}, 'visible': can_view_details},
     {'label': 'Histórico', 'icon': 'events', 'url_name': 'audit', 'active': {'audit'}, 'visible': can_view_details},

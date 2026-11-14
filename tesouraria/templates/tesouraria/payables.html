@@ -17,7 +17,7 @@
     {% for p in rows %}
     <tr>
       <td>{{ p.due_date|date:'d/m/Y' }}</td>
-      <td><strong>{{ p.description }}</strong>{% if p.payee %}<br><small>{{ p.payee }}</small>{% endif %}</td>
+      <td><strong>{{ p.description }}</strong>{% if p.installment_number %} <small>({{ p.installment_number }}/{{ p.installments_total }})</small>{% endif %}{% if p.payee %}<br><small>{{ p.payee }}</small>{% endif %}</td>
       <td>{{ p.category.name }}</td>
       <td>R$ {% if p.status == 'paid' %}{{ p.paid_amount|floatformat:'2g' }}{% else %}{{ p.amount|floatformat:'2g' }}{% endif %}</td>
       {% if tab == 'pagas' %}<td>{{ p.paid_date|date:'d/m/Y' }}</td>{% endif %}

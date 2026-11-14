@@ -1,0 +1,37 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Contas recorrentes | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Contas recorrentes{% endblock %}
+{% block admin_content %}
+{% if can_edit %}
+<div class="people-head tes-actions"><p class="people-count">Contas recorrentes e parceladas</p>
+  <div class="week-actions"><a class="button button-primary" href="{% url 'tesouraria:recurring_create' %}">Nova recorrente</a></div>
+</div>
+{% endif %}
+<article class="panel">
+  {% if rows %}
+  <table class="tes-table">
+    <thead><tr><th>Descrição</th><th>Categoria</th><th>Valor estimado</th><th>Vence dia</th><th>Início</th><th>Parcelas</th><th>Situação</th>{% if can_edit %}<th>Ações</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><strong>{{ r.description }}</strong>{% if r.payee %}<br><small>{{ r.payee }}</small>{% endif %}</td>
+      <td>{{ r.category.name }}</td>
+      <td>R$ {{ r.amount|floatformat:'2g' }}</td>
+      <td>{{ r.due_day }}</td>
+      <td>{{ r.start_date|date:'m/Y' }}</td>
+      <td>{% if r.installments %}{{ r.installments }}{% else %}Sem fim{% endif %}</td>
+      <td>{% if r.active %}Ativa{% else %}Desativada{% endif %}</td>
+      {% if can_edit %}
+      <td class="week-actions">
+        <a class="button button-ghost" href="{% url 'tesouraria:recurring_edit' r.pk %}">Editar</a>
+        <form method="post" action="{% url 'tesouraria:recurring_toggle' r.pk %}">{% csrf_token %}<button class="button button-ghost" type="submit">{% if r.active %}Desativar{% else %}Ativar{% endif %}</button></form>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="panel-sub">Nenhuma conta recorrente cadastrada.</p>
+  {% endif %}
+</article>
+{% endblock %}

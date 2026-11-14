@@ -7,10 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, ledger, payables as payables_service, pending as pending_service
+from . import audit, ledger, payables as payables_service, pending as pending_service, recurring as recurring_service
 from .balances import month_summary
-from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RejectPendingForm, SettingsForm, TransferForm
-from .models import Account, Category, Kind, Method, Movement, Payable, Status, Transfer, TreasurySettings
+from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
+from .models import Account, Category, Kind, Method, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
 from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
                           treasury_view_required)
 from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month
@@ -19,6 +19,7 @@ from .visibility import description_for
 
 @treasury_view_required
 def home(request):
+    recurring_service.ensure_recurring(timezone.localdate())
     month = parse_month(request.GET.get('mes'))
     try:
         summary = month_summary(month)
@@ -335,6 +336,7 @@ PAYABLE_TABS = [('vencidas', 'Vencidas', 'overdue'), ('a-vencer', 'A vencer', 'u
 @treasury_detail_required
 def payables(request):
     today = timezone.localdate()
+    recurring_service.ensure_recurring(today)
     tab = request.GET.get('aba')
     tab = tab if tab in {t[0] for t in PAYABLE_TABS} else 'vencidas'
     overview = payables_service.payables_overview(today)
@@ -434,3 +436,51 @@ def payable_undo(request, pk):
 @require_POST
 def payable_cancel(request, pk):
     return _payable_action(request, pk, payables_service.cancel_payable, 'Conta cancelada.')
+
+
+# --- Contas recorrentes -----------------------------------------------------------------------
+
+@treasury_detail_required
+def recurring_list(request):
+    return render(request, 'tesouraria/recurring.html', {
+        'rows': RecurringBill.objects.select_related('category'), 'can_edit': can_edit_treasury(request.user)})
+
+
+def _recurring_form(request, bill, title):
+    initial = RecurringForm.initial_from(bill) if bill else None
+    form = RecurringForm(request.POST or None, initial=initial, current_category=bill.category if bill else None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            if bill is None:
+                recurring_service.create_recurring(request.user, **form.cleaned_data)
+                messages.success(request, 'Conta recorrente criada. As contas do mês e do seguinte já aparecem em Contas a pagar.')
+            else:
+                recurring_service.update_recurring(request.user, bill, **form.cleaned_data)
+                messages.success(request, 'Conta recorrente alterada.')
+        except TreasuryError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect('tesouraria:recurring')
+    return render(request, 'tesouraria/recurring_form.html', {
+        'form': form, 'title': title, 'cancel_url': reverse('tesouraria:recurring')})
+
+
+@treasury_edit_required
+def recurring_create(request):
+    return _recurring_form(request, None, 'Nova conta recorrente')
+
+
+@treasury_edit_required
+def recurring_edit(request, pk):
+    return _recurring_form(request, get_object_or_404(RecurringBill.objects.select_related('category'), pk=pk),
+                           'Editar conta recorrente')
+
+
+@treasury_edit_required
+@require_POST
+def recurring_toggle(request, pk):
+    bill = get_object_or_404(RecurringBill, pk=pk)
+    recurring_service.set_active(request.user, bill, not bill.active)
+    messages.success(request, 'Conta recorrente ativada.' if not bill.active else
+                     'Conta recorrente desativada; as contas já geradas continuam.')
+    return redirect('tesouraria:recurring')
