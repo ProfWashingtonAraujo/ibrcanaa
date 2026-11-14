@@ -355,3 +355,62 @@ class ListTests(MovementBase):
         self.assertContains(response, 'Visível à comissão')
         self.assertNotContains(response, reverse('tesouraria:movement_edit', args=[movement.pk]))
         self.assertNotContains(response, reverse('tesouraria:movement_delete', args=[movement.pk]))
+
+
+class MonthRangeTests(MovementBase):
+    def test_extreme_months_do_not_crash_home_or_list(self):
+        from tesouraria.rules import parse_month
+        current = timezone.localdate().replace(day=1)
+        for value in ('9999-12', '0001-01', '2101-01', '1999-12'):
+            with self.subTest(value=value):
+                self.assertEqual(parse_month(value), current)
+                self.assertEqual(self.client.get(reverse('tesouraria:home'), {'mes': value}).status_code, 200)
+                self.assertEqual(self.client.get(reverse('tesouraria:movements'), {'mes': value}).status_code, 200)
+        self.assertEqual(parse_month('2000-01'), date(2000, 1, 1))
+        self.assertEqual(parse_month('2100-12'), date(2100, 12, 1))
+
+
+class PreservedLinkTests(MovementBase):
+    def edit(self, movement, category, **extra):
+        return self.client.post(reverse('tesouraria:movement_edit', args=[movement.pk]),
+                                post_data(category, **extra))
+
+    def test_edit_with_empty_member_keeps_member(self):
+        member = make_member()
+        movement = self.make(self.tithe, member=member, source='portal')
+        self.assertEqual(self.edit(movement, self.tithe, member='', amount='60.00').status_code, 302)
+        movement.refresh_from_db()
+        self.assertEqual((movement.member_id, movement.amount), (member.pk, Decimal('60.00')))
+
+    def test_edit_form_prefills_member(self):
+        member = make_member()
+        movement = self.make(self.tithe, member=member)
+        response = self.client.get(reverse('tesouraria:movement_edit', args=[movement.pk]))
+        self.assertEqual(response.context['form']['member'].value(), member.pk)
+
+    def test_edit_with_another_member_switches(self):
+        member, other = make_member(), make_member('João Lima', 'joao@example.com')
+        movement = self.make(self.tithe, member=member)
+        self.edit(movement, self.tithe, member=other.pk)
+        movement.refresh_from_db()
+        self.assertEqual(movement.member_id, other.pk)
+
+    def test_expense_edit_leaves_member_untouched(self):
+        member = make_member()
+        movement = self.make(self.expense, member=member)
+        self.assertEqual(self.edit(movement, self.expense, amount='7.00').status_code, 302)
+        movement.refresh_from_db()
+        self.assertEqual((movement.member_id, movement.amount), (member.pk, Decimal('7.00')))
+
+
+class ArchivedCategoryTests(MovementBase):
+    def test_edit_keeps_archived_category_but_create_does_not_offer_it(self):
+        movement = self.make(self.income)
+        Category.objects.filter(pk=self.income.pk).update(active=False)
+        response = self.client.post(reverse('tesouraria:movement_edit', args=[movement.pk]),
+                                    post_data(self.income, amount='88.00'))
+        self.assertEqual(response.status_code, 302)
+        movement.refresh_from_db()
+        self.assertEqual((movement.amount, movement.category_id), (Decimal('88.00'), self.income.pk))
+        create = self.client.get(reverse('tesouraria:movement_create') + '?tipo=income')
+        self.assertNotIn(self.income, create.context['form'].fields['category'].queryset)

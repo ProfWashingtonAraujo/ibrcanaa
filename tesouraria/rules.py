@@ -52,9 +52,12 @@ def ensure_month_open(d: date) -> None:
 
 
 def parse_month(value: str | None) -> date:
-    """'2026-11' vira 1º/11/2026; vazio ou inválido vira o primeiro dia do mês atual."""
+    """'2026-11' vira 1º/11/2026; vazio, inválido ou com ano fora de 2000..2100 vira o primeiro dia do mês atual."""
     try:
         year, month = (value or '').split('-')
-        return date(int(year), int(month), 1)
+        parsed = date(int(year), int(month), 1)
+        if not 2000 <= parsed.year <= 2100:
+            raise ValueError
+        return parsed
     except (ValueError, TypeError):
         return month_start(timezone.localdate())

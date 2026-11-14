@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django import forms
+from django.db.models import Q
 
 from core.forms import CrispyFormMixin
 
@@ -120,10 +121,13 @@ class MovementForm(CrispyFormMixin, forms.Form):
     destination = forms.CharField(label='Destino da oferta especial', max_length=120, required=False,
                                   help_text='Obrigatório quando a categoria é oferta especial.')
 
-    def __init__(self, *args, kind=Kind.INCOME, **kwargs):
+    def __init__(self, *args, kind=Kind.INCOME, current_category=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.kind = kind
-        self.fields['category'].queryset = active_categories(kind)
+        allowed = active_categories(kind)
+        if current_category is not None:  # categoria arquivada continua valendo para quem já a usa
+            allowed = Category.objects.filter(Q(pk__in=allowed.values('pk')) | Q(pk=current_category.pk))
+        self.fields['category'].queryset = allowed
         self.fields['member'].queryset = Member.objects.order_by('name')
         if kind != Kind.INCOME:
             del self.fields['member']
@@ -139,7 +143,6 @@ class MovementForm(CrispyFormMixin, forms.Form):
             else:
                 cleaned['destination'] = ''
             self.tithe_without_member = bool(category.is_tithe and not cleaned.get('member'))
-        cleaned.setdefault('member', None)
         return cleaned
 
     def clean_description(self):

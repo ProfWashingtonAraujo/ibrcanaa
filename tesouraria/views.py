@@ -138,7 +138,8 @@ def _tithe_hint(request, form):
 
 def _movement_form(request, movement, kind, title):
     initial = MovementForm.initial_from(movement) if movement else None
-    form = MovementForm(request.POST or None, kind=kind, initial=initial)
+    form = MovementForm(request.POST or None, kind=kind, initial=initial,
+                        current_category=movement.category if movement else None)
     if request.method == 'POST' and form.is_valid():
         fields = form.cleaned_data
         try:

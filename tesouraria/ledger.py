@@ -74,6 +74,8 @@ def update_movement(user, movement, **fields) -> Movement:
     before = audit.snapshot(movement)  # antes de qualquer alteração
     ensure_editable(movement)
     fields = {k: v for k, v in fields.items() if k in MOVEMENT_FIELDS}
+    if not fields.get('member'):
+        fields.pop('member', None)  # nunca apaga o membro já gravado; só trocar por outro
     merged = {name: getattr(movement, name) for name in MOVEMENT_FIELDS}
     merged.update(fields)
     if merged['category'].kind != movement.kind:
