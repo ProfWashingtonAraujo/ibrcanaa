@@ -7,13 +7,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, ledger
+from . import audit, ledger, pending as pending_service
 from .balances import month_summary
-from .forms import TITHE_HINT, CategoryForm, MovementForm, SettingsForm, TransferForm
-from .models import Account, Category, Kind, Method, Movement, Transfer, TreasurySettings
+from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, RejectPendingForm, MovementForm, SettingsForm, TransferForm
+from .models import Account, Category, Kind, Method, Movement, Status, Transfer, TreasurySettings
 from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
                           treasury_view_required)
-from .rules import BeforeStart, NotConfigured, TreasuryError, month_end, month_start, parse_month
+from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month
 from .visibility import description_for
 
 
@@ -272,3 +272,55 @@ def movements(request):
         'kinds': Kind.choices, 'accounts': Account.choices, 'methods': Method.choices,
         'can_edit': can_edit_treasury(request.user),
     })
+
+
+# --- Fila "A confirmar" ---------------------------------------------------------------------
+
+def _pending_page(request, bound=None):
+    """`bound`: (pk, 'confirm'|'reject', form) com os erros a mostrar naquele item."""
+    rows = list(Movement.objects.live().filter(status=Status.PENDING)
+                .select_related('category', 'member').order_by('date', 'id'))
+    for movement in rows:
+        movement.confirm_form = ConfirmPendingForm(prefix=f'c{movement.pk}', initial={'date': movement.date})
+        movement.reject_form = RejectPendingForm(prefix=f'r{movement.pk}')
+        if bound and bound[0] == movement.pk:
+            setattr(movement, f'{bound[1]}_form', bound[2])
+    return render(request, 'tesouraria/pending.html', {'movements': rows})
+
+
+@treasury_edit_required
+def pending(request):
+    return _pending_page(request)
+
+
+def _pending_action(request, pk, kind, form_class, run):
+    movement = get_object_or_404(Movement.objects.live(), pk=pk)
+    form = form_class(request.POST, prefix=f'{"c" if kind == "confirm" else "r"}{pk}')
+    if form.is_valid():
+        try:
+            run(movement, form.cleaned_data)
+        except TreasuryError as error:
+            form.add_error(None, str(error) + (' Escolha outra data, de um mês aberto.'
+                                               if isinstance(error, MonthClosed) else ''))
+            if movement.status != Status.PENDING:
+                messages.error(request, str(error))
+                return redirect('tesouraria:pending')
+        else:
+            messages.success(request, 'Contribuição confirmada.' if kind == 'confirm' else 'Contribuição recusada.')
+            return redirect('tesouraria:pending')
+    return _pending_page(request, (pk, kind, form))
+
+
+@treasury_edit_required
+@require_POST
+def pending_confirm(request, pk):
+    return _pending_action(request, pk, 'confirm', ConfirmPendingForm,
+                           lambda m, d: pending_service.confirm_pending(
+                               m, user=request.user, account=d['account'], method=d['method'], date=d['date']))
+
+
+@treasury_edit_required
+@require_POST
+def pending_reject(request, pk):
+    return _pending_action(request, pk, 'reject', RejectPendingForm,
+                           lambda m, d: pending_service.reject_pending(m, user=request.user, reason=d['reason']))

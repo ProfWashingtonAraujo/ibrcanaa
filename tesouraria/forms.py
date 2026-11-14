@@ -173,3 +173,15 @@ class TransferForm(CrispyFormMixin, forms.Form):
         if cleaned.get('from_account') and cleaned.get('from_account') == cleaned.get('to_account'):
             raise forms.ValidationError('A conta de origem deve ser diferente da conta de destino.')
         return cleaned
+
+
+class ConfirmPendingForm(forms.Form):
+    account = forms.ChoiceField(label='Conta', choices=Account.choices, initial=Account.BANK)
+    method = forms.ChoiceField(label='Forma', choices=Method.choices, initial=Method.PIX)
+    date = forms.DateField(label='Data em que entrou', widget=DATE_WIDGET)
+
+
+class RejectPendingForm(forms.Form):
+    reason = forms.CharField(label='Motivo da recusa', max_length=500,
+                             error_messages={'required': 'Informe o motivo da recusa.'},
+                             widget=forms.TextInput(attrs={'placeholder': 'Motivo da recusa'}))

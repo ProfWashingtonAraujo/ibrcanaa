@@ -1,0 +1,22 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}A confirmar | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}A confirmar{% endblock %}
+{% block admin_content %}
+{% for movement in movements %}
+<article class="panel">
+  <h2>{{ movement.description }}</h2>
+  <p class="panel-sub">{{ movement.category.name }} · declarado em {{ movement.date|date:'d/m/Y' }} · {{ movement.get_method_display }} · <strong>R$ {{ movement.amount|floatformat:'2g' }}</strong>{% if movement.destination %} · {{ movement.destination }}{% endif %}</p>
+  <form method="post" action="{% url 'tesouraria:pending_confirm' movement.pk %}">{% csrf_token %}
+    {{ movement.confirm_form.non_field_errors }}
+    {% for field in movement.confirm_form %}<label>{{ field.label }} {{ field }}</label>{{ field.errors }}{% endfor %}
+    <button class="button button-primary" type="submit">Confirmar</button>
+  </form>
+  <form method="post" action="{% url 'tesouraria:pending_reject' movement.pk %}">{% csrf_token %}
+    {{ movement.reject_form.non_field_errors }}
+    {% for field in movement.reject_form %}<label>{{ field.label }} {{ field }}</label>{{ field.errors }}{% endfor %}
+    <button class="button button-ghost" type="submit">Recusar</button>
+  </form>
+</article>
+{% empty %}
+<article class="panel"><h2>Nada a confirmar</h2><p class="panel-sub">Quando um membro registrar uma contribuição pelo portal, ela aparece aqui para você confirmar a conta ou recusar.</p></article>
+{% endfor %}
+{% endblock %}
