@@ -1,0 +1,43 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Contas a pagar | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Contas a pagar{% endblock %}
+{% block admin_content %}
+{% if can_edit %}
+<div class="people-head tes-actions"><p class="people-count">Contas a pagar</p>
+  <div class="week-actions"><a class="button button-primary" href="{% url 'tesouraria:payable_create' %}">Nova conta</a></div>
+</div>
+{% endif %}
+<nav class="crumb tes-month" aria-label="Situação das contas">
+  {% for t in tabs %}{% if not forloop.first %} · {% endif %}{% if t.active %}<strong aria-current="page">{{ t.label }} ({{ t.count }}) · R$ {{ t.total|floatformat:'2g' }}</strong>{% else %}<a href="?aba={{ t.key }}">{{ t.label }} ({{ t.count }}) · R$ {{ t.total|floatformat:'2g' }}</a>{% endif %}{% endfor %}
+</nav>
+<article class="panel">
+  {% if rows %}
+  <table class="tes-table">
+    <thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Valor</th>{% if tab == 'pagas' %}<th>Pago em</th>{% endif %}{% if can_edit %}<th>Ações</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for p in rows %}
+    <tr>
+      <td>{{ p.due_date|date:'d/m/Y' }}</td>
+      <td><strong>{{ p.description }}</strong>{% if p.payee %}<br><small>{{ p.payee }}</small>{% endif %}</td>
+      <td>{{ p.category.name }}</td>
+      <td>R$ {% if p.status == 'paid' %}{{ p.paid_amount|floatformat:'2g' }}{% else %}{{ p.amount|floatformat:'2g' }}{% endif %}</td>
+      {% if tab == 'pagas' %}<td>{{ p.paid_date|date:'d/m/Y' }}</td>{% endif %}
+      {% if can_edit %}
+      <td class="week-actions">
+        {% if p.status == 'open' %}
+        <a class="button button-primary" href="{% url 'tesouraria:payable_pay' p.pk %}">Pagar</a>
+        <a class="button button-ghost" href="{% url 'tesouraria:payable_edit' p.pk %}">Editar</a>
+        <form method="post" action="{% url 'tesouraria:payable_cancel' p.pk %}" onsubmit="return confirm('Cancelar esta conta?');">{% csrf_token %}<button class="button button-ghost" type="submit">Cancelar</button></form>
+        {% elif p.status == 'paid' %}
+        <form method="post" action="{% url 'tesouraria:payable_undo' p.pk %}" onsubmit="return confirm('Desfazer o pagamento? A saída será excluída do caixa.');">{% csrf_token %}<button class="button button-ghost" type="submit">Desfazer pagamento</button></form>
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="panel-sub">{% if tab == 'vencidas' %}Nenhuma conta vencida.{% elif tab == 'a-vencer' %}Nenhuma conta a vencer.{% else %}Nenhuma conta paga ainda.{% endif %}</p>
+  {% endif %}
+</article>
+{% endblock %}

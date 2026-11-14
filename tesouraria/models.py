@@ -75,8 +75,8 @@ class Category(models.Model):
         return self.name
 
     def in_use(self):
-        """Tasks 8 e 9 estendem para contas a pagar e recorrentes."""
-        return self.movement_set.exists()
+        """Task 9 estende para contas recorrentes."""
+        return self.movement_set.exists() or self.payable_set.exists()
 
 
 class MovementQuerySet(models.QuerySet):
@@ -176,6 +176,36 @@ class MonthClosing(models.Model):
     @property
     def is_closed(self):
         return self.closed_at is not None
+
+
+class Payable(models.Model):
+    class Status(models.TextChoices):
+        OPEN = 'open', 'Em aberto'
+        PAID = 'paid', 'Paga'
+        CANCELED = 'canceled', 'Cancelada'
+
+    description = models.CharField('descrição', max_length=180)
+    payee = models.CharField('favorecido', max_length=120, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name='categoria')
+    amount = _money('valor previsto')
+    due_date = models.DateField('vencimento')
+    status = models.CharField('situação', max_length=10, choices=Status.choices, default=Status.OPEN)
+    movement = models.OneToOneField(Movement, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='payable', verbose_name='saída gerada')
+    paid_amount = _money('valor pago', null=True, blank=True)
+    paid_date = models.DateField('data do pagamento', null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='+', verbose_name='criada por')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'conta a pagar'
+        verbose_name_plural = 'contas a pagar'
+        ordering = ['due_date', 'id']
+
+    def __str__(self):
+        return f'{self.description} ({self.due_date})'
 
 
 class AuditLog(models.Model):

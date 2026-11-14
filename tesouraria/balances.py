@@ -10,7 +10,7 @@ from decimal import Decimal
 
 from django.db.models import Q, Sum
 
-from .models import Account, Category, Kind, Method, Movement, MonthClosing, Transfer
+from .models import Account, Category, Kind, Method, Movement, MonthClosing, Payable, Transfer
 from .rules import BeforeStart, get_settings, month_end, month_start
 
 ZERO = Decimal('0.00')
@@ -124,6 +124,10 @@ def month_summary(month: date) -> MonthSummary:
         deposits=Sum('amount', filter=Q(from_account=Account.CASH, to_account=Account.BANK)),
         withdrawals=Sum('amount', filter=Q(from_account=Account.BANK, to_account=Account.CASH)),
     )
+    payables_open = Payable.objects.filter(
+        status=Payable.Status.OPEN, due_date__gte=first, due_date__lte=last).aggregate(t=Sum('amount'))['t'] or ZERO
+    payables_paid = Payable.objects.filter(
+        status=Payable.Status.PAID, paid_date__gte=first, paid_date__lte=last).aggregate(t=Sum('paid_amount'))['t'] or ZERO
     closing = MonthClosing.objects.filter(month=first).first()
     closing_total = closing_cash + closing_bank
     return MonthSummary(
@@ -143,6 +147,8 @@ def month_summary(month: date) -> MonthSummary:
         closing_cash=closing_cash,
         closing_bank=closing_bank,
         closing_total=closing_total,
-        projected_total=closing_total,
+        payables_open_total=payables_open,
+        payables_paid_total=payables_paid,
+        projected_total=closing_total - payables_open,
         is_closed=False,
     )

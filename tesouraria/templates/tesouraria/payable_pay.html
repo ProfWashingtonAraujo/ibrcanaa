@@ -1,0 +1,16 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Pagar conta | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Pagar conta{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem pagar</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub"><strong>{{ payable.description }}</strong> · vence em {{ payable.due_date|date:'d/m/Y' }} · previsto R$ {{ payable.amount|floatformat:'2g' }}. O pagamento lança uma saída no caixa; o valor pago pode ser diferente do previsto. O mês precisa estar aberto.</p>
+  {% include 'core/_form_body.html' with submit_label='Registrar pagamento' %}
+</article>
+<script>
+(function () {
+  var method = document.getElementById('id_method'), account = document.getElementById('id_account');
+  if (!method || !account) return;
+  method.addEventListener('change', function () { account.value = method.value === 'cash' ? 'cash' : 'bank'; });
+})();
+</script>
+{% endblock %}

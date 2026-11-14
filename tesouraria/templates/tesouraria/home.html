@@ -30,6 +30,15 @@
   <div><span>Saldo do Banco</span><strong>R$ {{ summary.closing_bank|floatformat:'2g' }}</strong></div>
   <div><span>Saldo total</span><strong>R$ {{ summary.closing_total|floatformat:'2g' }}</strong></div>
 </section>
+<article class="panel">
+  <h2>Contas do mês</h2>
+  <div class="week-list">
+    <div class="week-row"><span>Vencimentos do mês (em aberto)</span><strong>R$ {{ summary.payables_open_total|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>Pago no mês</span><strong>R$ {{ summary.payables_paid_total|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>A pagar</span><strong>R$ {{ summary.payables_open_total|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>Saldo depois de pagar o que falta</span><strong>R$ {{ summary.projected_total|floatformat:'2g' }}</strong></div>
+  </div>
+</article>
 <div class="week-grid">
   <article class="panel week-panel">
     <h2>Em dinheiro / Por Pix</h2>

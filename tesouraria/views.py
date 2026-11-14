@@ -7,10 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, ledger, pending as pending_service
+from . import audit, ledger, payables as payables_service, pending as pending_service
 from .balances import month_summary
-from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, RejectPendingForm, MovementForm, SettingsForm, TransferForm
-from .models import Account, Category, Kind, Method, Movement, Status, Transfer, TreasurySettings
+from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RejectPendingForm, SettingsForm, TransferForm
+from .models import Account, Category, Kind, Method, Movement, Payable, Status, Transfer, TreasurySettings
 from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
                           treasury_view_required)
 from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month
@@ -324,3 +324,112 @@ def pending_confirm(request, pk):
 def pending_reject(request, pk):
     return _pending_action(request, pk, 'reject', RejectPendingForm,
                            lambda m, d: pending_service.reject_pending(m, user=request.user, reason=d['reason']))
+
+
+# --- Contas a pagar -------------------------------------------------------------------------
+
+PAYABLE_TABS = [('vencidas', 'Vencidas', 'overdue'), ('a-vencer', 'A vencer', 'upcoming'), ('pagas', 'Pagas', 'paid')]
+
+
+@treasury_detail_required
+def payables(request):
+    today = timezone.localdate()
+    tab = request.GET.get('aba')
+    tab = tab if tab in {t[0] for t in PAYABLE_TABS} else 'vencidas'
+    overview = payables_service.payables_overview(today)
+    base = Payable.objects.select_related('category')
+    open_rows = base.filter(status=Payable.Status.OPEN)
+    if tab == 'vencidas':
+        rows = open_rows.filter(due_date__lt=today).order_by('due_date', 'id')
+    elif tab == 'a-vencer':
+        rows = open_rows.filter(due_date__gte=today).order_by('due_date', 'id')
+    else:
+        rows = base.filter(status=Payable.Status.PAID).order_by('-paid_date', '-id')[:200]
+    return render(request, 'tesouraria/payables.html', {
+        'tabs': [{'key': key, 'label': label, 'active': key == tab, **overview[bucket]}
+                 for key, label, bucket in PAYABLE_TABS],
+        'tab': tab, 'rows': list(rows), 'today': today, 'can_edit': can_edit_treasury(request.user),
+    })
+
+
+def _payable_form(request, payable, title):
+    before_ok = payable is None or payable.status == Payable.Status.OPEN
+    if not before_ok:
+        messages.error(request, 'Só contas em aberto podem ser alteradas; para mudar uma conta paga, '
+                                'desfaça o pagamento.')
+        return redirect('tesouraria:payables')
+    initial = PayableForm.initial_from(payable) if payable else None
+    form = PayableForm(request.POST or None, initial=initial,
+                       current_category=payable.category if payable else None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            if payable is None:
+                payables_service.create_payable(request.user, **form.cleaned_data)
+                messages.success(request, 'Conta registrada.')
+            else:
+                payables_service.update_payable(request.user, payable, **form.cleaned_data)
+                messages.success(request, 'Conta alterada.')
+        except TreasuryError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect('tesouraria:payables')
+    return render(request, 'tesouraria/payable_form.html', {
+        'form': form, 'title': title, 'cancel_url': reverse('tesouraria:payables')})
+
+
+@treasury_edit_required
+def payable_create(request):
+    return _payable_form(request, None, 'Nova conta a pagar')
+
+
+@treasury_edit_required
+def payable_edit(request, pk):
+    return _payable_form(request, get_object_or_404(Payable.objects.select_related('category'), pk=pk),
+                         'Editar conta a pagar')
+
+
+@treasury_edit_required
+def payable_pay(request, pk):
+    payable = get_object_or_404(Payable.objects.select_related('category'), pk=pk)
+    if payable.status != Payable.Status.OPEN:
+        messages.error(request, 'Só contas em aberto podem ser pagas.')
+        return redirect('tesouraria:payables')
+    form = PayForm(request.POST or None, initial={'paid_amount': payable.amount, 'paid_date': timezone.localdate()})
+    if request.method == 'POST' and form.is_valid():
+        try:
+            payables_service.pay_payable(payable, user=request.user, **form.cleaned_data)
+        except TreasuryError as error:
+            form.add_error(None, str(error) + (' Escolha outra data, de um mês aberto.'
+                                               if isinstance(error, MonthClosed) else ''))
+            payable.refresh_from_db()
+            if payable.status != Payable.Status.OPEN:
+                messages.error(request, str(error))
+                return redirect('tesouraria:payables')
+        else:
+            messages.success(request, 'Pagamento registrado.')
+            return redirect('tesouraria:payables')
+    return render(request, 'tesouraria/payable_pay.html', {
+        'form': form, 'payable': payable, 'cancel_url': reverse('tesouraria:payables')})
+
+
+def _payable_action(request, pk, run, ok_message):
+    payable = get_object_or_404(Payable, pk=pk)
+    try:
+        run(payable, request.user)
+    except TreasuryError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, ok_message)
+    return redirect('tesouraria:payables')
+
+
+@treasury_edit_required
+@require_POST
+def payable_undo(request, pk):
+    return _payable_action(request, pk, payables_service.undo_payment, 'Pagamento desfeito; a conta voltou a ficar em aberto.')
+
+
+@treasury_edit_required
+@require_POST
+def payable_cancel(request, pk):
+    return _payable_action(request, pk, payables_service.cancel_payable, 'Conta cancelada.')

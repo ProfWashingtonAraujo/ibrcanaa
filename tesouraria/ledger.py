@@ -29,12 +29,25 @@ def _guard(*dates):
         ensure_month_open(d)
 
 
-def _check(fields):
-    amount = fields.get('amount')
-    if amount is None or Decimal(amount) <= 0:
+def validate_amount(amount) -> Decimal:
+    """Valor monetário válido: Decimal positivo, até 2 casas e no máximo 12 dígitos (como o campo do banco)."""
+    try:
+        value = Decimal(amount)
+    except (TypeError, ValueError, ArithmeticError):
+        raise TreasuryError('Informe um valor válido.')
+    if not value.is_finite():
+        raise TreasuryError('Informe um valor válido.')
+    if value <= 0:
         raise TreasuryError('O valor deve ser maior que zero.')
-    if Decimal(amount).as_tuple().exponent < -2:
+    if value.as_tuple().exponent < -2:
         raise TreasuryError('O valor deve ter no máximo duas casas decimais.')
+    if len(value.quantize(Decimal('0.01')).as_tuple().digits) > 12:
+        raise TreasuryError('O valor é grande demais (máximo de 12 dígitos).')
+    return value
+
+
+def _check(fields):
+    fields['amount'] = validate_amount(fields.get('amount'))
     if not fields.get('account'):
         raise TreasuryError('Informe a conta (Caixa ou Banco) do lançamento.')
     if fields['account'] not in Account.values:
@@ -110,13 +123,11 @@ def _transfer_summary(transfer) -> str:
 def create_transfer(user, **fields) -> Transfer:
     transfer = Transfer(created_by=user, note=fields.get('note', ''), date=fields['date'],
                         from_account=fields['from_account'], to_account=fields['to_account'],
-                        amount=Decimal(fields['amount']))
+                        amount=validate_amount(fields['amount']))
     if transfer.from_account not in Account.values or transfer.to_account not in Account.values:
         raise TreasuryError('Conta inválida.')
     if transfer.from_account == transfer.to_account:
         raise TreasuryError('A conta de origem deve ser diferente da conta de destino.')
-    if transfer.amount <= 0:
-        raise TreasuryError('O valor deve ser maior que zero.')
     _guard(transfer.date)
     transfer.save()
     audit.record(user, audit.CREATE, transfer, _transfer_summary(transfer), after=audit.snapshot(transfer))

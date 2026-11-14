@@ -7,7 +7,7 @@ from core.forms import CrispyFormMixin
 
 from core.models import Member
 
-from .models import Account, Category, Kind, Method, MonthClosing, Movement, Transfer, TreasurySettings
+from .models import Account, Category, Kind, Method, MonthClosing, Movement, Payable, Transfer, TreasurySettings
 
 
 def active_categories(kind):
@@ -185,3 +185,53 @@ class RejectPendingForm(forms.Form):
     reason = forms.CharField(label='Motivo da recusa', max_length=500,
                              error_messages={'required': 'Informe o motivo da recusa.'},
                              widget=forms.TextInput(attrs={'placeholder': 'Motivo da recusa'}))
+
+
+class PayableForm(CrispyFormMixin, forms.Form):
+    full_width_fields = {'description'}
+
+    description = forms.CharField(label='Descrição', max_length=180)
+    payee = forms.CharField(label='Favorecido', max_length=120, required=False)
+    category = forms.ModelChoiceField(label='Categoria', queryset=Category.objects.none())
+    amount = forms.DecimalField(label='Valor previsto (R$)', max_digits=12, decimal_places=2,
+                                validators=[_positive_amount],
+                                widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0.01'}))
+    due_date = forms.DateField(label='Vencimento', widget=DATE_WIDGET)
+
+    def __init__(self, *args, current_category=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed = active_categories(Kind.EXPENSE)
+        if current_category is not None:  # categoria arquivada continua valendo na conta que já a usa
+            allowed = Category.objects.filter(Q(pk__in=allowed.values('pk')) | Q(pk=current_category.pk))
+        self.fields['category'].queryset = allowed
+
+    def clean_description(self):
+        return self.cleaned_data['description'].strip()
+
+    def clean_amount(self):
+        value = self.cleaned_data['amount']
+        if value.quantize(Decimal('0.01')) != value:
+            raise forms.ValidationError('Use no máximo duas casas decimais.')
+        return value
+
+    @classmethod
+    def initial_from(cls, payable):
+        return {name: getattr(payable, name) for name in
+                ('description', 'payee', 'category', 'amount', 'due_date')}
+
+
+class PayForm(CrispyFormMixin, forms.Form):
+    paid_amount = forms.DecimalField(label='Valor pago (R$)', max_digits=12, decimal_places=2,
+                                     validators=[_positive_amount],
+                                     widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0.01'}))
+    paid_date = forms.DateField(label='Data do pagamento', widget=DATE_WIDGET)
+    method = forms.ChoiceField(label='Forma', choices=Method.choices, initial=Method.PIX)
+    account = forms.ChoiceField(label='Conta', choices=Account.choices, initial=Account.BANK,
+                                help_text='Sugerida pela forma: dinheiro no Caixa, Pix e outras no Banco. '
+                                          'Você pode trocar.')
+
+    def clean_paid_amount(self):
+        value = self.cleaned_data['paid_amount']
+        if value.quantize(Decimal('0.01')) != value:
+            raise forms.ValidationError('Use no máximo duas casas decimais.')
+        return value

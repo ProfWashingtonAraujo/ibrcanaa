@@ -3,12 +3,13 @@
 Itens cujas rotas ainda não existem são omitidos em silêncio; cada tela nova aparece
 no menu assim que registra a sua rota.
 """
+from django.utils import timezone
 from django.urls import NoReverseMatch, reverse
 from django.utils.safestring import mark_safe
 
 from core.navigation import ICONS
 
-from .models import Movement, Status
+from .models import Movement, Payable, Status
 from .permissions import can_edit_treasury, can_see_member_names, can_view_details, can_view_treasury
 
 
@@ -17,8 +18,8 @@ def _pending_count():
 
 
 def _overdue_count():
-    # Contas a pagar vencidas: passa a contar quando a Task 9 criar o modelo.
-    return 0
+    """Contas em aberto já vencidas (vencimento anterior a hoje)."""
+    return Payable.objects.filter(status=Payable.Status.OPEN, due_date__lt=timezone.localdate()).count()
 
 
 # (rótulo, ícone, nome da rota, rotas que o destacam, visível para, contador)
