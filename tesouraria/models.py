@@ -105,7 +105,7 @@ class Movement(models.Model):
     method = models.CharField('forma', max_length=10, choices=Method.choices, default=Method.CASH)
     status = models.CharField('situação', max_length=10, choices=Status.choices, default=Status.CONFIRMED)
     source = models.CharField('origem', max_length=10, choices=Source.choices, default=Source.TREASURY)
-    member = models.ForeignKey('core.Member', on_delete=models.SET_NULL, null=True, blank=True,
+    member = models.ForeignKey('core.Member', on_delete=models.PROTECT, null=True, blank=True,
                                verbose_name='membro')
     destination = models.CharField('destino', max_length=120, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

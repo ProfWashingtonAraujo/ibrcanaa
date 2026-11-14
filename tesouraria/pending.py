@@ -38,7 +38,7 @@ def create_portal_contribution(member, category_name: str, amount: Decimal, note
 
 
 def _lock_pending(movement) -> Movement:
-    movement = Movement.objects.select_for_update().select_related('category').get(pk=movement.pk)
+    movement = Movement.objects.select_for_update(of=('self',)).select_related('category').get(pk=movement.pk)
     if movement.deleted_at is not None or movement.status != Status.PENDING:
         raise TreasuryError('Este lançamento já foi tratado (confirmado ou recusado) e não está mais na fila.')
     return movement

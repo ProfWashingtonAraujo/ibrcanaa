@@ -86,7 +86,7 @@ def create_movement(user, **fields) -> Movement:
 
 @transaction.atomic
 def update_movement(user, movement, **fields) -> Movement:
-    movement = Movement.objects.select_for_update().select_related('category').get(pk=movement.pk)
+    movement = Movement.objects.select_for_update(of=('self',)).select_related('category').get(pk=movement.pk)
     before = audit.snapshot(movement)  # antes de qualquer alteração
     ensure_editable(movement)
     fields = {k: v for k, v in fields.items() if k in MOVEMENT_FIELDS}
@@ -107,7 +107,7 @@ def update_movement(user, movement, **fields) -> Movement:
 
 @transaction.atomic
 def delete_movement(user, movement) -> None:
-    movement = Movement.objects.select_for_update().select_related('category').get(pk=movement.pk)
+    movement = Movement.objects.select_for_update(of=('self',)).select_related('category').get(pk=movement.pk)
     before = audit.snapshot(movement)
     ensure_editable(movement)
     _guard(movement.date)

@@ -182,3 +182,41 @@ class ReportTests(ReportBase):
             self.assertIn('Aprovado com ressalvas', pdf_text(self.get('report_pdf', user)))
             home = self.get('home', user)
             self.assertContains(home, 'Aprovado com ressalvas')
+
+
+@WITHOUT_AXES
+class DeletedMemberPrivacyTests(ReportBase):
+    def portal_movement(self):
+        from tesouraria import pending
+        m = pending.create_portal_contribution(self.ana, 'Dízimos', D('50.00'), '')
+        return pending.confirm_pending(m, user=self.tes, account='bank', method='pix', date=date(2026, 1, 9))
+
+    def test_description_for_masks_portal_movement_without_member(self):
+        from tesouraria.visibility import description_for
+        m = self.portal_movement()
+        Movement.objects.filter(pk=m.pk).update(member=None)
+        m.refresh_from_db()
+        self.assertIsNone(m.member_id)
+        self.assertNotIn('Ana', description_for(m, self.dir))
+        self.assertIn('Ana', description_for(m, self.tes))
+
+    def test_member_with_movements_cannot_be_deleted_and_board_sees_no_name(self):
+        from django.db.models import ProtectedError
+        self.portal_movement()
+        with self.assertRaises(ProtectedError):
+            self.ana.delete()
+        self.assertTrue(Member.objects.filter(pk=self.ana.pk).exists())
+        for name in ('report', 'report_pdf', 'home'):
+            r = self.get(name, self.dir)
+            body = pdf_text(r) if name == 'report_pdf' else r.content.decode()
+            self.assertNotIn('Ana Souza', body, name)
+
+    def test_admin_delete_of_member_with_movements_shows_protected_page_not_500(self):
+        self.portal_movement()
+        admin_user = make_user('adm', None, is_staff=True, is_superuser=True)
+        self.client.force_login(admin_user)
+        url = reverse('admin:core_member_delete', args=[self.ana.pk])
+        for method in (self.client.get, self.client.post):
+            r = method(url, {'post': 'yes'}) if method == self.client.post else method(url)
+            self.assertEqual(r.status_code, 200)
+        self.assertTrue(Member.objects.filter(pk=self.ana.pk).exists())

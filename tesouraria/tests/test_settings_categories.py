@@ -86,6 +86,16 @@ class SettingsTests(TestCase):
         self.assertEqual(TreasurySettings.get().start_date, date(2026, 1, 1))
         self.assertEqual(self.post(start_date='2026-03-10').status_code, 302)
 
+    def test_pending_and_rejected_portal_rows_do_not_block_start_date(self):
+        configure(date(2026, 1, 1))
+        cat = Category.objects.filter(kind=Kind.INCOME).first()
+        for status in ('pending', 'rejected'):
+            Movement.objects.create(date=date(2026, 10, 20), kind=Kind.INCOME, amount=Decimal('10.00'),
+                                    category=cat, description='Dízimo via portal', account=None,
+                                    method='pix', status=status, source='portal')
+        self.assertEqual(self.post(start_date='2026-11-01').status_code, 302)
+        self.assertEqual(TreasurySettings.get().start_date, date(2026, 11, 1))
+
     def test_start_date_checks_transfers_but_ignores_deleted(self):
         configure(date(2026, 1, 1))
         Transfer.objects.create(date=date(2026, 2, 5), from_account='cash', to_account='bank',

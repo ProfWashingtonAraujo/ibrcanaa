@@ -37,7 +37,7 @@ class SettingsForm(CrispyFormMixin, forms.ModelForm):
 
     def clean_start_date(self):
         start = self.cleaned_data['start_date']
-        dates = [Movement.objects.live().order_by('date').values_list('date', flat=True).first(),
+        dates = [Movement.objects.counted().order_by('date').values_list('date', flat=True).first(),
                  Transfer.objects.filter(deleted_at__isnull=True).order_by('date')
                  .values_list('date', flat=True).first()]
         oldest = min((d for d in dates if d), default=None)
