@@ -41,7 +41,7 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'Conheça a identidade da Canaã.')
         self.assertContains(response, '#nossa-igreja')
         self.assertContains(response, 'Desenvolvimento e criação por')
-        self.assertContains(response, 'https://profwashingtonaraujo.github.io/carcara/')
+        self.assertContains(response, 'https://carcaratech.com.br')
 
     def test_home_uses_fallback_when_database_is_unavailable(self):
         with patch.object(ChurchAboutPage.objects, 'get_or_create', side_effect=OperationalError('db offline')):
