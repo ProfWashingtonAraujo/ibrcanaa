@@ -190,3 +190,58 @@ class CategoryTests(TestCase):
             for url in post_urls + [reverse('tesouraria:category_create')]:
                 self.assertEqual(self.client.post(url, {'name': 'Q', 'kind': 'income'}).status_code, 403)
         self.assertTrue(Category.objects.filter(pk=cat.pk, active=True).exists())
+
+
+@WITHOUT_AXES
+class LockedCategoryTests(TestCase):
+    def setUp(self):
+        self.client.force_login(make_user('tes', Role.TREASURER))
+        self.cat = Category.objects.create(name='Usada', kind=Kind.INCOME)
+        make_movement(self.cat)
+        self.url = reverse('tesouraria:category_edit', args=[self.cat.pk])
+
+    def assert_unchanged(self):
+        self.cat.refresh_from_db()
+        self.assertEqual((self.cat.name, self.cat.kind, self.cat.is_special, self.cat.is_tithe),
+                         ('Usada', Kind.INCOME, False, False))
+
+    def test_changing_kind_of_used_category_is_rejected(self):
+        response = self.client.post(self.url, {'name': 'Usada', 'kind': 'expense'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'já tem lançamentos')
+        self.assert_unchanged()
+        self.assertFalse(AuditLog.objects.filter(action='update').exists())
+
+    def test_flipping_flags_of_used_category_is_rejected(self):
+        for flag in ('is_special', 'is_tithe'):
+            with self.subTest(flag=flag):
+                response = self.client.post(self.url, {'name': 'Usada', 'kind': 'income', flag: 'on'})
+                self.assertEqual(response.status_code, 200)
+                self.assert_unchanged()
+        flagged = Category.objects.create(name='Marcada', kind=Kind.INCOME, is_tithe=True)
+        make_movement(flagged)
+        self.client.post(reverse('tesouraria:category_edit', args=[flagged.pk]),
+                         {'name': 'Marcada', 'kind': 'income'})
+        flagged.refresh_from_db()
+        self.assertTrue(flagged.is_tithe)
+
+    def test_renaming_used_category_still_works(self):
+        response = self.client.post(self.url, {'name': 'Renomeada', 'kind': 'income'})
+        self.assertEqual(response.status_code, 302)
+        self.cat.refresh_from_db()
+        self.assertEqual(self.cat.name, 'Renomeada')
+        self.assertEqual(self.cat.kind, Kind.INCOME)
+
+    def test_form_shows_locked_fields_with_help(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Esta categoria já tem lançamentos; para mudar o significado')
+        self.assertContains(response, 'disabled')
+
+    def test_unused_category_can_change_kind_and_flags(self):
+        free = Category.objects.create(name='Livre', kind=Kind.EXPENSE)
+        response = self.client.post(reverse('tesouraria:category_edit', args=[free.pk]),
+                                    {'name': 'Livre', 'kind': 'income', 'is_special': 'on'})
+        self.assertEqual(response.status_code, 302)
+        free.refresh_from_db()
+        self.assertEqual(free.kind, Kind.INCOME)
+        self.assertTrue(free.is_special)

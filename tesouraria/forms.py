@@ -48,8 +48,31 @@ class CategoryForm(CrispyFormMixin, forms.ModelForm):
         model = Category
         fields = ['name', 'kind', 'is_special', 'is_tithe']
 
+    LOCKED_FIELDS = ('kind', 'is_special', 'is_tithe')
+    LOCKED_HELP = 'Esta categoria já tem lançamentos; para mudar o significado, crie outra categoria.'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.locked = bool(self.instance.pk and self.instance.in_use())
+        self.attempted_change = False
+        if not self.locked:
+            return
+        for name in self.LOCKED_FIELDS:
+            field = self.fields[name]
+            if self.is_bound:
+                posted = field.widget.value_from_datadict(self.data, self.files, self.add_prefix(name))
+                # Campos desabilitados não são enviados pelo navegador; só conta o que veio diferente.
+                if posted not in (None, '', False) and posted != getattr(self.instance, name):
+                    self.attempted_change = True
+            field.disabled = True
+            field.help_text = self.LOCKED_HELP
+
     def clean(self):
         cleaned = super().clean()
+        if self.attempted_change:
+            raise forms.ValidationError(
+                'Esta categoria já tem lançamentos: tipo e marcações não podem ser alterados. '
+                'Para mudar o significado, crie outra categoria.')
         name, kind = cleaned.get('name'), cleaned.get('kind')
         if name and kind:
             clash = Category.objects.filter(name__iexact=name.strip(), kind=kind).exclude(pk=self.instance.pk)
