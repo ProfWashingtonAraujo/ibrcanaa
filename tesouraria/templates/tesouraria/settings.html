@@ -1,0 +1,16 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Configurações | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Configurações{% endblock %}
+{% block admin_content %}
+<article class="panel form-panel">
+  <h2>Abertura da tesouraria</h2>
+  <p class="panel-sub">Data de início e saldos iniciais do caixa e do banco. Os saldos de cada mês partem destes valores.</p>
+  {% if locked %}<div class="form-alert" role="note"><strong>Abertura bloqueada.</strong> Já existe mês fechado; reabra os meses fechados para alterar a abertura.</div>{% endif %}
+  {% url 'tesouraria:home' as cancel_url %}
+  {% include 'core/_form_body.html' with submit_label='Salvar abertura' %}
+</article>
+<article class="panel">
+  <h2>Categorias</h2>
+  <p class="panel-sub">Tipos de entrada e saída usados nos lançamentos.</p>
+  <p><a class="button button-ghost" href="{% url 'tesouraria:categories' %}">Gerenciar categorias</a></p>
+</article>
+{% endblock %}

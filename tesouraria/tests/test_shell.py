@@ -183,9 +183,9 @@ class ShellTests(TestCase):
         self.login('com', Role.COMMITTEE)  # sem is_staff
         self.assertNotContains(self.client.get(self.url), 'Ir para o painel')
 
-    def test_settings_placeholder_is_editor_only(self):
+    def test_settings_page_is_editor_only(self):
         url = reverse('tesouraria:settings')
         self.login('dir', Role.BOARD)
         self.assertEqual(self.client.get(url).status_code, 403)
         self.login('tes', Role.TREASURER)
-        self.assertContains(self.client.get(url), 'Configurações')
+        self.assertContains(self.client.get(url), 'Saldo inicial do caixa')

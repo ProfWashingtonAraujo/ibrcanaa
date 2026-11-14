@@ -565,3 +565,4 @@ a.person-chip:hover{background:#dbe6fb}
 .tes-month strong{font-size:17px}
 .tes-amount{white-space:nowrap}
 .tes-expense{color:#a23a2e}
+.tes-tag{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;background:#eef2f8;color:#3d4b63;font-size:13px;font-weight:700}

@@ -1,0 +1,10 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}{{ title }} | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}{{ title }}{% endblock %}
+{% block admin_content %}
+{% url 'tesouraria:categories' as cancel_url %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem salvar</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">Oferta especial e relação de dizimistas valem só para entradas e não podem ser combinadas.</p>
+  {% include 'core/_form_body.html' %}
+</article>
+{% endblock %}

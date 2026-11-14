@@ -1,0 +1,29 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Categorias | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Categorias{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{% url 'tesouraria:settings' %}">Voltar às configurações</a></p>
+<div class="people-head"><p class="people-count">Categorias de entradas e saídas</p><a class="button button-primary" href="{% url 'tesouraria:category_create' %}">Nova categoria</a></div>
+{% for title, rows in groups %}
+<article class="panel">
+  <h2>{{ title }}</h2>
+  <div class="week-list">
+    {% for category in rows %}
+    <div class="week-row">
+      <div class="week-main">
+        <strong>{{ category.name }}{% if not category.active %} <span class="tes-tag">Arquivada</span>{% endif %}</strong>
+        <small>{{ category.uses }} lançamento{{ category.uses|pluralize }}{% if category.is_special %} · Oferta especial{% endif %}{% if category.is_tithe %} · Dizimistas{% endif %}</small>
+      </div>
+      <div class="week-actions">
+        <a class="button button-ghost" href="{% url 'tesouraria:category_edit' category.pk %}">Editar</a>
+        {% if category.active %}
+        <form method="post" action="{% url 'tesouraria:category_delete' category.pk %}">{% csrf_token %}<button class="button button-ghost" type="submit">{% if category.uses %}Arquivar{% else %}Excluir{% endif %}</button></form>
+        {% else %}
+        <form method="post" action="{% url 'tesouraria:category_reactivate' category.pk %}">{% csrf_token %}<button class="button button-ghost" type="submit">Reativar</button></form>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}<p class="panel-sub">Nenhuma categoria.</p>{% endfor %}
+  </div>
+</article>
+{% endfor %}
+{% endblock %}
