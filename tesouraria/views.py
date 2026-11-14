@@ -7,13 +7,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from . import audit, ledger, payables as payables_service, pending as pending_service, recurring as recurring_service
+from . import audit, closing as closing_service, ledger, payables as payables_service, pending as pending_service, recurring as recurring_service
 from .balances import month_summary
-from .forms import TITHE_HINT, CategoryForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
+from .forms import TITHE_HINT, CashCountForm, CategoryForm, CloseMonthForm, ConfirmPendingForm, MovementForm, PayableForm, PayForm, RecurringForm, RejectPendingForm, SettingsForm, TransferForm
 from .models import Account, Category, Kind, Method, Movement, Payable, RecurringBill, Status, Transfer, TreasurySettings
 from .permissions import (can_edit_treasury, treasury_detail_required, treasury_edit_required,
                           treasury_view_required)
-from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month
+from .rules import BeforeStart, MonthClosed, NotConfigured, TreasuryError, month_end, month_start, parse_month, shift_month
 from .visibility import description_for
 
 
@@ -42,15 +42,11 @@ def home(request):
         'month': summary.month,
         'summary': summary,
         'movements': movements,
-        'prev_param': f'{_shift(summary.month, -1):%Y-%m}',
-        'next_param': f'{_shift(summary.month, 1):%Y-%m}',
+        'prev_param': f'{shift_month(summary.month, -1):%Y-%m}',
+        'next_param': f'{shift_month(summary.month, 1):%Y-%m}',
+        'month_param': f'{summary.month:%Y-%m}',
         'can_edit': can_edit_treasury(request.user),
     })
-
-
-def _shift(month: date, delta: int) -> date:
-    index = month.year * 12 + month.month - 1 + delta
-    return date(index // 12, index % 12 + 1, 1)
 
 
 @treasury_edit_required
@@ -267,7 +263,7 @@ def movements(request):
     return render(request, 'tesouraria/movements.html', {
         'movements': rows, 'transfers': transfers, 'month': month,
         'month_param': f'{month:%Y-%m}',
-        'prev_param': f'{_shift(month, -1):%Y-%m}', 'next_param': f'{_shift(month, 1):%Y-%m}',
+        'prev_param': f'{shift_month(month, -1):%Y-%m}', 'next_param': f'{shift_month(month, 1):%Y-%m}',
         'filters': {'tipo': kind or '', 'categoria': category_id or '', 'conta': account or '',
                     'forma': method or ''},
         'categories': Category.objects.order_by('kind', 'name'),
@@ -484,3 +480,67 @@ def recurring_toggle(request, pk):
     messages.success(request, 'Conta recorrente ativada.' if not bill.active else
                      'Conta recorrente desativada; as contas já geradas continuam.')
     return redirect('tesouraria:recurring')
+
+
+# --- Conferência do caixa e fechamento do mês ---------------------------------------------------
+
+def _month_home(month):
+    return reverse('tesouraria:home') + f'?mes={month:%Y-%m}'
+
+
+def _closing_context(request, month, form, title):
+    try:
+        summary = month_summary(month)
+    except (NotConfigured, BeforeStart):
+        return None
+    return {'form': form, 'summary': summary, 'title': title, 'month': summary.month,
+            'cancel_url': _month_home(summary.month)}
+
+
+@treasury_edit_required
+def cash_count(request):
+    month = parse_month(request.GET.get('mes'))
+    form = CashCountForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            closing_service.record_cash_count(month, form.cleaned_data['counted_cash'], request.user)
+        except TreasuryError as error:
+            form.add_error(None, str(error))
+        else:
+            messages.success(request, 'Contagem do caixa registrada.')
+            return redirect(_month_home(month))
+    context = _closing_context(request, month, form, 'Conferir caixa')
+    if context is None:
+        return redirect(_month_home(month))
+    return render(request, 'tesouraria/cash_count.html', context)
+
+
+@treasury_edit_required
+def month_close(request):
+    month = parse_month(request.GET.get('mes'))
+    form = CloseMonthForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            closing_service.close_month(month, request.user, form.cleaned_data['notes'])
+        except TreasuryError as error:
+            messages.error(request, str(error))
+        else:
+            messages.success(request, f'Mês {month:%m/%Y} fechado.')
+        return redirect(_month_home(month))
+    context = _closing_context(request, month, form, 'Fechar mês')
+    if context is None:
+        return redirect(_month_home(month))
+    return render(request, 'tesouraria/month_close.html', context)
+
+
+@treasury_edit_required
+@require_POST
+def month_reopen(request):
+    month = parse_month(request.GET.get('mes'))
+    try:
+        closing_service.reopen_month(month, request.user)
+    except TreasuryError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, f'Mês {month:%m/%Y} reaberto.')
+    return redirect(_month_home(month))

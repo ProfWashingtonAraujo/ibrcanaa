@@ -1,0 +1,19 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Fechar mês | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Fechar mês{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar sem fechar</a></p>
+<article class="panel">
+  <h2>{{ month|date:'F' }} de {{ month.year }}</h2>
+  <div class="week-list">
+    <div class="week-row"><span>Caixa na abertura</span><strong>R$ {{ summary.opening_cash|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>Banco na abertura</span><strong>R$ {{ summary.opening_bank|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>Caixa no fechamento</span><strong>R$ {{ summary.closing_cash|floatformat:'2g' }}</strong></div>
+    <div class="week-row"><span>Banco no fechamento</span><strong>R$ {{ summary.closing_bank|floatformat:'2g' }}</strong></div>
+    {% if summary.counted_cash is not None %}<div class="week-row"><span>Caixa contado (diferença R$ {{ summary.cash_difference|floatformat:'2g' }})</span><strong>R$ {{ summary.counted_cash|floatformat:'2g' }}</strong></div>{% endif %}
+  </div>
+</article>
+<article class="panel form-panel">
+  <p class="panel-sub">Depois de fechado, o mês não aceita lançamentos, depósitos, pagamentos nem confirmações até ser reaberto. O mês anterior precisa estar fechado e não pode haver contribuições a confirmar no mês.</p>
+  {% include 'core/_form_body.html' with submit_label='Fechar mês' %}
+</article>
+{% endblock %}

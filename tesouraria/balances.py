@@ -47,12 +47,13 @@ def _opening(account: str, settings_obj) -> Decimal:
     return settings_obj.opening_cash if account == Account.CASH else settings_obj.opening_bank
 
 
-def account_balance(account: str, on: date) -> Decimal:
+def account_balance(account: str, on: date, settings_obj=None) -> Decimal:
     """Saldo da conta ao fim do dia `on`.
 
     Levanta NotConfigured sem configuração e BeforeStart se `on` é anterior ao início.
+    `settings_obj` evita nova consulta quando o chamador já tem a configuração.
     """
-    settings_obj = get_settings()
+    settings_obj = settings_obj or get_settings()
     if on < settings_obj.start_date:
         raise BeforeStart(
             f'A data {on:%d/%m/%Y} é anterior ao início da tesouraria ({settings_obj.start_date:%d/%m/%Y}).')
@@ -70,16 +71,16 @@ def account_balance(account: str, on: date) -> Decimal:
             + (transfers['inflow'] or ZERO) - (transfers['outflow'] or ZERO))
 
 
-def opening_balance(account: str, month: date) -> Decimal:
+def opening_balance(account: str, month: date, settings_obj=None) -> Decimal:
     """Saldo de abertura do mês: o cadastrado no mês de início; nos demais, o fechamento do mês anterior."""
-    settings_obj = get_settings()
+    settings_obj = settings_obj or get_settings()
     first = month_start(month)
     start_month = month_start(settings_obj.start_date)
     if first < start_month:
         raise BeforeStart(f'O mês {first:%m/%Y} é anterior ao início da tesouraria.')
     if first == start_month:
         return _opening(account, settings_obj)
-    return account_balance(account, first - timedelta(days=1))
+    return account_balance(account, first - timedelta(days=1), settings_obj)
 
 
 def total_balance(on: date) -> Decimal:
@@ -100,12 +101,13 @@ def month_summary(month: date) -> MonthSummary:
     """
     first = month_start(month)
     last = month_end(first)
-    opening_cash = opening_balance(Account.CASH, first)
-    opening_bank = opening_balance(Account.BANK, first)
-    closing_cash = account_balance(Account.CASH, last)
-    closing_bank = account_balance(Account.BANK, last)
+    settings_obj = get_settings()
+    opening_cash = opening_balance(Account.CASH, first, settings_obj)
+    opening_bank = opening_balance(Account.BANK, first, settings_obj)
+    closing_cash = account_balance(Account.CASH, last, settings_obj)
+    closing_bank = account_balance(Account.BANK, last, settings_obj)
 
-    start = max(first, get_settings().start_date)
+    start = max(first, settings_obj.start_date)
     window = dict(date__gte=start, date__lte=last)
     moves = Movement.objects.counted().filter(**window)
     income = moves.filter(kind=Kind.INCOME)
@@ -129,6 +131,7 @@ def month_summary(month: date) -> MonthSummary:
     payables_paid = Payable.objects.filter(
         status=Payable.Status.PAID, paid_date__gte=first, paid_date__lte=last).aggregate(t=Sum('paid_amount'))['t'] or ZERO
     closing = MonthClosing.objects.filter(month=first).first()
+    counted = closing.counted_cash if closing else None
     closing_total = closing_cash + closing_bank
     return MonthSummary(
         month=first,
@@ -150,5 +153,7 @@ def month_summary(month: date) -> MonthSummary:
         payables_open_total=payables_open,
         payables_paid_total=payables_paid,
         projected_total=closing_total - payables_open,
-        is_closed=False,
+        counted_cash=counted,
+        cash_difference=None if counted is None else counted - closing_cash,
+        is_closed=bool(closing and closing.is_closed),
     )

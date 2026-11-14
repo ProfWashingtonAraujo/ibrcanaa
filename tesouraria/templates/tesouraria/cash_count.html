@@ -1,0 +1,9 @@
+{% extends 'core/admin_base.html' %}
+{% block title %}Conferir caixa | Tesouraria | IBR Canaã{% endblock %}{% block section_name %}Tesouraria{% endblock %}{% block page_title %}Conferir caixa{% endblock %}
+{% block admin_content %}
+<p class="crumb"><a href="{{ cancel_url }}">Voltar ao Caixa do Mês</a></p>
+<article class="panel form-panel">
+  <p class="panel-sub">{{ month|date:'F' }} de {{ month.year }}: o sistema calcula R$ {{ summary.closing_cash|floatformat:'2g' }} em dinheiro no Caixa. Conte o dinheiro e informe o valor; a diferença aparece no Caixa do Mês. A contagem pode ser refeita enquanto o mês estiver aberto.</p>
+  {% include 'core/_form_body.html' with submit_label='Registrar contagem' %}
+</article>
+{% endblock %}

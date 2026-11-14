@@ -273,3 +273,16 @@ class RecurringForm(CrispyFormMixin, forms.Form):
     def initial_from(cls, bill):
         return {name: getattr(bill, name) for name in
                 ('description', 'payee', 'category', 'amount', 'due_day', 'start_date', 'installments')}
+
+
+class CashCountForm(CrispyFormMixin, forms.Form):
+    counted_cash = forms.DecimalField(label='Dinheiro contado no caixa (R$)', max_digits=12, decimal_places=2,
+                                      min_value=Decimal('0.00'),
+                                      widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0'}))
+
+
+class CloseMonthForm(CrispyFormMixin, forms.Form):
+    full_width_fields = {'notes'}
+
+    notes = forms.CharField(label='Observações (opcional)', required=False,
+                            widget=forms.Textarea(attrs={'rows': 3}))

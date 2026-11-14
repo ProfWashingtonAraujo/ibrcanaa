@@ -13,7 +13,8 @@
   <p><a class="button button-primary" href="?mes={{ start_month_param }}">Ir para o mês de início</a></p>
 </article>
 {% else %}
-{% if can_edit %}
+{% if summary.is_closed %}<p class="panel-sub"><strong class="tes-seal">Mês fechado</strong> · alterações bloqueadas{% if can_edit %} até reabrir o mês{% endif %}.</p>{% endif %}
+{% if can_edit and not summary.is_closed %}
 <div class="people-head tes-actions"><p class="people-count">Lançar no caixa</p>
   <div class="week-actions">
     <a class="button button-primary" href="{% url 'tesouraria:movement_create' %}?tipo=income">Nova entrada</a>
@@ -22,11 +23,27 @@
   </div>
 </div>
 {% endif %}
+{% if can_edit %}
+<div class="people-head tes-actions"><p class="people-count">Conferência e fechamento</p>
+  <div class="week-actions">
+    {% if summary.is_closed %}
+    <form method="post" action="{% url 'tesouraria:month_reopen' %}?mes={{ month_param }}">{% csrf_token %}<button class="button button-ghost" type="submit">Reabrir</button></form>
+    {% else %}
+    <a class="button button-ghost" href="{% url 'tesouraria:cash_count' %}?mes={{ month_param }}">Conferir caixa</a>
+    <a class="button button-primary" href="{% url 'tesouraria:month_close' %}?mes={{ month_param }}">Fechar mês</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 <section class="stat-row" aria-label="Resumo do mês">
   <div><span>Saldo do mês anterior</span><strong>R$ {{ summary.opening_cash|add:summary.opening_bank|floatformat:'2g' }}</strong></div>
   <div><span>Entradas</span><strong>R$ {{ summary.income_total|floatformat:'2g' }}</strong></div>
   <div><span>Saídas</span><strong>R$ {{ summary.expense_total|floatformat:'2g' }}</strong></div>
   <div><span>Saldo do Caixa</span><strong>R$ {{ summary.closing_cash|floatformat:'2g' }}</strong></div>
+  {% if summary.counted_cash is not None %}
+  <div><span>Caixa contado</span><strong>R$ {{ summary.counted_cash|floatformat:'2g' }}</strong></div>
+  <div><span>Diferença da contagem</span><strong>R$ {{ summary.cash_difference|floatformat:'2g' }}</strong></div>
+  {% endif %}
   <div><span>Saldo do Banco</span><strong>R$ {{ summary.closing_bank|floatformat:'2g' }}</strong></div>
   <div><span>Saldo total</span><strong>R$ {{ summary.closing_total|floatformat:'2g' }}</strong></div>
 </section>
