@@ -1,3 +1,6 @@
+from datetime import date
+from decimal import Decimal
+
 from django.contrib.auth.models import User
 from django.test import override_settings
 
@@ -17,3 +20,13 @@ def make_user(username, role=None, *, is_staff=None, is_superuser=False):
     if role is not None:
         AccessProfile.objects.create(user=user, role=role)
     return user
+
+
+def configure(start=date(2026, 1, 1), cash='0.00', bank='0.00'):
+    from tesouraria.models import TreasurySettings
+
+    settings_obj, _ = TreasurySettings.objects.update_or_create(
+        pk=1,
+        defaults={'start_date': start, 'opening_cash': Decimal(cash), 'opening_bank': Decimal(bank)},
+    )
+    return settings_obj
