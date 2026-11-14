@@ -1,6 +1,8 @@
 import calendar
 from datetime import date
 
+from django.utils import timezone
+
 from .models import MonthClosing, TreasurySettings
 
 
@@ -47,3 +49,12 @@ def ensure_month_open(d: date) -> None:
     """Levanta MonthClosed se o mês de `d` já foi fechado."""
     if MonthClosing.objects.filter(month=month_start(d), closed_at__isnull=False).exists():
         raise MonthClosed(f'O mês {d:%m/%Y} está fechado; reabra-o para alterar lançamentos.')
+
+
+def parse_month(value: str | None) -> date:
+    """'2026-11' vira 1º/11/2026; vazio ou inválido vira o primeiro dia do mês atual."""
+    try:
+        year, month = (value or '').split('-')
+        return date(int(year), int(month), 1)
+    except (ValueError, TypeError):
+        return month_start(timezone.localdate())

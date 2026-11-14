@@ -9,7 +9,7 @@ from tesouraria.permissions import (
     can_view_treasury, landing_url,
 )
 
-from .helpers import WITHOUT_AXES, make_user
+from .helpers import WITHOUT_AXES, configure, make_user
 
 Role = AccessProfile.Role
 
@@ -67,6 +67,7 @@ class DecoratorAndLoginTests(TestCase):
                 self.client.logout()
 
     def test_home_access(self):
+        configure()  # sem configuração o tesoureiro é redirecionado às Configurações
         url = reverse('tesouraria:home')
         self.assertEqual(self.client.get(url).status_code, 302)
         for role, status in [(Role.TREASURER, 200), (Role.COMMITTEE, 200), (Role.BOARD, 200), (Role.MEMBER, 403)]:

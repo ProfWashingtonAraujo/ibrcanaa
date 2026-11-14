@@ -5,9 +5,9 @@
 <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 <div class="admin-shell">
   <aside class="sidebar" id="admin-sidebar" aria-label="Menu do painel">
-    <a class="brand brand-dark" href="{% url 'dashboard' %}">
+    <a class="brand brand-dark" href="{% if shell.home_url %}{{ shell.home_url }}{% else %}{% url 'dashboard' %}{% endif %}">
       <img src="{% static 'logo_preto.png' %}" alt="IBR Canaã">
-      <span><small>IBR CANAÃ</small><strong>Gestão Eclesiástica</strong></span>
+      <span><small>IBR CANAÃ</small><strong>{{ shell.subtitle|default:'Gestão Eclesiástica' }}</strong></span>
     </a>
     <nav class="side-nav" aria-label="Seções do painel">
       {% for group in admin_nav.groups %}
@@ -35,7 +35,8 @@
       <button type="button" class="menu-button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menu"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"/></svg><span>Menu</span></button>
       <div class="topbar-title"><span class="eyebrow">Administração / {% block section_name %}Painel{% endblock %}</span><h1>{% block page_title %}Visão geral{% endblock %}</h1></div>
       <div class="topbar-actions">
-        <form class="admin-search" role="search" method="get" action="{% url 'admin_search' %}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg><input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Buscar no painel" aria-label="Buscar no painel" autocomplete="off"><kbd aria-hidden="true">/</kbd></form>
+        {% if shell.search|default_if_none:True %}<form class="admin-search" role="search" method="get" action="{% url 'admin_search' %}"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg><input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Buscar no painel" aria-label="Buscar no painel" autocomplete="off"><kbd aria-hidden="true">/</kbd></form>{% endif %}
+        {% if shell.panel_url %}<a class="button button-ghost" href="{{ shell.panel_url }}">Ir para o painel</a>{% endif %}
         <a class="button button-ghost" href="{% url 'home' %}">Ver site</a><span class="date-chip">{% now 'd M Y' %}</span>
       </div>
     </header>
