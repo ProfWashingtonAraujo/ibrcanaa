@@ -29,6 +29,14 @@ acesso restrito é consequência, não objetivo.
 - **Abordagem B:** livro-caixa novo e separado, não uma evolução da tabela de
   lançamentos atual.
 - **O menu "Financeiro" sai do painel principal.**
+- **Categorias:** o tesoureiro **cria, edita e exclui**. Com lançamentos, a
+  categoria não é apagada: é arquivada (ver regras).
+- **Comissão de Contas** audita as contas. Precisa de acesso próprio de leitura
+  (ver "Acesso"). Os detalhes (somente leitura e parecer por mês fechado) são
+  proposta minha, ainda não confirmada por ele.
+- **Contas a pagar:** o tesoureiro quer **controlar** o que vence e pagar por
+  aqui (registrando o pagamento), sem integração bancária. Há contas **que se
+  repetem todo mês** (luz, água, internet, aluguel) e contas parceladas.
 - O tesoureiro pediu: Caixa do Mês, entradas (dízimos e ofertas), saídas, saldo
   do caixa, saldo do banco, total de dinheiro, total de Pix, ofertas especiais
   e relatório financeiro. Pediu também sugestões.
@@ -45,9 +53,24 @@ acesso restrito é consequência, não objetivo.
 - **Fila "A confirmar"** para as contribuições do portal.
 - **Conferência do caixa:** ele informa quanto contou, o sistema mostra a
   diferença para o saldo calculado.
+- **Conta a pagar:** descrição, beneficiário, categoria de saída, valor
+  previsto, vencimento, situação (em aberto, paga, cancelada), recorrência de
+  origem (opcional) e, quando paga, o movimento de saída que ela gerou, o valor
+  pago, a data e a conta.
+- **Conta recorrente (modelo):** descrição, beneficiário, categoria, valor
+  estimado, dia do vencimento, data de início, **número de parcelas** (vazio =
+  sem fim), ativa. Cada mês ganha a sua **conta a pagar** a partir dele.
+- **Parecer da Comissão de Contas:** mês fechado, resultado (aprovado ou
+  aprovado com ressalvas), texto, autor, data. Um por comissário por mês; pode
+  ser substituído, e a troca fica no histórico.
 - **Fechamento do mês:** congela os números; o saldo final vira o inicial do mês
   seguinte.
 - **Editar e excluir** lançamentos, com histórico de quem fez o quê e quando.
+- **Categorias** criadas, editadas, arquivadas e excluídas por ele.
+- **Contas a pagar** com vencimento, alerta de vencidas e a vencer, e botão
+  **Pagar**, que gera a saída no caixa. Contas **recorrentes mensais** e
+  **parceladas** se renovam sozinhas, sem ele recadastrar.
+- **Perfil da Comissão de Contas**, só leitura, com **parecer por mês fechado**.
 - **Relatório financeiro mensal em PDF** (e a mesma versão na tela), pronto para
   apresentar.
 
@@ -59,7 +82,11 @@ acesso restrito é consequência, não objetivo.
 - Orçamento previsto contra realizado.
 - Recibo ou declaração anual de dízimo para o membro.
 - Mais de duas contas, mais de uma moeda, contabilidade de partidas dobradas.
-- Cobrar ou receber pagamento pelo sistema.
+- Cobrar ou receber pagamento pelo sistema, ou **pagar de verdade** (Pix, boleto)
+  a partir daqui: "pagar" significa registrar o pagamento já feito.
+- Fluxo de **autorização** de despesa (pastor ou Diretoria aprovando antes de
+  pagar).
+- Aviso automático (e-mail ou push) de conta a vencer: não há agendador.
 
 ## Anti-objetivos (seria falha mesmo funcionando)
 
@@ -67,7 +94,9 @@ acesso restrito é consequência, não objetivo.
 - Contribuição "a confirmar" alterando saldo antes de confirmada.
 - Alterar mês fechado sem deixar rastro.
 - Excluir um lançamento sem rastro (a exclusão é lógica e fica no histórico).
-- A Diretoria conseguir editar o caixa.
+- A Diretoria ou a Comissão de Contas conseguirem editar o caixa.
+- Uma conta paga e o caixa mostrarem valores diferentes.
+- A recorrência gerar a mesma conta duas vezes no mesmo mês.
 - Perder o histórico financeiro que já existe.
 
 ## Restrições
@@ -99,7 +128,8 @@ acesso restrito é consequência, não objetivo.
 - **Ajustes da Tesouraria** (um registro só): data de início e saldos de
   abertura do Caixa e do Banco. Só o que for **a partir dessa data** conta nos
   saldos.
-- **Categoria:** nome, tipo (entrada ou saída), ativa. "Oferta especial" é uma
+- **Categoria:** nome, tipo (entrada ou saída), ativa (arquivada quando
+  inativa). "Oferta especial" é uma
   categoria de entrada marcada como especial. Vêm criadas: Dízimos, Ofertas,
   Ofertas especiais; saídas a definir com ele (ver "Calls do construtor").
 - **Movimento:** data, tipo (entrada ou saída), valor, categoria, descrição,
@@ -127,6 +157,35 @@ acesso restrito é consequência, não objetivo.
   reabrir é uma ação explícita do tesoureiro e fica no histórico.
 - Saldo de Caixa negativo gera aviso, não bloqueio.
 
+### Categorias
+
+- Criar e editar livremente. Nome único por tipo.
+- **Excluir:** só se nenhum movimento, conta a pagar ou recorrência usa a
+  categoria. Se usa, a ação oferece **arquivar** (some das escolhas novas e
+  continua nos relatórios antigos). Arquivada pode ser reativada.
+- Ofertas especiais seguem como categoria de entrada marcada como especial.
+
+### Contas a pagar
+
+- Conta em aberto **não altera saldo**. Vencida é a de vencimento anterior a
+  hoje; a vencer, as demais em aberto.
+- **Pagar** pede: valor pago (padrão = valor previsto, pode ter multa ou
+  desconto), data, conta (Caixa ou Banco) e forma. Em uma única operação cria a
+  saída confirmada e marca a conta paga. Se algo falhar, nada fica pela metade.
+- **Desfazer pagamento** é permitido enquanto o mês estiver aberto: cancela a
+  saída e volta a conta para "em aberto", com histórico.
+- Editar e **cancelar** conta em aberto. Conta paga só se altera desfazendo o
+  pagamento. Nada é apagado de verdade; o cancelamento fica no histórico.
+- **Recorrência sem agendador:** ao abrir a Tesouraria ou uma tela de mês, o
+  sistema garante, de forma idempotente (uma conta por recorrência por mês), as
+  contas daquele mês e do seguinte. O valor nasce igual ao estimado; o
+  tesoureiro ajusta o valor da conta do mês antes de pagar (luz e água variam).
+- **Parcelada** é uma recorrência com número de parcelas: cada conta mostra
+  "3/10" e a série termina sozinha.
+- No Caixa do Mês: vencimentos do mês, total já pago, total ainda a pagar e o
+  **saldo depois de pagar o que falta** (saldo total menos as contas em aberto
+  do mês).
+
 ### Regras de borda (minhas decisões)
 
 - **Fechar o mês** é bloqueado enquanto houver contribuição "a confirmar" com
@@ -146,18 +205,30 @@ acesso restrito é consequência, não objetivo.
   saídas, saldo do Caixa, saldo do Banco e saldo total; blocos de dinheiro contra
   Pix e de ofertas especiais por destino; lista dos movimentos; ações Nova
   entrada, Nova saída, Depósito, Conferir caixa, Fechar mês.
+- **Contas a pagar:** abas Vencidas, A vencer e Pagas, com total de cada uma;
+  nova conta, editar, cancelar, **Pagar** e desfazer pagamento; cadastro das
+  recorrentes e parceladas.
 - **A confirmar:** fila das contribuições do portal. Para cada uma: confirmar
   (escolhendo conta e forma, podendo ajustar a data) ou recusar (com motivo).
 - **Lançamentos:** todos os movimentos, com filtros por mês, tipo, categoria,
   conta e forma, e histórico por lançamento.
 - **Ofertas especiais:** total por destino, com os lançamentos de cada um.
 - **Relatório:** relatório do mês na tela e em PDF; resumo do ano.
-- **Configurações:** abertura (data e saldos) e categorias.
+- **Configurações:** abertura (data e saldos) e **categorias** (criar, editar,
+  arquivar, excluir).
+- **Parecer** (aparece no Caixa do Mês e no Relatório de um mês fechado): a
+  Comissão registra o seu; todos os que têm acesso leem.
 - **Histórico anterior:** lista somente leitura dos lançamentos antigos.
 
 ### Acesso
 
 - **Tesoureiro** e **superusuário:** tudo.
+- **Comissão de Contas** (perfil novo): leitura de tudo da Tesouraria (Caixa do
+  Mês, lançamentos, contas a pagar, fechamentos, conferências, relatórios e o
+  **histórico completo de alterações**), mais o **parecer** por mês fechado.
+  Não vê "A confirmar" para agir nem edita nada. Vê o membro de cada
+  contribuição? Proposta: **sim**, pois auditar dízimo exige conferir a origem;
+  Diretoria **não** vê o nome do membro, só o total.
 - **Diretoria (Admin):** somente leitura em Caixa do Mês e Relatório.
 - **Secretário, Diácono, Pastor, membros:** sem acesso.
 - O Tesoureiro, ao entrar, cai direto na Tesouraria e tem um atalho "Ir para o
@@ -196,6 +267,12 @@ acesso restrito é consequência, não objetivo.
    por ele.
 5. Saque (Banco para Caixa) permitido, além do depósito.
 6. Comprovante anexado **fora** desta entrega.
+8. **Comissão de Contas:** perfil novo, somente leitura, com parecer por mês
+   fechado, e vê o nome do membro nas contribuições (a Diretoria não).
+9. **Recorrência calculada ao abrir a tela**, não por agendador, e parcelada
+   tratada como recorrência com fim.
+10. **Categoria com uso é arquivada, não apagada.**
+11. Sem fluxo de autorização de despesa nesta entrega.
 7. Exclusão é lógica (some das listas, fica no histórico).
 
 ## Para depois
@@ -214,9 +291,14 @@ dízimo ao membro, notificar o tesoureiro quando chegar contribuição nova.
 
 ## Entrega em etapas (para o plano)
 
-1. Modelos, regras de saldo, ajustes de abertura e Caixa do Mês com lançamento
-   de entrada, saída e depósito.
-2. Fila "A confirmar" e mudança do portal.
-3. Fechamento, conferência do caixa, histórico e ofertas especiais.
-4. Relatório em PDF e na tela.
-5. Acesso novo, remoção do Financeiro antigo e do menu, "Histórico anterior".
+1. Modelos, regras de saldo, categorias (criar, editar, arquivar, excluir),
+   ajustes de abertura e Caixa do Mês com entrada, saída e depósito.
+2. Contas a pagar: cadastro, pagar e desfazer, vencidas e a vencer, saldo
+   depois de pagar o que falta.
+3. Recorrentes e parceladas, com geração idempotente.
+4. Fila "A confirmar" e mudança do portal.
+5. Fechamento, conferência do caixa, histórico de alterações e ofertas
+   especiais.
+6. Perfil da Comissão de Contas e parecer por mês fechado.
+7. Relatório em PDF e na tela.
+8. Acesso novo, remoção do Financeiro antigo e do menu, "Histórico anterior".
