@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.urls import reverse
 
 from core.models import AccessProfile
-from tesouraria import balances, payables
+from tesouraria import balances, ledger, payables
 from tesouraria.models import AuditLog, Category, Kind, MonthClosing, Movement, Payable, Status
 from tesouraria.navigation import build_treasury_nav
 from tesouraria.rules import MonthClosed, TreasuryError
@@ -124,6 +124,31 @@ class PayableServiceTests(PayableBase):
         p.refresh_from_db()
         self.assertEqual(p.status, Payable.Status.PAID)
         self.assertTrue(Movement.objects.counted().filter(kind=Kind.EXPENSE).exists())
+
+    def test_undo_blocked_when_paid_date_month_is_closed(self):
+        p = self.make()
+        self.pay(p)
+        Payable.objects.filter(pk=p.pk).update(paid_date=date(2026, 5, 10))
+        MonthClosing.objects.create(month=date(2026, 5, 1), closed_at=timezone.now())
+        with self.assertRaises(MonthClosed):
+            payables.undo_payment(p, self.tes)
+        p.refresh_from_db()
+        self.assertEqual(p.status, Payable.Status.PAID)
+
+    def test_payment_movement_cannot_be_edited_or_deleted_directly(self):
+        p = self.make()
+        movement = self.pay(p)
+        with self.assertRaises(TreasuryError) as ctx:
+            ledger.delete_movement(self.tes, movement)
+        self.assertIn('desfaça o pagamento', str(ctx.exception))
+        with self.assertRaises(TreasuryError):
+            ledger.update_movement(self.tes, movement, amount=D('1.00'))
+        movement.refresh_from_db()
+        self.assertIsNone(movement.deleted_at)
+        self.assertEqual(movement.amount, D('200.00'))
+        payables.undo_payment(p, self.tes)  # o desfazer continua funcionando
+        movement.refresh_from_db()
+        self.assertIsNotNone(movement.deleted_at)
 
     def test_undo_only_paid(self):
         with self.assertRaises(TreasuryError):
@@ -250,6 +275,31 @@ class PayableScreenTests(PayableBase):
         self.client.post(reverse('tesouraria:payable_cancel', args=[p.pk]))
         p.refresh_from_db()
         self.assertEqual(p.status, Payable.Status.CANCELED)
+
+    def test_view_refuses_delete_and_edit_of_payment_movement(self):
+        p = self.make()
+        movement = self.pay(p)
+        self.client.force_login(self.tes)
+        self.client.post(reverse('tesouraria:movement_delete', args=[movement.pk]))
+        self.client.post(reverse('tesouraria:movement_edit', args=[movement.pk]), {
+            'date': '2026-06-18', 'category': self.category.pk, 'description': 'x', 'amount': '1.00',
+            'method': 'pix', 'account': 'bank'})
+        movement.refresh_from_db()
+        self.assertEqual((movement.deleted_at, movement.amount), (None, D('200.00')))
+        html = self.client.get(reverse('tesouraria:movements') + '?mes=2026-06').content.decode()
+        self.assertIn('desfaça o pagamento', html)
+        self.assertNotIn(reverse('tesouraria:movement_delete', args=[movement.pk]), html)
+
+    def test_view_undo_refused_in_closed_month(self):
+        p = self.make()
+        movement = self.pay(p)
+        MonthClosing.objects.create(month=date(2026, 6, 1), closed_at=timezone.now())
+        self.client.force_login(self.tes)
+        self.client.post(reverse('tesouraria:payable_undo', args=[p.pk]))
+        p.refresh_from_db()
+        movement.refresh_from_db()
+        self.assertEqual(p.status, Payable.Status.PAID)
+        self.assertIsNone(movement.deleted_at)
 
     def test_form_hides_archived_category_but_keeps_current_on_edit(self):
         archived = Category.objects.create(name='Velha', kind=Kind.EXPENSE, active=False)

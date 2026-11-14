@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -251,7 +251,8 @@ def movements(request):
         rows = rows.filter(account=account)
     if method:
         rows = rows.filter(method=method)
-    rows = list(rows.order_by('-date', '-id'))
+    rows = list(rows.annotate(from_payable=Exists(Payable.objects.filter(movement=OuterRef('pk'))))
+                .order_by('-date', '-id'))
     for movement in rows:
         movement.shown_description = description_for(movement, request.user)
 

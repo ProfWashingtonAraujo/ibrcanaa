@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from . import audit
-from .models import Account, Kind, Movement, Source, Status, Transfer
+from .models import Account, Kind, Movement, Payable, Source, Status, Transfer
 from .rules import TreasuryError, ensure_after_start, ensure_month_open
 
 MOVEMENT_FIELDS = ('date', 'category', 'description', 'amount', 'account', 'method', 'member', 'destination')
@@ -66,6 +66,9 @@ def ensure_editable(movement) -> None:
     if movement.status != Status.CONFIRMED:
         raise TreasuryError('Este lançamento ainda não foi confirmado (ou foi recusado); '
                             'trate-o na tela "A confirmar".')
+    if Payable.objects.filter(movement=movement).exists():
+        raise TreasuryError('Esta saída foi gerada pelo pagamento de uma conta a pagar; para alterá-la ou '
+                            'excluí-la, desfaça o pagamento na própria conta (tela "Contas a pagar").')
     ensure_month_open(movement.date)
 
 

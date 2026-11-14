@@ -21,7 +21,7 @@ def _summary(payable, verb) -> str:
 
 
 def _lock(payable) -> Payable:
-    return Payable.objects.select_for_update().select_related('category').get(pk=payable.pk)
+    return Payable.objects.select_for_update(of=('self',)).select_related('category').get(pk=payable.pk)
 
 
 def _ensure_open(payable, action) -> None:
@@ -99,6 +99,8 @@ def undo_payment(payable: Payable, user) -> None:
         raise TreasuryError('Só contas pagas podem ter o pagamento desfeito.')
     movement = Movement.objects.select_for_update().get(pk=payable.movement_id)
     ensure_month_open(movement.date)
+    if payable.paid_date:
+        ensure_month_open(payable.paid_date)
     movement.deleted_at = timezone.now()
     movement.save(update_fields=['deleted_at', 'updated_at'])
     payable.status = Payable.Status.OPEN

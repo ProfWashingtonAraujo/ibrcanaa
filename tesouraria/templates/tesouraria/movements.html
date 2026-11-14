@@ -32,7 +32,9 @@
         <small>{{ movement.date|date:'d/m/Y' }} · {{ movement.category.name }} · {{ movement.get_method_display }}{% if movement.account %} · {{ movement.get_account_display }}{% endif %}{% if movement.destination %} · Destino: {{ movement.destination }}{% endif %}</small>
       </div>
       <strong class="tes-amount {% if movement.kind == 'expense' %}tes-expense{% endif %}">{% if movement.kind == 'expense' %}&minus; {% endif %}R$ {{ movement.amount|floatformat:'2g' }}</strong>
-      {% if can_edit and movement.status == 'confirmed' %}
+      {% if can_edit and movement.from_payable %}
+      <small class="panel-sub">Gerada por conta a pagar; para alterar, desfaça o pagamento na conta.</small>
+      {% elif can_edit and movement.status == 'confirmed' %}
       <div class="week-actions">
         <a class="button button-ghost" href="{% url 'tesouraria:movement_edit' movement.pk %}">Editar</a>
         <form method="post" action="{% url 'tesouraria:movement_delete' movement.pk %}" onsubmit="return confirm('Excluir este lançamento?');">{% csrf_token %}<button class="button button-ghost" type="submit">Excluir</button></form>
