@@ -48,7 +48,7 @@ def spotify_embed_path(url):
     if (parsed.hostname or '').lower().removeprefix('www.') != 'open.spotify.com':
         return None
     path_parts = [part for part in parsed.path.split('/') if part]
-    for content_type in ('playlist', 'show'):
+    for content_type in ('playlist', 'show', 'episode'):
         try:
             content_index = path_parts.index(content_type)
             content_id = path_parts[content_index + 1]

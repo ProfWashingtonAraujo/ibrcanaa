@@ -321,7 +321,7 @@ class AccessTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Informe o link público de uma playlist ou programa do Spotify.')
+        self.assertContains(response, 'Informe o link público de uma playlist, programa ou episódio do Spotify.')
 
     def test_staff_can_save_church_history_urls(self):
         self.client.login(username='staff', password='test-pass')

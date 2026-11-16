@@ -471,7 +471,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
     def clean_spotify_playlist_url(self):
         url = self.cleaned_data['spotify_playlist_url'].strip()
         if url and not spotify_embed_path(url):
-            raise ValidationError('Informe o link público de uma playlist ou programa do Spotify.')
+            raise ValidationError('Informe o link público de uma playlist, programa ou episódio do Spotify.')
         return url
 
     class Meta:
@@ -492,7 +492,7 @@ class ChurchAboutPageForm(CrispyFormMixin, forms.ModelForm):
             'spotify_playlist_text': forms.Textarea(attrs={'rows': 3}),
             'featured_video_url': forms.URLInput(attrs={'placeholder': 'https://youtu.be/...'}),
             'spotify_playlist_url': forms.URLInput(attrs={
-                'placeholder': 'https://open.spotify.com/playlist/... ou /show/...',
+                'placeholder': 'https://open.spotify.com/playlist/..., /show/... ou /episode/...',
             }),
         }
 
