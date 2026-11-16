@@ -24,7 +24,7 @@ from dal import autocomplete
 from .bible import BIBLE_BOOKS, fetch_chapter, get_book, get_daily_verse
 from .charts import membership_tenure_chart, reports_chart
 from .forms import BibleNoteForm, BookForm, ChurchAboutPageForm, ChurchHistoryPageForm, ContactLeadForm, CourseEvaluationForm, CourseForm, EventForm, LessonForm, LoginForm, MemberContributionForm, MemberForm, MembershipApplicationForm, MembershipCandidateForm, MinistryForm, UserAccountForm
-from .models import DEFAULT_FEATURED_VIDEO_TITLE, DEFAULT_FEATURED_VIDEO_URL, youtube_video_id
+from .models import youtube_video_id
 from .models import AccessProfile, BibleFavorite, BibleNote, Book, ChurchAboutPage, ChurchHistoryPage, ContactLead, Course, CourseEvaluation, Event, Lesson, LessonProgress, Member, MembershipApplication, Ministry
 from .youtube import home_videos
 from tesouraria.models import Kind, Movement, Status
@@ -101,7 +101,7 @@ def _pinned_video():
         page, _ = ChurchAboutPage.objects.get_or_create(site_key='about')
         url, title = page.featured_video_url, page.featured_video_title
     except (OperationalError, ProgrammingError):
-        url, title = DEFAULT_FEATURED_VIDEO_URL, DEFAULT_FEATURED_VIDEO_TITLE
+        url, title = '', ''
     video_id = youtube_video_id(url)
     if not video_id:
         return None

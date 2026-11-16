@@ -36,8 +36,6 @@ def validate_youtube_url(value):
         raise ValidationError('Informe uma URL válida de vídeo do YouTube.')
 
 
-DEFAULT_FEATURED_VIDEO_URL = 'https://youtu.be/i7tGR33yy-o'
-DEFAULT_FEATURED_VIDEO_TITLE = 'MARXISMO CULTURAL + Marcos Perin + Carlos A. Bezerra + Márcio Bastos. PodcastCanaã#01'
 
 
 def spotify_embed_path(url):
@@ -137,14 +135,13 @@ class ChurchAboutPage(models.Model):
         default='https://open.spotify.com/episode/7jSvOSYGtfbP3XIiwrD1nY',
     )
     featured_video_title = models.CharField(
-        'título do vídeo em destaque', max_length=160, blank=True, default=DEFAULT_FEATURED_VIDEO_TITLE,
+        'título do vídeo em destaque', max_length=160, blank=True,
     )
     featured_video_url = models.URLField(
         'vídeo em destaque na home (YouTube)',
         blank=True,
-        default=DEFAULT_FEATURED_VIDEO_URL,
         validators=[validate_youtube_url],
-        help_text='Aparece no destaque grande quando não há transmissão ao vivo.',
+        help_text='Opcional. Deixe vazio para mostrar sempre a transmissão ao vivo ou a mais recente.',
     )
 
     class Meta:

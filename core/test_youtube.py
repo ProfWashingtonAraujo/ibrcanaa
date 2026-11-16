@@ -54,10 +54,11 @@ class FeaturedVideoFieldTests(TestCase):
         data.update(overrides)
         return ChurchAboutPageForm(data, instance=page)
 
-    def test_defaults_point_to_the_podcast(self):
+    def test_no_pinned_video_by_default(self):
         page = ChurchAboutPage.objects.create(site_key='about')
-        self.assertEqual(page.featured_video_id, 'i7tGR33yy-o')
-        self.assertIn('PodcastCanaã#01', page.featured_video_title)
+        self.assertIsNone(page.featured_video_id)
+        self.assertEqual(page.featured_video_title, '')
+        self.assertIsNone(_pinned_video())
 
     def test_form_accepts_valid_youtube_url(self):
         form = self.form(featured_video_url='https://youtu.be/AAAAAAAAAAA')
@@ -408,6 +409,7 @@ class HomeYoutubeTests(TestCase):
 
     def test_home_labels_the_pinned_video(self, mocked):
         mocked.return_value = PINNED_RESULT
+        ChurchAboutPage.objects.update_or_create(site_key='about', defaults={'featured_video_url': 'https://youtu.be/i7tGR33yy-o', 'featured_video_title': 'Podcast Canaã #01'})
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'EM DESTAQUE')
         self.assertContains(response, 'data-live="false"')
@@ -442,6 +444,7 @@ class HomeYoutubeTests(TestCase):
 
     def test_home_passes_the_pinned_video_to_home_videos(self, mocked):
         mocked.return_value = PINNED_RESULT
+        ChurchAboutPage.objects.update_or_create(site_key='about', defaults={'featured_video_url': 'https://youtu.be/i7tGR33yy-o', 'featured_video_title': 'Podcast Canaã #01'})
         self.client.get(reverse('home'))
         pinned = mocked.call_args.args[0]
         self.assertEqual(pinned['video_id'], 'i7tGR33yy-o')
@@ -461,9 +464,10 @@ class HomeYoutubeTests(TestCase):
 
 class PinnedVideoTests(TestCase):
     def test_pinned_video_comes_from_the_about_page(self):
+        ChurchAboutPage.objects.update_or_create(site_key='about', defaults={'featured_video_url': 'https://youtu.be/i7tGR33yy-o', 'featured_video_title': 'Podcast Canaã #01'})
         pinned = _pinned_video()
         self.assertEqual(pinned['video_id'], 'i7tGR33yy-o')
-        self.assertIn('PodcastCanaã#01', pinned['title'])
+        self.assertEqual(pinned['title'], 'Podcast Canaã #01')
         self.assertIsNone(pinned['published'])
 
     def test_blank_or_invalid_url_means_no_pinned_video(self):
@@ -474,13 +478,12 @@ class PinnedVideoTests(TestCase):
                 self.assertIsNone(_pinned_video())
 
     def test_blank_title_gets_a_generic_title(self):
-        page = ChurchAboutPage.objects.create(site_key='about')
-        ChurchAboutPage.objects.filter(pk=page.pk).update(featured_video_title='')
+        page = ChurchAboutPage.objects.create(site_key='about', featured_video_url='https://youtu.be/i7tGR33yy-o')
         self.assertEqual(_pinned_video()['title'], 'Vídeo em destaque')
 
-    def test_pinned_video_uses_defaults_when_the_database_fails(self):
+    def test_no_pinned_video_when_the_database_fails(self):
         with patch('core.views.ChurchAboutPage.objects.get_or_create', side_effect=OperationalError('sem tabela')):
-            self.assertEqual(_pinned_video()['video_id'], 'i7tGR33yy-o')
+            self.assertIsNone(_pinned_video())
 
 
 SCRIPT = Path(settings.BASE_DIR) / 'static' / 'js' / 'home-live.js'
