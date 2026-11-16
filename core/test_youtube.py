@@ -269,6 +269,9 @@ class LoadVideosTests(TestCase):
         self.details = details.start()
         self.addCleanup(feed.stop)
         self.addCleanup(details.stop)
+        live_page = patch('core.youtube.fetch_live_without_key', return_value=None)
+        self.live_page = live_page.start()
+        self.addCleanup(live_page.stop)
 
     def at(self, seconds):
         return NOW + timedelta(seconds=seconds)
@@ -285,7 +288,7 @@ class LoadVideosTests(TestCase):
 
     def test_fresh_snapshot_does_not_refetch(self):
         load_videos(NOW)
-        load_videos(self.at(30))
+        load_videos(self.at(20))
         self.assertEqual(self.feed.call_count, 1)
         self.assertEqual(self.details.call_count, 1)
 
@@ -406,6 +409,21 @@ class HomeYoutubeTests(TestCase):
         self.assertContains(response, 'data-live="true"')
         self.assertContains(response, 'data-video-id="LIVE0000001"')
         self.assertNotContains(response, 'EM DESTAQUE')
+
+    def test_home_turns_the_section_into_the_live_stage(self, mocked):
+        mocked.return_value = LIVE_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'video-section is-live')
+        self.assertContains(response, 'O culto está acontecendo agora')
+        self.assertContains(response, '&autoplay=1&mute=1')
+        self.assertContains(response, ' autoload')
+
+    def test_home_without_live_keeps_the_regular_section(self, mocked):
+        mocked.return_value = PINNED_RESULT
+        response = self.client.get(reverse('home'))
+        self.assertNotContains(response, 'video-section is-live')
+        self.assertContains(response, 'Transmissões mais recentes')
+        self.assertNotContains(response, 'autoplay=1')
 
     def test_home_labels_the_pinned_video(self, mocked):
         mocked.return_value = PINNED_RESULT
@@ -608,3 +626,43 @@ class ReadCurrentStateTests(SimpleTestCase):
 
     def test_no_featured_element_means_no_state(self):
         self.assertIsNone(read_current(featured_present=False))
+
+
+class LiveWithoutKeyTests(TestCase):
+    """Sem chave da API, a transmissão no ar é detectada pela página /live do canal."""
+
+    PAGE_LIVE = (
+        '<meta property="og:title" content="Culto de Louvor &amp; Adoração - 16/11/2026">'
+        '<link rel="canonical" href="https://www.youtube.com/watch?v=LIVE0000001">'
+        '..."isLiveNow":true...'
+    )
+    PAGE_OFFLINE = '<link rel="canonical" href="https://www.youtube.com/channel/UCnJeIwpnusCcbJa9nAInb8Q">'
+
+    def test_parses_a_live_page(self):
+        from core.youtube import parse_channel_live_page
+        self.assertEqual(parse_channel_live_page(self.PAGE_LIVE),
+                         {'video_id': 'LIVE0000001', 'title': 'Culto de Louvor & Adoração - 16/11/2026'})
+
+    def test_offline_or_unconfirmed_pages_are_not_live(self):
+        from core.youtube import parse_channel_live_page
+        self.assertIsNone(parse_channel_live_page(self.PAGE_OFFLINE))
+        self.assertIsNone(parse_channel_live_page(self.PAGE_LIVE.replace('"isLiveNow":true', '"isLiveNow":false')))
+
+    @override_settings(YOUTUBE_API_KEY='', YOUTUBE_CHANNEL_ID=CHANNEL_ID, YOUTUBE_LIVE_PAGE_CHECK=True)
+    def test_live_is_detected_even_when_the_streams_feed_is_down(self):
+        live = {'video_id': 'LIVE0000001', 'title': 'Culto ao vivo'}
+        with patch('core.youtube.fetch_feed_entries', side_effect=YoutubeError('fora do ar')), \
+                patch('core.youtube.fetch_live_without_key', return_value=live):
+            videos = load_videos(NOW)
+        self.assertEqual([item['video_id'] for item in videos], ['LIVE0000001'])
+        self.assertTrue(videos[0]['live'])
+
+    @override_settings(YOUTUBE_API_KEY='', YOUTUBE_CHANNEL_ID=CHANNEL_ID, YOUTUBE_LIVE_PAGE_CHECK=True)
+    def test_live_detected_without_key_is_featured_even_if_not_in_the_streams_feed(self):
+        live = {'video_id': 'LIVE0000001', 'title': 'Culto ao vivo'}
+        with patch('core.youtube.fetch_feed_entries', return_value=ENTRIES), \
+                patch('core.youtube.fetch_live_without_key', return_value=live):
+            videos = load_videos(NOW)
+        self.assertEqual(videos[0]['video_id'], 'LIVE0000001')
+        self.assertTrue(videos[0]['live'])
+        self.assertTrue(build_home_videos(videos, None)['live'])

@@ -605,3 +605,19 @@ a.person-chip:hover{background:#dbe6fb}
 .ficha-rows{margin:0}.ficha-rows>div{display:flex;justify-content:space-between;gap:20px;padding:11px 0;border-bottom:1px solid #edf0f5;font-size:14px}
 .ficha-rows dt{color:var(--muted);font-weight:600;flex:0 0 auto}.ficha-rows dd{margin:0;text-align:right;font-weight:700;overflow-wrap:anywhere}
 .ficha-edit{margin-top:24px}
+
+/* Palco do culto: a seção de vídeos muda inteira enquanto a transmissão está no ar. */
+.video-section.is-live{background:radial-gradient(circle at 50% 0,#1a3a78 0,#07142f 62%);color:white}
+.video-section.is-live .video-heading h2{color:white}
+.video-section.is-live .youtube-channel-link{color:#cfd9ec}
+.video-section.is-live .video-gallery{grid-template-columns:1fr}
+.video-section.is-live .video-featured{max-width:1080px;width:100%;margin:0 auto;background:#0b1d42;border:0;box-shadow:0 0 0 2px #d92d20,0 30px 80px rgba(0,0,0,.45)}
+.video-section.is-live .video-featured>div{padding:24px 30px 30px}
+.video-section.is-live .video-featured small.is-live{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#d92d20;color:white;letter-spacing:.12em}
+.video-section.is-live .video-featured h3{color:white}
+.video-section.is-live .video-featured p{color:#b9c6de}
+.video-section.is-live .video-list{grid-template-columns:repeat(3,1fr);max-width:1080px;margin:8px auto 0}
+.video-section.is-live .video-list article{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.video-section.is-live .video-list h3{color:white}
+.video-section.is-live .video-list p,.video-section.is-live .video-list small{color:#aebbd4}
+@media(max-width:800px){.video-section.is-live .video-list{grid-template-columns:1fr}.video-section.is-live .video-featured>div{padding:18px}}

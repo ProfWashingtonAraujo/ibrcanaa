@@ -8,7 +8,7 @@
 (function (root) {
   'use strict';
 
-  var POLL_MS = 60000;
+  var POLL_MS = 20000;
   var STACK_SIZE = 3;
 
   function stackIdsOf(videos) {
@@ -41,12 +41,14 @@
     return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR');
   }
 
-  function createPlayer(video) {
+  function createPlayer(video, live) {
     var player = document.createElement('lite-youtube');
     player.setAttribute('videoid', video.video_id);
     player.setAttribute('title', video.title);
     player.setAttribute('playlabel', 'Reproduzir ' + video.title);
-    player.setAttribute('params', 'origin=' + location.origin);
+    // Ao vivo: começa sozinho e sem som (o navegador só permite autoplay mudo).
+    player.setAttribute('params', 'origin=' + location.origin + (live ? '&autoplay=1&mute=1' : ''));
+    if (live) player.setAttribute('autoload', '');
     return player;
   }
 
@@ -63,9 +65,11 @@
     var title = document.createElement('h3');
     title.textContent = video.title;
     var channel = document.createElement('p');
-    channel.textContent = video.channel_title || 'Igreja Batista Regular Canaã';
+    channel.textContent = live
+      ? 'Transmissão em andamento. Esta página atualiza sozinha; se o som estiver desligado, toque no player para ativar.'
+      : (video.channel_title || 'Igreja Batista Regular Canaã');
     copy.append(label, title, channel);
-    article.append(createPlayer(video), copy);
+    article.append(createPlayer(video, live), copy);
     return article;
   }
 
@@ -103,6 +107,15 @@
     };
   }
 
+  /* Palco do culto: a seção inteira muda de aparência enquanto a transmissão está no ar. */
+  function setLiveStage(section, live) {
+    section.classList.toggle('is-live', live);
+    var eyebrow = section.querySelector('[data-video-eyebrow]');
+    var heading = section.querySelector('[data-video-title]');
+    if (eyebrow) eyebrow.textContent = live ? 'Ao vivo' : 'Cultos online';
+    if (heading) heading.textContent = live ? 'O culto está acontecendo agora' : 'Transmissões mais recentes';
+  }
+
   function start() {
     var section = document.querySelector('#mensagens[data-feed-url]');
     if (!section || !root.fetch) return;
@@ -114,6 +127,7 @@
       if (!current) return;
       var next = nextFeaturedState(current, payload);
       if (next.replaceFeatured) {
+        setLiveStage(section, Boolean(payload.live));
         section.querySelector('.video-featured').replaceWith(createFeatured(payload.videos[0], Boolean(payload.live)));
       }
       if (next.replaceStack) {

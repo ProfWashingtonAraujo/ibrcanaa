@@ -10,8 +10,10 @@ A chave da API vai na URL da consulta. Por isso nenhuma exceção desta camada
 carrega a URL: os erros são trocados por mensagens fixas e nada é registrado em log.
 """
 
+import html
 import http.client
 import json
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone as dt_timezone
 from urllib.parse import urlencode
@@ -28,13 +30,16 @@ FEED_URL = 'https://www.youtube.com/feeds/videos.xml'
 API_VIDEOS_URL = 'https://www.googleapis.com/youtube/v3/videos'
 TIMEOUT_SECONDS = 2
 MAX_BODY_BYTES = 1024 * 1024
+LIVE_PAGE_MAX_BYTES = 3 * 1024 * 1024
+LIVE_PAGE_TIMEOUT_SECONDS = 4
+CHANNEL_LIVE_URL = 'https://www.youtube.com/channel/{channel_id}/live'
 MAX_IDS_PER_REQUEST = 50
 USER_AGENT = 'ibrcanaa-site/1.0'
 
 ATOM = '{http://www.w3.org/2005/Atom}'
 YT = '{http://www.youtube.com/xml/schemas/2015}'
 
-REFRESH_SECONDS = 60
+REFRESH_SECONDS = 30
 LIVE_MAX_AGE_SECONDS = 600
 STACK_SIZE = 3
 SNAPSHOT_KEY = 'channel'
@@ -46,14 +51,14 @@ class YoutubeError(Exception):
     """Falha ao consultar o YouTube. A mensagem nunca contém a URL nem a chave."""
 
 
-def _read(url):
+def _read(url, timeout=TIMEOUT_SECONDS, max_bytes=MAX_BODY_BYTES):
     request = Request(url, headers={'User-Agent': USER_AGENT})
     try:
-        with urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-            body = response.read(MAX_BODY_BYTES + 1)
+        with urlopen(request, timeout=timeout) as response:
+            body = response.read(max_bytes + 1)
     except (OSError, ValueError, http.client.HTTPException) as error:
         raise YoutubeError(f'Falha ao consultar o YouTube ({type(error).__name__}).') from None
-    if len(body) > MAX_BODY_BYTES:
+    if len(body) > max_bytes:
         raise YoutubeError('Resposta do YouTube grande demais.')
     return body
 
@@ -85,6 +90,32 @@ def fetch_feed_entries(channel_id):
                 'published': (entry.findtext(f'{ATOM}published') or '').strip(),
             })
     return entries
+
+
+CANONICAL_RE = re.compile(r'<link rel="canonical" href="https://www\.youtube\.com/watch\?v=([A-Za-z0-9_-]{11})"')
+OG_TITLE_RE = re.compile(r'<meta property="og:title" content="([^"]*)"')
+
+
+def parse_channel_live_page(page):
+    """Lê a página `/live` do canal: `{'video_id', 'title'}` se há transmissão no ar, senão `None`.
+
+    Sem transmissão, o YouTube deixa a página do canal; no ar, ela aponta (canonical)
+    para o vídeo e marca `"isLiveNow":true`.
+    """
+    match = CANONICAL_RE.search(page)
+    if not match or '"isLiveNow":true' not in page:
+        return None
+    title = OG_TITLE_RE.search(page)
+    return {'video_id': match.group(1), 'title': html.unescape(title.group(1)).strip() if title else ''}
+
+
+def fetch_live_without_key(channel_id):
+    """Detecta a transmissão no ar sem chave da API (uma consulta à página /live do canal)."""
+    body = _read(
+        CHANNEL_LIVE_URL.format(channel_id=channel_id),
+        timeout=LIVE_PAGE_TIMEOUT_SECONDS, max_bytes=LIVE_PAGE_MAX_BYTES,
+    )
+    return parse_channel_live_page(body.decode('utf-8', errors='replace'))
 
 
 def fetch_video_details(video_ids, api_key):
@@ -148,13 +179,37 @@ def _has_recent_details(snapshot, now):
     return bool((snapshot.payload or {}).get('live_state_known'))
 
 
+def _refresh_live_only(snapshot, now):
+    """Feed fora do ar: se a live foi detectada pela página /live, ela não pode esperar o feed voltar.
+    Reaproveita a lista anterior (se houver) e coloca a transmissão no ar na frente."""
+    if settings.YOUTUBE_API_KEY or not settings.YOUTUBE_LIVE_PAGE_CHECK:
+        return
+    try:
+        live_page = fetch_live_without_key(settings.YOUTUBE_CHANNEL_ID)
+    except YoutubeError:
+        return
+    if not live_page:
+        return
+    videos = [item for item in (snapshot.payload or {}).get('videos', []) if item['video_id'] != live_page['video_id']]
+    for item in videos:
+        item['live'] = False
+    videos.insert(0, {
+        'video_id': live_page['video_id'], 'title': live_page['title'] or 'Culto ao vivo',
+        'published': now.isoformat(), 'live': True, 'transmission': True,
+    })
+    snapshot.payload = {'videos': videos, 'live_state_known': True}
+    snapshot.updated_at = now
+    snapshot.save(update_fields=['payload', 'updated_at'])
+
+
 def _refresh(snapshot, now):
     """Consulta o YouTube e grava o resultado. Em falha, mantém o instantâneo anterior."""
     try:
         entries = fetch_feed_entries(settings.YOUTUBE_CHANNEL_ID)
     except YoutubeError:
-        return
+        entries = []
     if not entries:
+        _refresh_live_only(snapshot, now)
         return
     details = None
     if settings.YOUTUBE_API_KEY:
@@ -166,16 +221,28 @@ def _refresh(snapshot, now):
             if _has_recent_details(snapshot, now):
                 return
             details = None
+    live_page = None
+    if details is None and settings.YOUTUBE_LIVE_PAGE_CHECK:
+        try:
+            live_page = fetch_live_without_key(settings.YOUTUBE_CHANNEL_ID)
+        except YoutubeError:
+            live_page = None
+        if live_page and live_page['video_id'] not in {entry['video_id'] for entry in entries}:
+            entries = [{
+                'video_id': live_page['video_id'],
+                'title': live_page['title'] or 'Culto ao vivo',
+                'published': now.isoformat(),
+            }, *entries]
     videos = []
     for entry in entries:
         detail = (details or {}).get(entry['video_id'])
         videos.append({
             **entry,
-            'live': bool(detail and detail['live']),
+            'live': bool(detail and detail['live']) or bool(live_page and live_page['video_id'] == entry['video_id']),
             # Todo item da aba Streams é uma transmissão; a API só diz o que está no ar.
             'transmission': True,
         })
-    snapshot.payload = {'videos': videos, 'live_state_known': details is not None}
+    snapshot.payload = {'videos': videos, 'live_state_known': details is not None or live_page is not None}
     snapshot.updated_at = now
     snapshot.save(update_fields=['payload', 'updated_at'])
 

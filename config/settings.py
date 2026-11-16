@@ -48,6 +48,8 @@ CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 # destaque ao vivo e o filtro de transmissões. Só é usada no servidor.
 YOUTUBE_CHANNEL_ID = (os.environ.get('YOUTUBE_CHANNEL_ID') or '').strip() or 'UCnJeIwpnusCcbJa9nAInb8Q'
 YOUTUBE_API_KEY = (os.environ.get('YOUTUBE_API_KEY') or '').strip()
+# Sem chave da API, detecta a live pela página /live do canal. Desligado nos testes (sem rede).
+YOUTUBE_LIVE_PAGE_CHECK = 'test' not in sys.argv
 VERCEL_URL = os.environ.get('VERCEL_URL')
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
 VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL')
