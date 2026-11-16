@@ -125,7 +125,7 @@ class ChurchAboutPage(models.Model):
     highlight_3_title = models.CharField('destaque 3', max_length=120, default='Serviço com propósito')
     highlight_3_text = models.TextField('texto 3', default='Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.')
     spotify_playlist_title = models.CharField(
-        'título no Spotify', max_length=120, default='Série em Atos dos Apóstolos - Episódio 23',
+        'título no Spotify', max_length=120, default='Série em Lamentações - Episódio 3',
     )
     spotify_playlist_text = models.TextField(
         'apresentação do conteúdo',
@@ -134,7 +134,7 @@ class ChurchAboutPage(models.Model):
     spotify_playlist_url = models.URLField(
         'URL da playlist ou programa no Spotify',
         blank=True,
-        default='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=bd85139b74144700',
+        default='https://open.spotify.com/episode/7jSvOSYGtfbP3XIiwrD1nY',
     )
     featured_video_title = models.CharField(
         'título do vídeo em destaque', max_length=160, blank=True, default=DEFAULT_FEATURED_VIDEO_TITLE,
