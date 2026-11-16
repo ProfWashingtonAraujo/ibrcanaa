@@ -152,18 +152,18 @@ class OldFinanceRemovedTests(TestCase):
 
     def test_panel_topbar_has_treasury_shortcut_only_for_treasury_profiles(self):
         link = f'href="{reverse("tesouraria:home")}"'
-        for user in (make_user('tes', Role.TREASURER), make_user('board', Role.BOARD),
+        for user in (make_user('tes', Role.TREASURER),
                      make_user('root', None, is_staff=True, is_superuser=True)):
             self.client.force_login(user)
             with self.subTest(user=user.username):
                 self.assertContains(self.client.get(reverse('dashboard')), link)
-        for role in (Role.PASTOR, Role.SECRETARY, Role.DEACON):
+        for role in (Role.BOARD, Role.PASTOR, Role.SECRETARY, Role.DEACON):
             self.client.force_login(make_user(f'n-{role}', role))
             with self.subTest(role=role):
                 self.assertNotContains(self.client.get(reverse('dashboard')), link)
 
     def test_roles_without_treasury_land_on_dashboard_and_are_blocked(self):
-        for role in (Role.PASTOR, Role.SECRETARY, Role.DEACON):
+        for role in (Role.BOARD, Role.PASTOR, Role.SECRETARY, Role.DEACON):
             user = make_user(f'u-{role}', role)
             with self.subTest(role=role):
                 self.assertEqual(landing_url(user), reverse('dashboard'))
@@ -189,7 +189,7 @@ class LegacyTests(TestCase):
         return html[start:end]
 
     def test_legacy_page_lists_old_transactions_read_only(self):
-        for user in (make_user('tes', Role.TREASURER), make_user('com', Role.COMMITTEE),
+        for user in (make_user('tes', Role.TREASURER),
                      make_user('root', None, is_staff=True, is_superuser=True)):
             self.client.force_login(user)
             with self.subTest(user=user.username):

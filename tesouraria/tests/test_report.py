@@ -85,14 +85,14 @@ class ReportTests(ReportBase):
             self.assertIn(label, text)
         self.assertNotIn('Mês em aberto', text)
 
-    def test_pdf_masks_member_names_for_board_and_shows_for_committee(self):
+    def test_pdf_shows_member_names_to_committee_and_treasurer_only(self):
         self.seed()
-        for user, sees in ((self.dir, False), (self.com, True), (self.tes, True)):
+        for user, sees in ((self.com, True), (self.tes, True)):
             screen = self.get('report', user)
             text = pdf_text(self.get('report_pdf', user))
             self.assertEqual('Ana Souza' in text, sees, user.username)
             self.assertEqual('Ana Souza' in screen.content.decode(), sees, user.username)
-        self.assertIn('contribuição de membro', pdf_text(self.get('report_pdf', self.dir)))
+        self.assertEqual(self.get('report_pdf', self.dir).status_code, 403)
 
     def test_open_month_is_marked_in_report_and_pdf(self):
         self.seed()
@@ -106,9 +106,10 @@ class ReportTests(ReportBase):
         for name in ('report', 'report_pdf'):
             self.client.logout()
             self.assertEqual(self.client.get(reverse(f'tesouraria:{name}')).status_code, 302)
-            for user in (self.tes, self.com, self.dir):
+            for user in (self.tes, self.com):
                 self.assertEqual(self.get(name, user).status_code, 200, (name, user.username))
-            self.assertEqual(self.get(name, stranger).status_code, 403)
+            for user in (stranger, self.dir):
+                self.assertEqual(self.get(name, user).status_code, 403, (name, user.username))
 
     def test_year_summary_matches_sum_of_months(self):
         self.seed()
@@ -159,7 +160,7 @@ class ReportTests(ReportBase):
             self.assertEqual(r.status_code, 200 if name == 'report' else 302, name)
         from tesouraria.models import TreasurySettings
         TreasurySettings.objects.all().delete()
-        for user in (self.tes, self.dir):
+        for user in (self.tes, self.com):
             for name in ('report', 'report_pdf'):
                 self.assertIn(self.get(name, user).status_code, (200, 302), name)
 
@@ -174,7 +175,7 @@ class ReportTests(ReportBase):
         self.seed()
         closing.close_month(JAN, self.tes)
         opinions.record_opinion(JAN, self.com, 'reservations', '<script>x</script> ressalva')
-        for user in (self.com, self.dir, self.tes):
+        for user in (self.com, self.tes):
             page = self.get('report', user)
             self.assertContains(page, 'Aprovado com ressalvas')
             self.assertContains(page, '&lt;script&gt;x&lt;/script&gt; ressalva')
@@ -200,16 +201,14 @@ class DeletedMemberPrivacyTests(ReportBase):
         self.assertNotIn('Ana', description_for(m, self.dir))
         self.assertIn('Ana', description_for(m, self.tes))
 
-    def test_member_with_movements_cannot_be_deleted_and_board_sees_no_name(self):
+    def test_member_with_movements_cannot_be_deleted_and_board_is_blocked(self):
         from django.db.models import ProtectedError
         self.portal_movement()
         with self.assertRaises(ProtectedError):
             self.ana.delete()
         self.assertTrue(Member.objects.filter(pk=self.ana.pk).exists())
         for name in ('report', 'report_pdf', 'home'):
-            r = self.get(name, self.dir)
-            body = pdf_text(r) if name == 'report_pdf' else r.content.decode()
-            self.assertNotIn('Ana Souza', body, name)
+            self.assertEqual(self.get(name, self.dir).status_code, 403, name)
 
     def test_admin_delete_of_member_with_movements_shows_protected_page_not_500(self):
         self.portal_movement()

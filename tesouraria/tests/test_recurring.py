@@ -269,7 +269,7 @@ class RecurringViewTests(RecurringBase):
         self.assertEqual(self.client.get(self.url).status_code, 403)
 
     def test_nav_item_for_treasurer_and_committee_not_board(self):
-        for user, expected in ((self.tes, True), (self.com, True), (self.board, False)):
+        for user, expected in ((self.tes, True), (self.com, True)):
             request = mock.Mock(user=user, resolver_match=None)
             nav = build_treasury_nav(request)
             urls = [i['url'] for i in nav['groups'][0]['items']]

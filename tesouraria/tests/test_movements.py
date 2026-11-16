@@ -322,7 +322,7 @@ class ListTests(MovementBase):
         response = self.client.get(reverse('tesouraria:movements') + '?mes=2026-06')
         self.assertContains(response, reverse('tesouraria:transfer_delete', args=[transfer.pk]))
 
-    def test_home_list_masks_member_description_for_board_but_not_for_treasurer_or_committee(self):
+    def test_home_list_hides_home_from_board_and_shows_member_description_to_treasurer_and_committee(self):
         member = make_member('Maria Souza')
         self.make(self.tithe, member=member, description='Dízimo de Maria Souza', amount='80.00',
                   when=JUN)
@@ -331,9 +331,7 @@ class ListTests(MovementBase):
         self.client.force_login(make_user('com', Role.COMMITTEE))
         self.assertContains(self.client.get(url), 'Dízimo de Maria Souza')
         self.client.force_login(make_user('dir', Role.BOARD))
-        response = self.client.get(url)
-        self.assertNotContains(response, 'Maria Souza')
-        self.assertContains(response, 'Dízimos (contribuição de membro)')
+        self.assertEqual(self.client.get(url).status_code, 403)
 
     def test_home_has_buttons_for_editor_only(self):
         url = reverse('tesouraria:home') + '?mes=2026-06'

@@ -19,7 +19,7 @@ class PermissionPredicatesTests(TestCase):
         roles = [Role.TREASURER, Role.BOARD, Role.COMMITTEE, Role.DEACON, Role.SECRETARY, Role.PASTOR, Role.MEMBER]
         expected = {
             'edit': {Role.TREASURER},
-            'view': {Role.TREASURER, Role.BOARD, Role.COMMITTEE},
+            'view': {Role.TREASURER, Role.COMMITTEE},
             'details': {Role.TREASURER, Role.COMMITTEE},
             'names': {Role.TREASURER, Role.COMMITTEE},
             'opinion': {Role.COMMITTEE},
@@ -70,7 +70,7 @@ class DecoratorAndLoginTests(TestCase):
         configure()  # sem configuração o tesoureiro é redirecionado às Configurações
         url = reverse('tesouraria:home')
         self.assertEqual(self.client.get(url).status_code, 302)
-        for role, status in [(Role.TREASURER, 200), (Role.COMMITTEE, 200), (Role.BOARD, 200), (Role.MEMBER, 403)]:
+        for role, status in [(Role.TREASURER, 200), (Role.COMMITTEE, 200), (Role.BOARD, 403), (Role.MEMBER, 403)]:
             self.client.force_login(make_user(f'h-{role}', role))
             with self.subTest(role=role):
                 self.assertEqual(self.client.get(url).status_code, status)

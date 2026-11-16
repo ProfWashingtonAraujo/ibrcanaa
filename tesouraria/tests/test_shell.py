@@ -35,7 +35,7 @@ class ShellTests(TestCase):
 
     def test_home_requires_view_permission(self):
         self.assertEqual(self.client.get(self.url).status_code, 302)
-        for role in (Role.SECRETARY, Role.DEACON, Role.PASTOR, Role.MEMBER):
+        for role in (Role.BOARD, Role.SECRETARY, Role.DEACON, Role.PASTOR, Role.MEMBER):
             with self.subTest(role=role):
                 self.client.force_login(make_user(f'u-{role}', role))
                 self.assertEqual(self.client.get(self.url).status_code, 403)
@@ -44,7 +44,7 @@ class ShellTests(TestCase):
         self.login('tes', Role.TREASURER)
         response = self.client.get(self.url)
         self.assertRedirects(response, reverse('tesouraria:settings'), fetch_redirect_response=False)
-        self.login('dir', Role.BOARD)
+        self.login('com', Role.COMMITTEE)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'ainda não foi configurada')
@@ -109,8 +109,7 @@ class ShellTests(TestCase):
             status=Status.CONFIRMED, source=Source.TREASURY, member=member)
         self.login('dir', Role.BOARD)
         response = self.client.get(self.url, {'mes': '2026-11'})
-        self.assertNotContains(response, 'Maria Secreta')
-        self.assertContains(response, 'contribuição de membro')
+        self.assertEqual(response.status_code, 403)
 
     def test_shell_hides_panel_search_and_changes_brand(self):
         self._populate()
@@ -133,11 +132,6 @@ class ShellTests(TestCase):
         # Lançamentos, Ofertas especiais, Histórico) conforme registrarem suas rotas.
         self._populate()
         editor_only = ('A confirmar',)
-        self.login('dir', Role.BOARD)
-        html = self.client.get(self.url, {'mes': '2026-11'}).content.decode()
-        self.assertIn('Caixa do Mês', html.split('side-nav', 1)[1])
-        for label in ('Dizimistas', 'Lançamentos', 'Histórico', 'Contas a pagar') + editor_only:
-            self.assertNotIn(label, html.split('side-nav', 1)[1].split('side-user', 1)[0])
         self.login('com', Role.COMMITTEE)
         nav = self.client.get(self.url, {'mes': '2026-11'}).content.decode().split('side-nav', 1)[1].split('side-user', 1)[0]
         self.assertIn('Caixa do Mês', nav)
@@ -154,7 +148,7 @@ class ShellTests(TestCase):
         board = make_user('b', Role.BOARD)
         com = make_user('c', Role.COMMITTEE)
         tes = make_user('t', Role.TREASURER)
-        self.assertEqual({l for l, v in by_label.items() if v(board)}, {'Caixa do Mês', 'Relatório'})
+        self.assertEqual({l for l, v in by_label.items() if v(board)}, set())
         self.assertEqual({l for l, v in by_label.items() if v(com)},
                          {'Caixa do Mês', 'Relatório', 'Dizimistas', 'Contas a pagar', 'Contas recorrentes', 'Lançamentos',
                           'Ofertas especiais', 'Histórico', 'Histórico anterior'})

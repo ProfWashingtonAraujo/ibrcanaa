@@ -68,7 +68,7 @@ A Tesouraria fica em `/tesouraria/`, com menu próprio. Ela substitui o antigo F
 **Perfis**
 
 - **Tesoureiro** (e superusuário): faz tudo. Ao entrar, cai direto no Caixa do Mês e tem o atalho "Ir para o painel".
-- **Diretoria (Admin):** somente leitura do Caixa do Mês e do Relatório, sem o nome do membro nas contribuições. Acessa pelo atalho "Tesouraria" no topo do painel.
+- **Diretoria (Admin):** sem acesso à Tesouraria (apenas Tesoureiro, Comissão de Contas e superusuário).
 - **Comissão de Contas:** leitura de tudo (lançamentos, contas a pagar, fechamentos, histórico de alterações e dizimistas) e registra o parecer de cada mês fechado.
 - Pastor, Secretário, Diácono e membros não têm acesso.
 

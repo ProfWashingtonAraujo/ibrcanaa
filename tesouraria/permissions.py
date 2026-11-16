@@ -21,7 +21,7 @@ def can_edit_treasury(user):
 
 
 def can_view_treasury(user):
-    return can_edit_treasury(user) or get_role(user) in (Role.BOARD, Role.COMMITTEE)
+    return can_edit_treasury(user) or get_role(user) == Role.COMMITTEE
 
 
 def can_view_details(user):

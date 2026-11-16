@@ -126,7 +126,7 @@ class OpinionViewTests(CommitteeBase):
     def test_opinion_visible_on_home_escaped(self):
         self.close_jan()
         opinions.record_opinion(JAN, self.com, 'reservations', '<script>alert(1)</script> ressalva')
-        for username in ('com', 'dir', 'tes'):
+        for username in ('com', 'tes'):
             self.client.login(username=username, password=PASSWORD)
             page = self.client.get(reverse('tesouraria:home') + '?mes=2026-01')
             self.assertContains(page, 'Aprovado com ressalvas')
@@ -136,9 +136,8 @@ class OpinionViewTests(CommitteeBase):
         # só a Comissão vê o formulário/botão de parecer
         self.client.login(username='com', password=PASSWORD)
         self.assertContains(self.client.get(reverse('tesouraria:home') + '?mes=2026-01'), self.url().replace('&', '&amp;'))
-        for username in ('dir', 'tes'):
-            self.client.login(username=username, password=PASSWORD)
-            self.assertNotContains(self.client.get(reverse('tesouraria:home') + '?mes=2026-01'), reverse('tesouraria:opinion'))
+        self.client.login(username='tes', password=PASSWORD)
+        self.assertNotContains(self.client.get(reverse('tesouraria:home') + '?mes=2026-01'), reverse('tesouraria:opinion'))
 
     def test_opinion_form_link_hidden_when_month_open(self):
         self.client.login(username='com', password=PASSWORD)
@@ -149,11 +148,11 @@ class OpinionViewTests(CommitteeBase):
         self.close_jan()
         opinions.record_opinion(JAN, self.com, 'approved', 'ok')
         closing.reopen_month(JAN, self.tes)
-        self.client.login(username='dir', password=PASSWORD)
+        self.client.login(username='com', password=PASSWORD)
         self.assertContains(self.client.get(reverse('tesouraria:home') + '?mes=2026-01'),
                             'de mês reaberto')
 
-    def test_committee_sees_member_names_in_movements_but_board_sees_masked_text_on_home(self):
+    def test_committee_sees_member_names_in_movements_but_board_gets_403_on_home(self):
         member = Member.objects.create(name='Fulano Secreto')
         ledger.create_movement(self.tes, date=date(2026, 1, 5), category=self.income,
                                description='Dízimo de Fulano Secreto', amount=D('10.00'), account='cash',
@@ -162,9 +161,7 @@ class OpinionViewTests(CommitteeBase):
         self.client.login(username='com', password=PASSWORD)
         self.assertContains(self.client.get(url), 'Fulano Secreto')
         self.client.login(username='dir', password=PASSWORD)
-        page = self.client.get(url)
-        self.assertNotContains(page, 'Fulano Secreto')
-        self.assertContains(page, 'contribuição de membro')
+        self.assertEqual(self.client.get(url).status_code, 403)
 
 
 class WriteAccessTests(CommitteeBase):

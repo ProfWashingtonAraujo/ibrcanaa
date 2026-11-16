@@ -101,10 +101,10 @@ class PermissionViewTests(TestCase):
         self.login(user)
         self.assertEqual(self.client.get(reverse('member_portal')).status_code, 200)
 
-    def test_board_can_open_panel_and_treasury(self):
+    def test_board_can_open_panel_but_not_treasury(self):
         self.login(make_user('board', Role.BOARD, is_staff=True))
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
-        self.assertEqual(self.client.get(reverse('tesouraria:home')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('tesouraria:home')).status_code, 403)
 
     def test_pastor_sees_panel_but_not_treasury(self):
         self.login(make_user('pastor', Role.PASTOR, is_staff=True))
