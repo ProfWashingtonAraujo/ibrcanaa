@@ -90,12 +90,12 @@ class FeedParsingTests(SimpleTestCase):
         self.assertEqual(entries[0]['title'], 'Culto de Louvor - 08/11/2026')
         self.assertEqual(entries[0]['published'], '2026-11-09T11:44:52+00:00')
 
-    def test_feed_requests_the_channel_feed_url(self, mocked_urlopen):
+    def test_feed_requests_the_streams_playlist_feed_url(self, mocked_urlopen):
         respond_with(mocked_urlopen, FEED_XML)
         fetch_feed_entries(CHANNEL_ID)
         request = mocked_urlopen.call_args.args[0]
         url = request.full_url if hasattr(request, 'full_url') else request
-        self.assertEqual(url, f'https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}')
+        self.assertEqual(url, f'https://www.youtube.com/feeds/videos.xml?playlist_id=UULV{CHANNEL_ID[2:]}')
         self.assertEqual(mocked_urlopen.call_args.kwargs['timeout'], 2)
 
     def test_feed_rejects_malformed_xml(self, mocked_urlopen):
@@ -316,7 +316,7 @@ class LoadVideosTests(TestCase):
         videos = load_videos(NOW)
         self.assertEqual(len(videos), 2)
         self.assertFalse(any(item['live'] for item in videos))
-        self.assertTrue(all(item['transmission'] is None for item in videos))
+        self.assertTrue(all(item['transmission'] is True for item in videos))
 
     def test_api_failure_keeps_the_previous_snapshot_while_it_is_recent(self):
         load_videos(NOW)
@@ -333,7 +333,7 @@ class LoadVideosTests(TestCase):
         videos = load_videos(self.at(700))
         self.assertEqual(len(videos), 2)
         self.assertFalse(any(item['live'] for item in videos))
-        self.assertTrue(all(item['transmission'] is None for item in videos))
+        self.assertTrue(all(item['transmission'] is True for item in videos))
 
     def test_live_flag_expires_after_ten_minutes_without_success(self):
         load_videos(NOW)
@@ -356,7 +356,7 @@ class LoadVideosTests(TestCase):
     def test_without_api_key_the_api_is_never_called(self):
         videos = load_videos(NOW)
         self.details.assert_not_called()
-        self.assertTrue(all(item['transmission'] is None for item in videos))
+        self.assertTrue(all(item['transmission'] is True for item in videos))
         self.assertFalse(any(item['live'] for item in videos))
 
     def test_nothing_fetched_ever_returns_an_empty_list(self):

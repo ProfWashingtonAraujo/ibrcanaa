@@ -1,7 +1,8 @@
 """Vídeos do canal da igreja no YouTube: feed RSS, estado ao vivo e montagem da home.
 
 Fontes estáveis, sem raspar HTML:
-- feed RSS público do canal (lista de vídeos e datas);
+- feed RSS público da aba "Ao vivo" (Streams) do canal, a playlist automática
+  `UULV<id do canal sem o UC>` (lista de transmissões e datas, sem precisar de chave);
 - YouTube Data API `videos.list` (opcional, com chave) para saber o que está ao
   vivo e separar transmissões de uploads comuns.
 
@@ -57,10 +58,18 @@ def _read(url):
     return body
 
 
+def streams_playlist_id(channel_id):
+    """Playlist automática com as transmissões do canal (a aba Streams)."""
+    return 'UULV' + channel_id[2:] if channel_id.startswith('UC') else None
+
+
 def fetch_feed_entries(channel_id):
-    """Vídeos do feed RSS do canal, do mais novo ao mais antigo, como
+    """Transmissões da aba Streams do canal (feed RSS), da mais nova à mais antiga, como
     `{'video_id', 'title', 'published'}` (`published` em ISO 8601)."""
-    body = _read(f'{FEED_URL}?{urlencode({"channel_id": channel_id})}')
+    playlist_id = streams_playlist_id(channel_id)
+    if not playlist_id:
+        raise YoutubeError('ID de canal do YouTube inválido.')
+    body = _read(f'{FEED_URL}?{urlencode({"playlist_id": playlist_id})}')
     try:
         root = ET.fromstring(body)
     except ET.ParseError:
@@ -136,7 +145,7 @@ def _has_recent_details(snapshot, now):
     """O instantâneo atual tem dados da API e é recente o bastante para ainda valer?"""
     if snapshot.updated_at is None or now - snapshot.updated_at > timedelta(seconds=LIVE_MAX_AGE_SECONDS):
         return False
-    return any(item.get('transmission') is not None for item in (snapshot.payload or {}).get('videos', []))
+    return bool((snapshot.payload or {}).get('live_state_known'))
 
 
 def _refresh(snapshot, now):
@@ -163,9 +172,10 @@ def _refresh(snapshot, now):
         videos.append({
             **entry,
             'live': bool(detail and detail['live']),
-            'transmission': None if details is None else bool(detail and detail['transmission']),
+            # Todo item da aba Streams é uma transmissão; a API só diz o que está no ar.
+            'transmission': True,
         })
-    snapshot.payload = {'videos': videos}
+    snapshot.payload = {'videos': videos, 'live_state_known': details is not None}
     snapshot.updated_at = now
     snapshot.save(update_fields=['payload', 'updated_at'])
 
