@@ -46,7 +46,49 @@
       <div><dt>Profissão</dt><dd>{{ member.profession|default:'Não informada' }}</dd></div>
       <div><dt>Cadastrado em</dt><dd>{{ member.created_at|date:'d/m/Y' }}</dd></div>
     </dl>
-    <p class="person-note">Estado civil, filhos e demais dados pessoais ficam na <a href="{% url 'member_edit' member.pk %}">ficha completa</a>.</p>
+    <p class="person-note">Estado civil, filhos e demais dados pessoais ficam na <button type="button" class="link-button" data-open-ficha>ficha completa</button>.</p>
   </article>
 </section>
+<dialog class="ficha-drawer" id="ficha-drawer" aria-labelledby="ficha-title">
+  <header class="ficha-head">
+    <div><h2 id="ficha-title">Ficha completa</h2><p>{{ member.name }} · {{ member.get_status_display }}</p></div>
+    <button type="button" class="ficha-close" data-close-ficha aria-label="Fechar">&times;</button>
+  </header>
+  <div class="ficha-body">
+    <h3>Dados pessoais</h3>
+    <dl class="ficha-rows">
+    <div><dt>Nome</dt><dd>{{ member.name }}</dd></div>
+    <div><dt>Nascimento</dt><dd>{% if member.birth_date %}{{ member.birth_date|date:'d/m/Y' }}{% else %}Não informado{% endif %}</dd></div>
+    <div><dt>Profissão</dt><dd>{{ member.profession|default:'Não informada' }}</dd></div>
+    <div><dt>Escolaridade</dt><dd>{{ member.education|default:'Não informada' }}</dd></div>
+    <div><dt>Endereço</dt><dd>{{ member.address|default:'Não informado' }}</dd></div>
+    </dl>
+    <h3>Família</h3>
+    <dl class="ficha-rows">
+    <div><dt>Casado(a)</dt><dd>{% if member.married is None %}Não informado{% elif member.married %}Sim{% else %}Não{% endif %}</dd></div>
+    <div><dt>Data de casamento</dt><dd>{% if member.wedding_date %}{{ member.wedding_date|date:'d/m/Y' }}{% else %}Não informado{% endif %}</dd></div>
+    <div><dt>Viuvez</dt><dd>{% if member.widowed is None %}Não informado{% elif member.widowed %}Sim{% else %}Não{% endif %}</dd></div>
+    <div><dt>Divorciado(a)</dt><dd>{% if member.divorced is None %}Não informado{% elif member.divorced %}Sim{% else %}Não{% endif %}</dd></div>
+    <div><dt>Casado(a) com divorciado(a)</dt><dd>{% if member.married_to_divorced is None %}Não informado{% elif member.married_to_divorced %}Sim{% else %}Não{% endif %}</dd></div>
+    <div><dt>Filho 1</dt><dd>{% if member.child_1_name %}{{ member.child_1_name }}{% if member.child_1_birth_date %} · {{ member.child_1_birth_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}</dd></div>
+    <div><dt>Filho 2</dt><dd>{% if member.child_2_name %}{{ member.child_2_name }}{% if member.child_2_birth_date %} · {{ member.child_2_birth_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}</dd></div>
+    <div><dt>Filho 3</dt><dd>{% if member.child_3_name %}{{ member.child_3_name }}{% if member.child_3_birth_date %} · {{ member.child_3_birth_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}</dd></div>
+    <div><dt>Filho 4</dt><dd>{% if member.child_4_name %}{{ member.child_4_name }}{% if member.child_4_birth_date %} · {{ member.child_4_birth_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}</dd></div>
+    </dl>
+    <h3>Vida na igreja</h3>
+    <dl class="ficha-rows">
+    <div><dt>Entrada na igreja</dt><dd>{% if member.church_entry_date %}{{ member.church_entry_date|date:'d/m/Y' }}{% else %}Não informado{% endif %}</dd></div>
+    <div><dt>Conversão</dt><dd>{% if member.conversion_date %}{{ member.conversion_date|date:'d/m/Y' }}{% else %}Não informado{% endif %}</dd></div>
+    <div><dt>Batismo</dt><dd>{% if member.baptism_date %}{{ member.baptism_date|date:'d/m/Y' }}{% elif member.baptized %}Batizado{% else %}Não informado{% endif %}</dd></div>
+    <div><dt>Ministérios</dt><dd>{% for m in member.ministries.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% empty %}Nenhum{% endfor %}</dd></div>
+    </dl>
+    <a class="button button-primary ficha-edit" href="{% url 'member_edit' member.pk %}">Editar ficha</a>
+  </div>
+</dialog>
+<script>
+(function(){var d=document.getElementById('ficha-drawer');if(!d)return;
+document.querySelectorAll('[data-open-ficha]').forEach(function(b){b.addEventListener('click',function(){d.showModal()})});
+d.querySelector('[data-close-ficha]').addEventListener('click',function(){d.close()});
+d.addEventListener('click',function(e){if(e.target===d)d.close()});})();
+</script>
 {% endblock %}
