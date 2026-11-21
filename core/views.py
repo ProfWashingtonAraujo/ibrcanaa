@@ -163,6 +163,7 @@ def home(request):
         church_history_page = PUBLIC_HOME_FALLBACKS['church_history_page']
         public_ministries = []
         pastor_books = []
+    spotify = None if isinstance(church_about_page, dict) else church_about_page.spotify_card
     youtube = home_videos(_pinned_video())
     today = timezone.localdate()
     return render(request, 'core/home.html', {
@@ -171,6 +172,7 @@ def home(request):
         'public_ministries': public_ministries,
         'pastor_books': pastor_books,
         'church_about_page': church_about_page,
+        'spotify': spotify,
         'church_history_page': church_history_page,
         'daily_verse': get_daily_verse(timezone.localdate()),
         'youtube_videos': youtube['videos'],

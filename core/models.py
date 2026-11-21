@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from .spotify import latest_episode
+
 
 def membership_link_expiry():
     return timezone.now() + timedelta(days=14)
@@ -123,7 +125,7 @@ class ChurchAboutPage(models.Model):
     highlight_3_title = models.CharField('destaque 3', max_length=120, default='Serviço com propósito')
     highlight_3_text = models.TextField('texto 3', default='Ministérios para desenvolver dons e impactar pessoas dentro e fora da igreja.')
     spotify_playlist_title = models.CharField(
-        'título no Spotify', max_length=120, default='Série em Lamentações - Episódio 3',
+        'título no Spotify', max_length=120, default='Mensagens da Igreja Batista Regular Canaã',
     )
     spotify_playlist_text = models.TextField(
         'apresentação do conteúdo',
@@ -132,7 +134,7 @@ class ChurchAboutPage(models.Model):
     spotify_playlist_url = models.URLField(
         'URL da playlist ou programa no Spotify',
         blank=True,
-        default='https://open.spotify.com/episode/7jSvOSYGtfbP3XIiwrD1nY',
+        default='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp',
     )
     featured_video_title = models.CharField(
         'título do vídeo em destaque', max_length=160, blank=True,
@@ -154,6 +156,31 @@ class ChurchAboutPage(models.Model):
     @property
     def featured_video_id(self):
         return youtube_video_id(self.featured_video_url)
+
+    @property
+    def spotify_card(self):
+        """Dados do cartão do Spotify na home.
+
+        Link de programa (`/show/`): usa o episódio mais recente, se o Spotify responder;
+        senão cai no embed do programa com o título digitado no admin.
+        """
+        embed_path = spotify_embed_path(self.spotify_playlist_url)
+        if not embed_path:
+            return None
+        card = {
+            'embed_url': f'https://open.spotify.com/embed/{embed_path}?utm_source=generator&theme=0',
+            'title': self.spotify_playlist_title,
+            'url': self.spotify_playlist_url,
+        }
+        content_type, _, content_id = embed_path.partition('/')
+        episode = latest_episode(content_id) if content_type == 'show' else None
+        if episode:
+            card.update(
+                embed_url=f'https://open.spotify.com/embed/episode/{episode["id"]}?utm_source=generator&theme=0',
+                title=episode['title'],
+                url=f'https://open.spotify.com/episode/{episode["id"]}',
+            )
+        return card
 
     @property
     def spotify_embed_url(self):

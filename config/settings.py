@@ -50,6 +50,7 @@ YOUTUBE_CHANNEL_ID = (os.environ.get('YOUTUBE_CHANNEL_ID') or '').strip() or 'UC
 YOUTUBE_API_KEY = (os.environ.get('YOUTUBE_API_KEY') or '').strip()
 # Sem chave da API, detecta a live pela página /live do canal. Desligado nos testes (sem rede).
 YOUTUBE_LIVE_PAGE_CHECK = 'test' not in sys.argv
+SPOTIFY_LATEST_EPISODE = 'test' not in sys.argv  # home segue o episódio mais recente do programa
 VERCEL_URL = os.environ.get('VERCEL_URL')
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
 VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL')

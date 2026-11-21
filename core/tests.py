@@ -66,7 +66,8 @@ class PublicViewsTests(TestCase):
         self.assertContains(response, 'https://open.spotify.com/embed/playlist/abc123XYZ?utm_source=generator&amp;theme=0')
         self.assertContains(response, 'Abrir no Spotify')
 
-    def test_home_embeds_configured_spotify_show(self):
+    @patch('core.models.latest_episode', return_value=None)
+    def test_home_embeds_configured_spotify_show_when_spotify_is_unavailable(self, _latest):
         ChurchAboutPage.objects.create(
             spotify_playlist_title='Série em Atos dos Apóstolos - Episódio 23',
             spotify_playlist_url='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=tracking',
@@ -76,6 +77,21 @@ class PublicViewsTests(TestCase):
 
         self.assertContains(response, 'Série em Atos dos Apóstolos - Episódio 23')
         self.assertContains(response, 'https://open.spotify.com/embed/show/7cIt85QzUPeO10vOLYDsAp?utm_source=generator&amp;theme=0')
+
+    @patch('core.models.latest_episode', return_value={'id': 'EP123abc', 'title': 'Quando a Ira de Deus se Manifesta', 'released': ''})
+    def test_home_follows_latest_episode_of_spotify_show(self, latest):
+        ChurchAboutPage.objects.create(
+            spotify_playlist_title='Título manual',
+            spotify_playlist_url='https://open.spotify.com/show/7cIt85QzUPeO10vOLYDsAp?si=tracking',
+        )
+
+        response = self.client.get(reverse('home'))
+
+        latest.assert_called_once_with('7cIt85QzUPeO10vOLYDsAp')
+        self.assertContains(response, 'Quando a Ira de Deus se Manifesta')
+        self.assertNotContains(response, 'Título manual')
+        self.assertContains(response, 'https://open.spotify.com/embed/episode/EP123abc?utm_source=generator&amp;theme=0')
+        self.assertContains(response, 'href="https://open.spotify.com/episode/EP123abc"')
 
     def test_home_hides_invalid_spotify_playlist(self):
         ChurchAboutPage.objects.create(spotify_playlist_url='https://example.com/playlist/abc123')

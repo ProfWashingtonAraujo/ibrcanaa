@@ -72,17 +72,17 @@
     </div>
     <div class="bookstore-actions reveal"><a class="button button-primary" href="{% url 'bookstore' %}">Ver publicações completas</a></div>
   </section>
-  {% if church_about_page.spotify_embed_url %}
+  {% if spotify %}
   <section class="spotify-section" id="playlist">
     <div class="spotify-copy reveal">
       <span class="spotify-kicker"><i aria-hidden="true"></i> Ouça no Spotify</span>
-      <h2>{{ church_about_page.spotify_playlist_title }}</h2>
+      <h2{% if spotify.title|length > 40 %} class="is-long"{% endif %}>{{ spotify.title }}</h2>
       <p>{{ church_about_page.spotify_playlist_text }}</p>
-      <a href="{{ church_about_page.spotify_playlist_url }}" target="_blank" rel="noopener">Abrir no Spotify <span aria-hidden="true">↗</span></a>
+      <a href="{{ spotify.url }}" target="_blank" rel="noopener">Abrir no Spotify <span aria-hidden="true">↗</span></a>
     </div>
     <div class="spotify-player reveal reveal-delay">
       <span class="spotify-player-label">CONTEÚDO SELECIONADO</span>
-      <iframe src="{{ church_about_page.spotify_embed_url }}" title="{{ church_about_page.spotify_playlist_title }} no Spotify" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+      <iframe src="{{ spotify.embed_url }}" title="{{ spotify.title }} no Spotify" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
     </div>
   </section>
   {% endif %}
