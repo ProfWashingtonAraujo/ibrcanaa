@@ -265,6 +265,13 @@ class Book(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def is_amazon(self):
+        # Preço de livro da Amazon muda sempre: o site não o exibe, o leitor vê o valor atual na Amazon.
+        from urllib.parse import urlparse
+        host = (urlparse(self.purchase_url or '').hostname or '').lower()
+        return any(host == d or host.endswith('.' + d) for d in ('amazon.com.br', 'amazon.com', 'amzn.to', 'amzn.com', 'a.co'))
+
 
 class Member(models.Model):
     class Status(models.TextChoices):

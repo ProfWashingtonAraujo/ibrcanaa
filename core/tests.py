@@ -1911,3 +1911,19 @@ class FormScreensTests(TestCase):
         })
         self.assertRedirects(saved, reverse('events'))
         self.assertTrue(Event.objects.filter(title='Culto de Ação de Graças').exists())
+
+
+class BookAmazonTests(TestCase):
+    def test_is_amazon_detects_amazon_links_only(self):
+        for url in ('https://www.amazon.com.br/dp/B0TEST', 'https://amzn.to/abc', 'https://a.co/d/xyz'):
+            self.assertTrue(Book(title='L', purchase_url=url).is_amazon, url)
+        for url in ('', 'https://wa.me/5511999999999', 'https://evilamazon.com.br/x', 'https://amazon.com.br.evil.com/x'):
+            self.assertFalse(Book(title='L', purchase_url=url).is_amazon, url)
+
+    def test_amazon_book_hides_price_on_bookstore(self):
+        Book.objects.create(title='Livro Amazon', price='39.90', purchase_url='https://www.amazon.com.br/dp/B0TEST')
+        Book.objects.create(title='Livro Direto', price='25.00', purchase_url='https://wa.me/5511999999999')
+        html = self.client.get('/').content.decode()
+        self.assertIn('Ver preço na Amazon', html)
+        self.assertNotIn('39,90', html)
+        self.assertIn('25,00', html)
