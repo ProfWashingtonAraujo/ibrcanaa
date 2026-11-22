@@ -623,3 +623,9 @@ a.person-chip:hover{background:#dbe6fb}
 .video-section .video-list h3{color:white;font-size:15px;margin:14px 4px 5px}
 .video-section .video-list p,.video-section .video-list small{color:#aebbd4;margin-inline:4px}
 @media(max-width:800px){.video-section .video-list{grid-template-columns:1fr}.video-section .video-featured>div{padding:18px}}
+
+/* Capas de livros: mostrar a capa inteira, sem cortar (fundo escuro preenche as laterais). */
+.book-card .book-cover{height:360px;min-height:0;background-color:#0c1c43;background-size:contain;background-position:center;background-repeat:no-repeat}
+.book-card .book-cover:not(.book-cover-placeholder):after{display:none}
+.book-card .book-cover:not(.book-cover-placeholder) small{background:rgba(7,20,47,.78)}
+@media(max-width:700px){.book-card .book-cover{height:320px}}
